@@ -4,8 +4,10 @@ Aplikacja internetowa dla graczy kampanii RPG. Łączy **interaktywne mapy w sty
 ekranu Data-Slate** ze **wspólnym notatnikiem drużyny** zapisywanym na żywo
 w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glory).
 
-> **Etap: pierwszy szkic.** Aplikacja działa, ale **nie ma zabezpieczeń** —
-> przeczytaj rozdział [Bezpieczeństwo](#bezpieczeństwo).
+> **Etap: pierwszy szkic.** Bazę chronią reguły (tylko zapisy używane przez
+> aplikację, konta tylko do odczytu) i App Check (zapytania tylko ze strony
+> aplikacji). Logowanie przez kolekcję `secrets` zostaje świadomie — co z tego
+> wynika, opisuje rozdział [Bezpieczeństwo](#bezpieczeństwo).
 
 ## Spis treści
 
@@ -39,21 +41,25 @@ w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glor
 * **Kopia zapasowa bazy** do pliku CSV i **przywracanie** (tryb „Scal” albo „Zastąp”) — tylko admin.
 * **Telefon, tablet, komputer** — przesuwanie palcem, szczypanie, kółko myszy,
   obsługa klawiaturą; bez przewijania strony na boki.
-* **Wiele kampanii** — każda w osobnym folderze w `Scenariusze/`.
+* **Wiele kampanii** — każda w osobnym folderze w `kampanie/`.
 
 ## Pierwsze uruchomienie — krok po kroku
 
-1. **Opublikuj reguły bazy** — instrukcja w [`firebase/README.md`](firebase/README.md).
-   Dopóki tego nie zrobisz, aplikacja pokazuje komunikat „Baza danych odmówiła dostępu”.
-2. **Włącz GitHub Pages** (jednorazowo): w repozytorium na GitHubie wejdź w
-   **Settings → Pages → Build and deployment → Source** i wybierz **GitHub Actions**.
-3. Od tej chwili **po każdej zmianie na gałęzi `main` strona publikuje się sama**
-   (zakładka **Actions** → „Publikacja strony (GitHub Pages)”; trwa 1–2 minuty).
-   Adres strony pokaże się w Settings → Pages — zwykle
-   `https://cutelittlegoat.github.io/NotatkiRPG/`.
-4. Otwórz stronę, **zaloguj się kontem admina** i w zakładce **ADMIN** ustaw, co
-   widzą gracze (zakładki map, miejsca, kolory).
-5. **Rób kopię zapasową** (zakładka ADMIN) — najlepiej po każdej sesji.
+1. **Opublikuj reguły bazy** z pliku `firebase/firestore.rules` — instrukcja w
+   [`firebase/README.md`](firebase/README.md).
+2. **Ustaw repozytorium jako publiczne** (Settings → General → Danger Zone →
+   Change visibility). W darmowym planie GitHub Pages działa tylko dla repozytoriów publicznych.
+3. **Włącz GitHub Pages** (jednorazowo): **Settings → Pages → Build and deployment →
+   Source** → **GitHub Actions**. Potem w zakładce **Actions** wybierz „Publikacja
+   strony (GitHub Pages)” → **Run workflow** (albo poczekaj na następną zmianę na `main`).
+4. Od tej chwili **po każdej zmianie na gałęzi `main` strona publikuje się sama**
+   (trwa 1–2 minuty). Adres: `https://cutelittlegoat.github.io/NotatkiRPG/`
+   (pokazuje się też w Settings → Pages).
+5. Otwórz stronę, **zaloguj się kontem admina**, zakładka **ADMIN** → sekcja
+   **ZABEZPIECZENIA**: powinno być „Działa”. Wtedy **włącz wymuszanie App Check**
+   dla Cloud Firestore (krok po kroku w [`firebase/README.md`](firebase/README.md)).
+6. W zakładce **ADMIN** ustaw, co widzą gracze (zakładki map, miejsca, kolory).
+7. **Rób kopię zapasową** (zakładka ADMIN) — najlepiej po każdej sesji.
 
 Ważne: na stronę trafiają **tylko** pliki aplikacji, rejestr kampanii, manifesty
 i mapy dla graczy. Rysunki od MG zostają wyłącznie w repozytorium (wybiera to
@@ -101,12 +107,12 @@ NotatkiRPG/
 │   ├── css/slate.css          wygląd Data-Slate (motywy zielony / bursztynowy)
 │   ├── grafika/ikona.svg      ikona karty przeglądarki
 │   └── js/                    moduły ES (opis niżej)
-├── firebase/                  firebase-config.js, firestore.rules, README.md (publikacja reguł)
-├── Scenariusze/               kampanie — każda w osobnym folderze
+├── firebase/                  firebase-config.js, firestore.rules, README.md (reguły, App Check)
+├── kampanie/                  kampanie — każda w osobnym folderze
 │   ├── README.md              konwencja rysunków MG, nowa wersja mapy, nowa kampania
 │   └── Iliac/                 kampania „Kopiec Iliac” (manifest, mapy, rysunki MG)
-├── narzedzia/                 skrypty: przygotowanie map, złożenie strony, szablon scenariusza
-├── testy/                     testy automatyczne (jednostkowe, skryptów, całej aplikacji)
+├── narzedzia/                 skrypty: przygotowanie map, złożenie strony, szablon kampanii
+├── testy/                     testy automatyczne (jednostkowe, skryptów, reguł bazy, całej aplikacji)
 ├── dokumentacja/              materiały pomocnicze (Kod_Wzoru.txt — wzór klikalnej mapy)
 ├── .github/workflows/         automatyczna publikacja na GitHub Pages
 ├── AGENTS.md                  zasady pracy dla agentów AI
@@ -117,7 +123,7 @@ Moduły w `aplikacja/js/`:
 
 | Plik | Za co odpowiada |
 |---|---|
-| `firebase.js` | jedyne miejsce ładowania Firebase 13.2.0 (wszystkie moduły w tej samej wersji) |
+| `firebase.js` | jedyne miejsce ładowania Firebase 13.2.0 (wszystkie moduły w tej samej wersji) i uruchomienia App Check |
 | `konfiguracja.js` | nazwy kolekcji, motywy, kategorie, stany, rodzaje relacji |
 | `sesja.js`, `logowanie.js` | sesja i logowanie (kolekcje `secrets`, `admins`) |
 | `dane.js`, `stan.js` | odczyt/zapis w Firestore na żywo; wspólny stan strony i ustawienia domyślne |
@@ -138,7 +144,9 @@ python3 -m http.server 8000
 ```
 
 Potem w przeglądarce: <http://localhost:8000>. Strona łączy się z prawdziwą bazą
-Firebase (ten sam projekt co wersja w internecie).
+Firebase (ten sam projekt co wersja w internecie). Gdy wymuszanie App Check jest
+włączone, na komputerze potrzebny jest zarejestrowany **token debugowania** —
+instrukcja w [`firebase/README.md`](firebase/README.md) („Testowanie na własnym komputerze”).
 
 ## Dane w Firestore
 
@@ -182,39 +190,49 @@ nikomu i nie wrzucaj do repozytorium; `.gitignore` blokuje takie pliki).
    (plik `NotatkiRPG_kopia_przed-przywroceniem_…csv`).
 4. Zapis partiami po najwyżej 500 operacji. Przy błędzie zatrzymuje się i pokazuje,
    co zdążyło się zapisać.
-5. Konta: `admins` i `secrets` są zmieniane tylko wtedy, gdy plik zawiera z nich
-   dokumenty. Podgląd ostrzega, jeśli w pliku brakuje Twojego konta admina.
+5. **Kont (`admins`, `secrets`) aplikacja nie przywraca** — reguły bazy pozwalają je
+   tylko czytać. Kopia nadal je zawiera (dla porządku), a podgląd informuje, że
+   zostaną pominięte. Konta zmieniasz ręcznie w konsoli Firebase.
 
 ## Bezpieczeństwo
 
-Na Twoją prośbę na tym etapie **nie ma zabezpieczeń**. Konkretnie:
+**Co chroni bazę teraz:**
 
-1. **Baza jest otwarta bez terminu** (`firebase/firestore.rules`). Każdy, kto zna
-   konfigurację strony (jest w jej kodzie), może czytać, zmieniać i usuwać wszystkie dane.
-2. **Hasła są widoczne.** Logowanie porównuje login i hasło z kolekcją `secrets`,
-   więc przeglądarka musi ją czytać — hasła zobaczy każdy, kto zajrzy do bazy albo
-   do narzędzi deweloperskich. **Używaj haseł, których nie używasz nigdzie indziej.**
-3. **Role działają tylko w wyglądzie aplikacji** — baza ich nie pilnuje.
-4. **Ukrywanie miejsc i zakładek działa tylko w wyglądzie aplikacji.** Plik
+1. **Reguły bazy** (`firebase/firestore.rules`, wersja 2): dostępne są tylko kolekcje
+   aplikacji, zapisy muszą mieć właściwe pola i długość tekstów, a **konta (`admins`,
+   `secrets`) są tylko do odczytu** — nikt nie zmieni haseł ani ról przez aplikację
+   ani poza nią. Reguły sprawdzono testami w emulatorze bazy (`testy/reguly/`).
+2. **App Check** (reCAPTCHA Enterprise, klucz dla `cutelittlegoat.github.io`): po
+   włączeniu wymuszania w konsoli Firebase baza przyjmuje zapytania **wyłącznie z
+   aplikacji na jej adresie**. Skrypty i inne strony, które znają konfigurację,
+   dostają odmowę. Przepustka (token) ważna 7 dni, odnawia się sama — gracze niczego
+   nie zauważają. Szczegóły i kolejność włączania: [`firebase/README.md`](firebase/README.md).
+
+**Czego to nie zmienia** (bo logowanie zostaje oparte na kolekcji `secrets`, bez
+logowania Firebase — Twoja decyzja):
+
+1. **Baza nie wie, kto pyta.** Role gracz/admin działają tylko w wyglądzie aplikacji.
+   Ktoś, kto otworzy prawdziwą stronę i użyje narzędzi deweloperskich przeglądarki,
+   może dodawać, zmieniać i usuwać notatki oraz ustawienia map (ale nie konta).
+2. **Hasła da się podejrzeć** w ten sam sposób — logowanie wymaga odczytu kolekcji
+   `secrets`. **Używaj haseł, których nie używasz nigdzie indziej.**
+3. **Ukrywanie miejsc i zakładek działa tylko w wyglądzie aplikacji.** Plik
    manifestu (`kampania.json`) i pliki map są publiczne — ciekawski gracz może w
-   nich przeczytać nazwy i opisy wszystkich miejsc z manifestu. Dlatego w manifeście
-   trzymaj tylko rzeczy, których odkrycie nie zepsuje gry.
-5. **Repozytorium jest publiczne** — rysunki od MG (`Rysunki_*.svg`) może obejrzeć
-   każdy na GitHubie. Zdecydowałeś/-aś, że to akceptowalne. Na stronę (GitHub Pages)
-   rysunki MG nie trafiają.
+   nich przeczytać nazwy i opisy wszystkich miejsc z manifestu. W manifeście trzymaj
+   tylko rzeczy, których odkrycie nie zepsuje gry.
+4. **Repozytorium będzie publiczne** — rysunki od MG (`Rysunki_*.svg`) może obejrzeć
+   każdy na GitHubie (zdecydowałeś/-aś, że to akceptowalne). Na stronę nie trafiają.
 
-**Droga na później** (nic z tego nie jest wdrożone bez Twojej zgody):
+Kopia zapasowa po każdej sesji to najlepsza ochrona przed przypadkowym lub
+złośliwym skasowaniem notatek.
 
-* **Firebase Authentication** (logowanie e-mailem i hasłem „w Firebase”) zamiast
-  kolekcji `secrets` — hasła przestają być widoczne.
-* **Reguły oparte na zalogowanym użytkowniku** (`request.auth`): odczyt dla
-  wszystkich albo tylko zalogowanych, zapis notatek tylko dla graczy, ustawienia i
-  przywracanie tylko dla admina; `secrets` niedostępne z przeglądarki.
-* **Rola admina** w dokumencie `admins/{uid}` sprawdzanym przez reguły albo w
-  „custom claims” (wymaga jednorazowego skryptu administracyjnego).
-* **App Check** — baza przyjmuje tylko zapytania z prawdziwej strony aplikacji.
-* **Ograniczenie klucza API** do adresu strony w Google Cloud Console
-  (Interfejsy API → Dane logowania).
+**Dalsze możliwości** (nic z tego nie jest wdrożone):
+
+* **Ograniczenie klucza API** do adresu strony w Google Cloud Console (Interfejsy API
+  i usługi → Dane logowania → klucz przeglądarki → ograniczenie do witryn
+  `https://cutelittlegoat.github.io/*`) — dodatkowa warstwa obok App Check.
+* Logowanie przez Firebase Authentication — świadomie odrzucone; bez niego hasła i
+  role nie mogą być chronione przez bazę.
 
 ## Decyzje do potwierdzenia
 
@@ -222,14 +240,15 @@ Przyjęte na tym etapie — każdą można zmienić:
 
 1. **Publikacja:** GitHub Pages przez GitHub Actions; na stronę trafiają tylko pliki
    z listy dozwolonych (rysunki MG — nie). Repozytorium publiczne, rysunki MG w repozytorium.
-2. **Reguły bazy:** otwarte bezterminowo (Twoja decyzja).
+2. **Reguły bazy (wersja 2):** zapis tylko tam i tylko w takim kształcie, jakiego
+   używa aplikacja; konta tylko do odczytu, więc **przywracanie kopii pomija konta**.
 3. **Mapy:** dwie zakładki — **Okolice** (panel A rysunku; domyślnie widoczna) i
    **Kopiec** (panel B; domyślnie ukryta). Przekrój (panel C) pominięty — to materiał MG.
    Każda mapa to osobny plik SVG (zamiast jednego pliku z widokami), bo admin może
    ukryć zakładkę, a z jednego pliku dałoby się podejrzeć ukrytą część przez oddalenie.
 4. **Miejsca na start:** 23 miejsca z polecenia + `kopiec-iliac` (doszło w nowym
    rysunku). Część domyślnie dostępna, część czeka na zaznaczenie przez admina —
-   lista w [`Scenariusze/Iliac/README.md`](Scenariusze/Iliac/README.md).
+   lista w [`kampanie/Iliac/README.md`](kampanie/Iliac/README.md).
 5. **Miejsce niedostępne** wygląda jak tło mapy dla graczy: bez narożników,
    podświetlenia, podpowiedzi i bez reakcji na kliknięcie. Podpisy narysowane na
    mapie dla graczy zostają (to część zatwierdzonej mapy dla graczy).
@@ -240,39 +259,54 @@ Przyjęte na tym etapie — każdą można zmienić:
    dla graczy. Do uzupełnienia przez Ciebie albo MG.
 8. **Czcionki:** Ubuntu Mono (tekst) i VT323 (nagłówki) z Google Fonts — Share Tech
    Mono nie ma polskich liter.
-9. **Folder `Scenariusze/`** (Twoja prośba). Rejestr nadal nazywa się `kampanie.json`,
-   a dane w bazie leżą pod `kampanie/{id}` — tak jak w poleceniu.
+9. **Folder `kampanie/`** (Twoja prośba) — nazwa spójna z rejestrem `kampanie.json`
+   i z danymi w bazie (`kampanie/{id}`).
 10. **Nowy dokument ustawień** `kampanie/{id}/ustawienia/mapy` i pole `kontoIdZmiany`
     (kto ostatnio zmienił wpis).
 11. **Plik `Kod_Wzoru.txt`** przeniesiony do `dokumentacja/` (porządek w katalogu głównym).
+12. **App Check** w aplikacji (reCAPTCHA Enterprise, klucz witryny w
+    `firebase/firebase-config.js`); na komputerze lokalnym — token debugowania.
+    Informacja o reCAPTCHA (wymagana przez Google, bo znaczek reCAPTCHA jest
+    niewidoczny) jest w stopce stron.
 
 ## Testy — co sprawdzono, a czego nie
 
 Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/README.md)):
 
-* **Testy jednostkowe** (Node): format CSV (cudzysłowy, przecinki, nowe linie, BOM),
-  kodowanie typów Firestore, odczyt błędnych plików, partie po 500, wyszukiwanie bez polskich znaków.
-* **Skrypty** (Python): przygotowanie map — usuwanie materiału MG, przerwanie przy
-  śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), raport nowych i
-  brakujących miejsc; złożenie strony — rysunki MG nie trafiają na stronę.
-* **Cała aplikacja w przeglądarce** (Chromium, 52 kroki) na **udawanym Firebase**:
+* **Testy jednostkowe** (Node, 18): format CSV (cudzysłowy, przecinki, nowe linie,
+  BOM), kodowanie typów Firestore, odczyt błędnych plików, partie po 500,
+  wyszukiwanie bez polskich znaków.
+* **Skrypty** (Python, 9): przygotowanie map — usuwanie materiału MG, przerwanie
+  przy śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), raport
+  nowych i brakujących miejsc; złożenie strony — rysunki MG nie trafiają na stronę.
+* **Reguły bazy w emulatorze Firestore** (24): każdy zapis i odczyt aplikacji
+  (logowanie, notatki, postęp, powiązania, ustawienia admina, kopia i przywracanie)
+  przechodzi; obce pola, za długie teksty, nieznane kolekcje i każda zmiana kont są
+  odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
+* **Cała aplikacja w przeglądarce** (Chromium, 53 kroki) na **udawanym Firebase**:
   role (gość/gracz/admin), logowanie i ogólny komunikat błędu, notatki (dodanie,
   edycja, usunięcie z potwierdzeniem, notatka ogólna), postęp, powiązania z grafem,
   zmiany na żywo w drugiej karcie, checkboxy admina działające na żywo u gracza,
-  ukrywanie zakładki i kolor bursztynowy, „podgląd gracza”, kopia CSV (z `secrets`
-  i bez), przywracanie „Scal” i „Zastąp” (z kopią bezpieczeństwa, bez naruszania
-  kont), odporność na wstrzyknięcie HTML w notatce, klawiatura, komunikat przy
-  zablokowanej bazie; **telefony (iPhone 13, Pixel 5) i tablet (iPad Mini pionowo i
-  poziomo)**: brak przewijania w bok, przesuwanie palcem, szczypanie dwoma palcami,
-  stuknięcie w miejsce, indeks, panel admina.
-* **Prawdziwy Firebase 13.2.0:** biblioteki wczytują się z `gstatic`, aplikacja łączy
-  się z projektem `notatkirpg-b601c`; przy obecnych (domyślnych, zamkniętych)
-  regułach baza odmawia dostępu, a aplikacja pokazuje zrozumiały komunikat.
+  ukrywanie zakładki i kolor bursztynowy, „podgląd gracza”, status App Check w
+  panelu admina, kopia CSV (z `secrets` i bez), przywracanie „Scal” i „Zastąp” (z
+  kopią bezpieczeństwa, z pominięciem kont), odporność na wstrzyknięcie HTML w
+  notatce, klawiatura, komunikat przy odmowie dostępu; **telefony (iPhone 13,
+  Pixel 5) i tablet (iPad Mini pionowo i poziomo)**: brak przewijania w bok,
+  przesuwanie palcem, szczypanie dwoma palcami, stuknięcie w miejsce, indeks, panel admina.
+* **Prawdziwe biblioteki Firebase 13.2.0** (aplikacja, App Check, baza) wczytują się z
+  `gstatic` i uruchamiają bez błędów (połączenia z usługami Google zablokowane na
+  czas testu). Wcześniej, przy zamkniętych regułach, sprawdzono też połączenie z
+  projektem `notatkirpg-b601c` — baza odmówiła dostępu, a aplikacja pokazała
+  zrozumiały komunikat.
 
 **Czego nie dało się sprawdzić** (i jak to zrobić ręcznie):
 
-* **Zapisu i odczytu w prawdziwej bazie** — reguły są jeszcze zamknięte, a ich
-  publikacja należy do Ciebie. Po opublikowaniu reguł:
+* **Działania App Check na stronie w internecie** — klucz reCAPTCHA działa tylko pod
+  adresem `cutelittlegoat.github.io`, a strona nie jest jeszcze opublikowana. Po
+  publikacji: zakładka ADMIN → ZABEZPIECZENIA ma pokazać „Działa”; potem wykres w
+  konsoli Firebase (App Check → Cloud Firestore) — żądania „zweryfikowane”.
+* **Zapisu i odczytu w prawdziwej bazie** (nie zapisuję nic w Twojej bazie). Po
+  opublikowaniu reguł i strony:
   1. Otwórz stronę w dwóch kartach (albo na dwóch urządzeniach).
   2. Zaloguj się w pierwszej jako gracz, dodaj notatkę przy dowolnym miejscu —
      powinna od razu pojawić się w drugiej karcie.
@@ -280,8 +314,7 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
      pierwszej karcie powinno od razu stać się klikalne (złote narożniki).
   4. W zakładce ADMIN pobierz kopię, usuń jedną notatkę, przywróć kopię trybem
      „Scal” — notatka powinna wrócić.
-* **Publikacji na GitHub Pages** — wymaga przełączenia „Source: GitHub Actions” w
-  ustawieniach repozytorium (krok 2 wyżej). Potem sprawdź zakładkę Actions.
+  5. Po włączeniu wymuszania App Check powtórz punkt 2.
 * **Prawdziwych telefonów i tabletów** — testy używały emulacji w Chromium. Warto
   sprawdzić przesuwanie i szczypanie na telefonie i tablecie przy stole.
 

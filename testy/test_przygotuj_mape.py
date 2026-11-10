@@ -125,7 +125,7 @@ class TestPrzygotujMape(unittest.TestCase):
             self.assertIn("Nieprawidłowy identyfikator", wyjscie)
 
     def test_prawdziwa_kampania_iliac(self):
-        folder = KORZEN / "Scenariusze" / "Iliac"
+        folder = KORZEN / "kampanie" / "Iliac"
         if not (folder / "Rysunki_kopca_Iliac.svg").exists():
             self.skipTest("brak rysunku MG kampanii Iliac w repozytorium")
         kod, wyjscie = uruchom(str(folder), "--sprawdz")

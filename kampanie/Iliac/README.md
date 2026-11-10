@@ -2,7 +2,7 @@
 
 Kampania Warhammer 40,000 / Wrath & Glory. Identyfikator w rejestrze i w bazie: `iliac`.
 Ogólne zasady (konwencja rysunku, nowa wersja mapy, pola manifestu):
-[`Scenariusze/README.md`](../README.md).
+[`kampanie/README.md`](../README.md).
 
 ## Pliki
 
@@ -17,7 +17,7 @@ Ogólne zasady (konwencja rysunku, nowa wersja mapy, pola manifestu):
 Mapy odtwarza polecenie (z katalogu głównego repozytorium):
 
 ```bash
-python3 narzedzia/przygotuj_mape.py Scenariusze/Iliac
+python3 narzedzia/przygotuj_mape.py kampanie/Iliac
 ```
 
 ## Mapy (zakładki)

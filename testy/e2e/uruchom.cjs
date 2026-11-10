@@ -53,6 +53,11 @@ async function nowyKontekst(przegladarka, opcje = {}) {
   await ctx.route("https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js", (r) =>
     r.fulfill({ contentType: "text/javascript", body: fs.readFileSync(path.join(FALSZYWY, "firebase-firestore.js"), "utf8") })
   );
+  await ctx.route("https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js", (r) =>
+    r.fulfill({ contentType: "text/javascript", body: fs.readFileSync(path.join(FALSZYWY, "firebase-app-check.js"), "utf8") })
+  );
+  // Nic nie może wyjść do prawdziwych usług Google (reCAPTCHA, App Check, Firestore).
+  await ctx.route(/(google\.com\/recaptcha|firebaseappcheck\.googleapis\.com|firestore\.googleapis\.com)/, (r) => r.abort());
   if (!process.env.CZCIONKI) {
     await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
   }
@@ -382,6 +387,17 @@ async function bezPrzewijaniaWBok(strona) {
     await sa.screenshot({ path: path.join(WYNIKI, "08_admin_kopiec.png") });
   });
 
+  await krok("admin: status App Check w panelu (działa / nie działa)", async () => {
+    await sa.click("#zakladki .zakladka:has-text('ADMIN')");
+    await sa.waitForSelector("#widok-admin .status-na-zywo:has-text('Działa')");
+    await sa.evaluate(() => localStorage.setItem("falszywy-appcheck-blad", "1"));
+    await sa.click("#widok-admin button:has-text('SPRAWDŹ PONOWNIE')");
+    await sa.waitForSelector("#widok-admin .formularz-blad:has-text('Nie działa')");
+    await sa.evaluate(() => localStorage.removeItem("falszywy-appcheck-blad"));
+    await sa.click("#widok-admin button:has-text('SPRAWDŹ PONOWNIE')");
+    await sa.waitForSelector("#widok-admin .status-na-zywo:has-text('Działa')");
+  });
+
   // ---- kopia zapasowa i przywracanie
   let plikKopii = null;
   await krok("admin: kopia CSV (BOM, nagłówek, #meta, bez secrets)", async () => {
@@ -434,6 +450,9 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(baza["kampanie/iliac/notatki/sierota"], "usunięta notatka nie wróciła");
     zalozenie(baza["kampanie/iliac/notatki/nowa-po-kopii"], "SCAL usunął dokument spoza pliku");
     zalozenie(baza["secrets/Player1"] && baza["secrets/Player2"], "przywracanie naruszyło konta");
+    const dziennik = await sa.textContent("#widok-admin .dziennik");
+    zalozenie(dziennik.includes("Pominięte dokumenty kont (admins/secrets): 1"), "dziennik nie mówi o pominiętych kontach");
+    zalozenie((await sa.textContent("#widok-admin .podglad-kopii")).includes("zostaną pominięte"), "podgląd nie ostrzega o pominięciu kont");
   });
 
   await krok("przywracanie ZASTĄP: wymaga słowa PRZYWRÓĆ, usuwa dokumenty spoza pliku, nie rusza kont", async () => {
@@ -465,12 +484,13 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(await sa.$eval("#przycisk-przywroc", (b) => b.disabled), "przycisk przywracania aktywny przy złym pliku");
   });
 
-  await krok("brak uprawnień w bazie → zrozumiały komunikat o regułach", async () => {
+  await krok("brak uprawnień w bazie → zrozumiały komunikat (reguły / App Check)", async () => {
     const s3 = await nowaStrona(ctx, []);
     await s3.addInitScript(() => localStorage.setItem("falszywa-baza-odmowa", "1"));
     await s3.goto(`${ADRES}/kampania.html?k=iliac`);
     await s3.waitForSelector("#baner:not([hidden])");
-    zalozenie((await s3.textContent("#baner")).includes("reguły Firestore"), "brak wyjaśnienia o regułach");
+    const baner = await s3.textContent("#baner");
+    zalozenie(baner.includes("reguły bazy") && baner.includes("App Check"), `brak wyjaśnienia o regułach i App Check: ${baner}`);
     await s3.evaluate(() => localStorage.removeItem("falszywa-baza-odmowa"));
     await s3.close();
   });

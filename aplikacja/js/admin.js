@@ -4,6 +4,7 @@
 import { MOTYWY } from "./konfiguracja.js";
 import { el, komunikat, opisBledu, potwierdz, wyczysc } from "./narzedzia.js";
 import { pobierzKopie, przeanalizujPlik, przywroc } from "./kopia.js";
+import { sprawdzAppCheck } from "./firebase.js";
 import { BladKopii } from "./kopia-format.js";
 
 const NAZWY_KOLOROW = { zielony: "zielony", bursztynowy: "bursztynowy" };
@@ -133,7 +134,6 @@ export class WidokAdmina {
       this.potwierdzenie
     ]);
     for (const r of [this.trybScal, this.trybZastap]) r.addEventListener("change", () => (this.wierszPotwierdzenia.hidden = !this.trybZastap.checked));
-    this.bezpieczenstwoSecrets = el("input.przelacznik", { atrybuty: { type: "checkbox", id: "bezpieczenstwo-secrets" } });
     this.przyciskPrzywroc = el("button.przycisk.przycisk-niebezpieczny", { tekst: "PRZYWRÓĆ", atrybuty: { type: "button", disabled: true, id: "przycisk-przywroc" } });
     this.przyciskPrzywroc.addEventListener("click", () => this.wykonajPrzywracanie());
     this.dziennik = el("pre.dziennik", { atrybuty: { "aria-live": "polite", hidden: true } });
@@ -141,6 +141,7 @@ export class WidokAdmina {
       el("section.panel-ramka", [
         el("h3.sekcja-tytul", { tekst: "PRZYWRACANIE Z KOPII" }),
         el("p", { tekst: "1. Wybierz plik kopii. 2. Sprawdź podgląd. 3. Wybierz tryb. Przed przywróceniem aplikacja sama pobierze świeżą kopię obecnego stanu bazy." }),
+        el("p.przygaszony", { tekst: "Kont (admins, secrets) aplikacja nie przywraca — baza pozwala je tylko czytać. Konta zmieniasz ręcznie w konsoli Firebase." }),
         this.plik,
         this.podglad,
         el("fieldset.tryby", [
@@ -152,25 +153,52 @@ export class WidokAdmina {
           ])
         ]),
         this.wierszPotwierdzenia,
-        el("label.przelacznik-etykieta", { atrybuty: { for: "bezpieczenstwo-secrets" } }, [
-          this.bezpieczenstwoSecrets,
-          el("span", { tekst: "Kopia bezpieczeństwa ma zawierać też secrets (hasła zwykłym tekstem)" })
-        ]),
         el("div.admin-wiersz", [this.przyciskPrzywroc]),
         this.dziennik
       ])
     );
 
+    this.statusAppCheck = el("p", { tekst: "Sprawdzam…", atrybuty: { "aria-live": "polite" } });
+    const przyciskAppCheck = el("button.przycisk.przycisk-maly", {
+      tekst: "SPRAWDŹ PONOWNIE",
+      atrybuty: { type: "button" },
+      zdarzenia: { click: () => this.sprawdzZabezpieczenie() }
+    });
     tresc.append(
       el("section.panel-ramka", [
-        el("h3.sekcja-tytul", { tekst: "BEZPIECZEŃSTWO — STAN SZKICU" }),
-        el("p", {
+        el("h3.sekcja-tytul", { tekst: "ZABEZPIECZENIA" }),
+        el("p", { tekst: "App Check — czy ta strona dostała od Google przepustkę do bazy:" }),
+        this.statusAppCheck,
+        el("div.admin-wiersz", [przyciskAppCheck]),
+        el("p.przygaszony", {
           tekst:
-            "Baza jest otwarta: każdy, kto zna adres strony, może czytać, zmieniać i usuwać dane, a hasła z kolekcji secrets da się podejrzeć. Role (gracz/admin) działają tylko w wyglądzie aplikacji. Szczegóły i droga na później: README.md."
+            "Gdy na stronie w internecie widać tu „działa”, możesz w konsoli Firebase włączyć wymuszanie App Check dla Cloud Firestore — wtedy baza przyjmie zapytania wyłącznie z tej strony (instrukcja: firebase/README.md)."
+        }),
+        el("p.przygaszony", {
+          tekst:
+            "Reguły bazy pozwalają tylko na zapisy, których używa aplikacja, a konta (admins, secrets) są tylko do odczytu. Nadal jednak baza nie wie, kto pyta: role gracz/admin działają w wyglądzie aplikacji, a hasła z kolekcji secrets da się podejrzeć. Szczegóły: README.md."
         })
       ])
     );
+    this.sprawdzZabezpieczenie();
     this.kontener.append(tresc);
+  }
+
+  async sprawdzZabezpieczenie() {
+    this.statusAppCheck.className = "";
+    this.statusAppCheck.textContent = "Sprawdzam…";
+    const wynik = await sprawdzAppCheck();
+    if (wynik.ok) {
+      this.statusAppCheck.className = "status-na-zywo";
+      this.statusAppCheck.textContent = wynik.lokalnie
+        ? "Działa (token debugowania — strona uruchomiona na tym komputerze)."
+        : "Działa — strona dostała przepustkę App Check.";
+    } else {
+      this.statusAppCheck.className = "formularz-blad";
+      this.statusAppCheck.textContent = wynik.lokalnie
+        ? `Nie działa na tym komputerze (${wynik.powod}). To normalne poza adresem strony — zarejestruj token debugowania (firebase/README.md).`
+        : `Nie działa (${wynik.powod}). Nie włączaj wymuszania App Check, dopóki to się nie zmieni — gracze straciliby dostęp do bazy.`;
+    }
   }
 
   /** Odświeża stan pól (bez przebudowy — nie gubimy fokusu). */
@@ -219,7 +247,7 @@ export class WidokAdmina {
       this.podglad.append(el("p.formularz-blad", { tekst: e instanceof BladKopii ? e.message : `Nie udało się odczytać pliku: ${e.message}` }));
       return;
     }
-    const { meta, podsumowanie, maAdmins, maSecrets, kampanie } = this.analiza;
+    const { meta, podsumowanie, maAdmins, maSecrets, kampanie, konta } = this.analiza;
     const tabela = el("table.tabela", [el("thead", [el("tr", [el("th", { tekst: "Kolekcja" }), el("th", { tekst: "Dokumenty" })])])]);
     const tbody = el("tbody");
     for (const [kolekcja, liczba] of podsumowanie) tbody.append(el("tr", [el("td", { tekst: kolekcja }), el("td", { tekst: String(liczba) })]));
@@ -229,15 +257,12 @@ export class WidokAdmina {
       el("p", { tekst: `Zakres: kampanie ${kampanie.join(", ") || "—"}; ${maAdmins ? "zawiera admins" : "bez admins"}; ${maSecrets ? "ZAWIERA secrets (hasła)" : "bez secrets"}.` }),
       tabela
     );
-    const sesja = this.opcje.stan.sesja;
-    if (maAdmins && sesja && !this.analiza.dokumenty.some((d) => d.sciezka === `admins/${sesja.kontoId}`)) {
+    if (konta) {
       this.podglad.append(
-        el("p.ostrzezenie", { tekst: "Uwaga: w pliku nie ma Twojego dokumentu w kolekcji admins. Po przywróceniu w trybie „Zastąp” stracisz uprawnienia admina." })
+        el("p.ostrzezenie", {
+          tekst: `Dokumenty kont w pliku (${konta}) zostaną pominięte — baza pozwala je tylko czytać. W razie potrzeby popraw konta ręcznie w konsoli Firebase.`
+        })
       );
-    }
-    if (maSecrets) {
-      this.podglad.append(el("p.ostrzezenie", { tekst: "Plik zawiera kolekcję secrets — przywrócenie zmieni loginy i hasła na te z pliku." }));
-      this.bezpieczenstwoSecrets.checked = true;
     }
     this.przyciskPrzywroc.disabled = false;
   }
@@ -267,7 +292,7 @@ export class WidokAdmina {
     try {
       this.log("Krok 1: kopia bezpieczeństwa obecnego stanu…");
       const kopia = await pobierzKopie(
-        { kampanie: this.kampanieZRejestru(), zSecrets: this.bezpieczenstwoSecrets.checked, przedrostek: "przed-przywroceniem" },
+        { kampanie: this.kampanieZRejestru(), zSecrets: false, przedrostek: "przed-przywroceniem" },
         (t) => this.log(`  ${t}`)
       );
       this.log(`  Pobrano: ${kopia.nazwa} (${kopia.liczba} dokumentów).`);
@@ -276,6 +301,7 @@ export class WidokAdmina {
       const opisz = (mapa) => [...mapa.entries()].map(([k, n]) => `${k}: ${n}`).join(", ") || "—";
       this.log(`Usunięte: ${opisz(wynik.wykonane.usuniete)}`);
       this.log(`Zapisane: ${opisz(wynik.wykonane.zapisane)}`);
+      if (wynik.pominieteKonta) this.log(`Pominięte dokumenty kont (admins/secrets): ${wynik.pominieteKonta}.`);
       if (wynik.ok) {
         this.log(`GOTOWE. Partie: ${wynik.partie}.`);
         komunikat("Przywrócono dane z kopii.", "ok");

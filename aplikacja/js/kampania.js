@@ -349,7 +349,14 @@ async function start() {
       el("span", { klasa: `status-bazy status-${stan.polaczenie}`, tekst: opis }),
       el("span", { tekst: `KONTO: ${opisRoli(stan.sesja)}${mozeEdytowac(stan.sesja) ? " (edycja)" : ""}` }),
       el("span.ozdoba", { tekst: `MAPA v${manifest.wersjaMapy || "?"}` }),
-      el("span.ozdoba.ozdoba-dluga", { tekst: "+++ TRANSMISJA ZAKOŃCZONA POPRAWNIE +++" })
+      el("span.ozdoba.ozdoba-dluga", { tekst: "+++ TRANSMISJA ZAKOŃCZONA POPRAWNIE +++" }),
+      // Wymagana informacja o reCAPTCHA (App Check) — znaczek reCAPTCHA jest ukryty.
+      el("span.recaptcha", [
+        "chronione przez reCAPTCHA: ",
+        el("a", { tekst: "prywatność", atrybuty: { href: "https://policies.google.com/privacy", target: "_blank", rel: "noopener" } }),
+        " · ",
+        el("a", { tekst: "warunki", atrybuty: { href: "https://policies.google.com/terms", target: "_blank", rel: "noopener" } })
+      ])
     );
   }
 

@@ -120,8 +120,12 @@ export function opoznij(funkcja, ms = 150) {
 /** Zrozumiały opis błędu Firebase dla osoby bez wiedzy technicznej. */
 export function opisBledu(blad) {
   const kod = blad && (blad.code || blad.name);
-  if (kod === "permission-denied") {
-    return "Baza danych odmówiła dostępu. Najczęściej znaczy to, że reguły Firestore nie zostały jeszcze opublikowane (instrukcja: firebase/README.md). Po zmianie reguł odśwież stronę.";
+  if (kod === "permission-denied" || kod === "unauthenticated") {
+    return (
+      "Baza danych odmówiła dostępu. Możliwe przyczyny: reguły bazy nie pozwalają na tę operację " +
+      "(albo nie zostały opublikowane) lub zabezpieczenie App Check nie rozpoznało strony — np. otwartej " +
+      "pod innym adresem albo z blokadą skryptów Google. Odśwież stronę; szczegóły: firebase/README.md."
+    );
   }
   if (kod === "unavailable" || kod === "deadline-exceeded") {
     return "Brak połączenia z bazą danych. Sprawdź internet — zmiany zapiszą się, gdy połączenie wróci.";

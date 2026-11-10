@@ -7,6 +7,7 @@ Polecenia uruchamiaj z katalogu głównego repozytorium.
 | jednostkowe — format kopii CSV, kodowanie typów, wyszukiwanie | `node testy/jednostkowe.mjs` | Node 22+ |
 | skrypty map i publikacji | `python3 -m unittest discover -s testy -p "test_*.py" -v` | Python 3.9+ |
 | cała aplikacja w przeglądarce (komputer, telefony, tablet) | `node testy/e2e/uruchom.cjs` | pakiet `playwright` + Chromium |
+| reguły bazy (`firebase/firestore.rules`) w emulatorze Firestore | `cd testy/reguly && npm install && npm test` | Node 20+, Java 11+ (pakiety instaluje `npm install` w tym folderze) |
 
 Pierwsze dwa uruchamia też GitHub Actions przed każdą publikacją strony.
 
@@ -21,3 +22,13 @@ Pierwsze dwa uruchamia też GitHub Actions przed każdą publikacją strony.
   (ładniejsze zrzuty; wymaga internetu).
 * Instalacja Playwright, jeśli go nie ma: `npm i -D playwright && npx playwright install chromium`
   (w folderze poza repozytorium albo bez zapisywania `node_modules` w repozytorium).
+
+## Test reguł bazy (`reguly/`)
+
+* Uruchamia lokalny **emulator Firestore** w trybie „demo” — nie łączy się z prawdziwym
+  projektem. Przy pierwszym uruchomieniu pobiera emulator (ok. 60 MB).
+* Odtwarza dokładnie zapisy aplikacji (logowanie, notatki, postęp, powiązania,
+  ustawienia admina, kopia i przywracanie) i sprawdza, że przechodzą, a zapisy
+  niedozwolone (obce pola, za długie teksty, nieznane kolekcje, zmiany kont) — nie.
+* Po każdej zmianie reguł albo pól zapisywanych przez aplikację: popraw test, uruchom go,
+  a potem wklej nowe reguły w konsoli Firebase (`firebase/README.md`).

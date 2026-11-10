@@ -1,21 +1,132 @@
 rules_version = '2';
 
 // ===========================================================================
-// NotatkiRPG — reguły Firestore na ETAP SZKICU.
+// NotatkiRPG — reguły Firestore, wersja 2 (2026-11-10).
 //
-// Baza jest OTWARTA BEZTERMINOWO (decyzja właściciela projektu, 2026-11-10).
-// Oznacza to, że KAŻDY, kto zna konfigurację strony (jest w jej kodzie), może
-// czytać, zmieniać i usuwać WSZYSTKIE dane — także loginy i hasła z kolekcji
-// „secrets”. Role gracz/admin działają tylko w wyglądzie aplikacji.
+// Bez logowania Firebase (świadoma decyzja właściciela) baza nie wie, KTO pyta,
+// więc nie odróżni gracza od gościa ani od admina. Te reguły pilnują za to, CO
+// wolno zrobić:
+//   * dostępne są tylko kolekcje używane przez aplikację — wszystko inne jest
+//     zablokowane (nikt nie dopisze do bazy własnych kolekcji);
+//   * zapisywane wpisy muszą mieć właściwe pola i rozsądną długość tekstów;
+//   * kolekcje kont „admins” i „secrets” są TYLKO DO ODCZYTU (odczyt jest
+//     potrzebny do logowania) — zmienić je można wyłącznie w konsoli Firebase.
 //
-// Tych reguł aplikacja nie publikuje sama — wkleja je właściciel w konsoli
-// Firebase (instrukcja: firebase/README.md). Droga do zabezpieczenia bazy:
-// README.md, rozdział „Bezpieczeństwo — droga na później”.
+// To, że baza przyjmuje zapytania tylko z aplikacji (ze strony
+// cutelittlegoat.github.io), zapewnia App Check — włącza się go w konsoli
+// Firebase przyciskiem „Wymuś” (instrukcja: firebase/README.md), nie tutaj.
+//
+// Ważne dla zmian w aplikacji: każde nowe pole zapisywane przez aplikację trzeba
+// dopisać tutaj, inaczej baza odrzuci zapis. Test reguł: testy/reguly/.
 // ===========================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+
+    // ---------------------------------------------------------------- pomocnicze
+    function tekst(v, max) {
+      return v is string && v.size() <= max;
     }
+    // Pole może nie istnieć, może być null albo tekstem nie dłuższym niż max.
+    function tekstOpcjonalny(d, pole, max) {
+      return !(pole in d) || d[pole] == null || tekst(d[pole], max);
+    }
+    function czasOpcjonalny(d, pole) {
+      return !(pole in d) || d[pole] is timestamp;
+    }
+    function identyfikator(v) {
+      return v.matches('^[A-Za-z0-9_-]{1,64}$');
+    }
+    function slady(d) {
+      return tekstOpcjonalny(d, 'podpis', 80)
+        && tekstOpcjonalny(d, 'kontoId', 100)
+        && tekstOpcjonalny(d, 'kontoIdZmiany', 100)
+        && czasOpcjonalny(d, 'utworzono')
+        && czasOpcjonalny(d, 'zmieniono');
+    }
+
+    // ---------------------------------------------------------------- kształt wpisów
+    function poprawnaKampania(d) {
+      return d.keys().hasOnly(['nazwa', 'utworzono'])
+        && tekst(d.nazwa, 200)
+        && czasOpcjonalny(d, 'utworzono');
+    }
+    function poprawnaNotatka(d) {
+      return d.keys().hasOnly(['elementId', 'tytul', 'tresc', 'kategoria', 'podpis',
+                               'kontoId', 'kontoIdZmiany', 'utworzono', 'zmieniono'])
+        && tekst(d.tytul, 200)
+        && tekstOpcjonalny(d, 'tresc', 20000)
+        && tekstOpcjonalny(d, 'kategoria', 40)
+        && tekstOpcjonalny(d, 'elementId', 100)
+        && slady(d);
+    }
+    function poprawnyPostep(d) {
+      return d.keys().hasOnly(['tytul', 'opis', 'stan', 'podpis',
+                               'kontoId', 'kontoIdZmiany', 'utworzono', 'zmieniono'])
+        && tekst(d.tytul, 200)
+        && tekstOpcjonalny(d, 'opis', 20000)
+        && tekstOpcjonalny(d, 'stan', 20)
+        && slady(d);
+    }
+    function poprawnePowiazanie(d) {
+      return d.keys().hasOnly(['od', 'do', 'rodzaj', 'opis', 'podpis',
+                               'kontoId', 'kontoIdZmiany', 'utworzono', 'zmieniono'])
+        && tekst(d['od'], 120)
+        && tekst(d['do'], 120)
+        && tekstOpcjonalny(d, 'rodzaj', 30)
+        && tekstOpcjonalny(d, 'opis', 20000)
+        && slady(d);
+    }
+    // Ustawienia admina: widoczność zakładek i kolory (mapy), dostępność miejsc
+    // (elementy: id → true/false), kolor ekranu poza mapami.
+    function poprawneUstawienia(d) {
+      return d.keys().hasOnly(['mapy', 'elementy', 'kolor', 'zmieniono', 'kontoIdZmiany'])
+        && (!('mapy' in d) || (d.mapy is map && d.mapy.size() <= 50))
+        && (!('elementy' in d) || (d.elementy is map
+              && d.elementy.size() <= 1000
+              && d.elementy.values().hasOnly([true, false])))
+        && tekstOpcjonalny(d, 'kolor', 30)
+        && tekstOpcjonalny(d, 'kontoIdZmiany', 100)
+        && czasOpcjonalny(d, 'zmieniono');
+    }
+
+    // ---------------------------------------------------------------- kampanie
+    match /kampanie/{kampaniaId} {
+      allow read: if true;
+      allow create, update: if kampaniaId.matches('^[a-z0-9-]{1,40}$')
+                            && poprawnaKampania(request.resource.data);
+      allow delete: if true;
+
+      match /notatki/{id} {
+        allow read: if true;
+        allow create, update: if identyfikator(id) && poprawnaNotatka(request.resource.data);
+        allow delete: if true;
+      }
+      match /postep/{id} {
+        allow read: if true;
+        allow create, update: if identyfikator(id) && poprawnyPostep(request.resource.data);
+        allow delete: if true;
+      }
+      match /powiazania/{id} {
+        allow read: if true;
+        allow create, update: if identyfikator(id) && poprawnePowiazanie(request.resource.data);
+        allow delete: if true;
+      }
+      match /ustawienia/{id} {
+        allow read: if true;
+        allow create, update: if id == 'mapy' && poprawneUstawienia(request.resource.data);
+        allow delete: if id == 'mapy';
+      }
+    }
+
+    // ---------------------------------------------------------------- konta
+    // Tylko odczyt — potrzebny do logowania. Zmiany wyłącznie w konsoli Firebase.
+    match /admins/{id} {
+      allow read: if true;
+    }
+    match /secrets/{id} {
+      allow read: if true;
+    }
+
+    // Wszystko inne: brak dostępu (reguła domyślna Firestore).
   }
 }

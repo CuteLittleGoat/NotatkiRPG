@@ -3,10 +3,10 @@
 
 Użycie (z katalogu głównego repozytorium):
 
-    python3 narzedzia/przygotuj_mape.py Scenariusze/Iliac             # mapy według Scenariusze/Iliac/kampania.json
-    python3 narzedzia/przygotuj_mape.py Scenariusze/Iliac --sprawdz   # tylko sprawdza, niczego nie zapisuje
+    python3 narzedzia/przygotuj_mape.py kampanie/Iliac             # mapy według kampanie/Iliac/kampania.json
+    python3 narzedzia/przygotuj_mape.py kampanie/Iliac --sprawdz   # tylko sprawdza, niczego nie zapisuje
 
-Konwencja rysunku od MG (szczegóły: Scenariusze/README.md):
+Konwencja rysunku od MG (szczegóły: kampanie/README.md):
 
 * miejsce klikalne:      <g data-element="id-miejsca"> ... </g>
 * treść tylko dla MG:    <g class="tylko-mg"> ... </g>
@@ -769,7 +769,7 @@ def porownaj_z_manifestem(manifest: dict, znalezione: dict[str, dict[str, dict]]
 # ---------------------------------------------------------------------------
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Tworzy mapy dla graczy (Data-Slate) z rysunku MG według manifestu kampanii.")
-    parser.add_argument("kampania", help="folder scenariusza, np. Scenariusze/Iliac")
+    parser.add_argument("kampania", help="folder kampanii, np. kampanie/Iliac")
     parser.add_argument("--sprawdz", action="store_true", help="tylko sprawdź, nie zapisuj plików")
     parser.add_argument("--zrodlo", help="inny plik rysunku MG niż podany w manifeście (dla wszystkich map)")
     argumenty = parser.parse_args(argv)

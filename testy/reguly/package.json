@@ -1,0 +1,14 @@
+{
+  "name": "notatkirpg-test-regul",
+  "private": true,
+  "description": "Test reguł Firestore (firebase/firestore.rules) w lokalnym emulatorze — nie dotyka prawdziwej bazy.",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-notatkirpg \"node test_reguly.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.2.0",
+    "firebase-tools": "15.35.0"
+  }
+}

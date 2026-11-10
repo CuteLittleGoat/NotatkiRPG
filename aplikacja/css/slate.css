@@ -158,6 +158,12 @@ a {
 .status-na-zywo {
   color: var(--fosfor);
 }
+.recaptcha {
+  color: var(--przygaszony);
+}
+.recaptcha a {
+  color: inherit;
+}
 .status-pamiec {
   color: var(--klik);
 }

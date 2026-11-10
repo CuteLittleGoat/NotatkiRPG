@@ -1,16 +1,16 @@
-# Scenariusze — mapy i manifesty kampanii
+# Kampanie — mapy i manifesty
 
-Każdy scenariusz (kampania) ma tu własny folder, np. `Scenariusze/Iliac/`, i
+Każda kampania ma tu własny folder, np. `kampanie/Iliac/`, i
 wpis w rejestrze [`kampanie.json`](../kampanie.json) w katalogu głównym.
 
-## Co jest w folderze scenariusza
+## Co jest w folderze kampanii
 
 | Plik | Co to jest | Trafia na stronę? |
 |---|---|---|
 | `kampania.json` | **manifest** — mapy (zakładki), miejsca, nazwy, opisy, ustawienia domyślne | tak (bez sekcji `zrodlo`) |
 | `mapa_*.svg` | mapy dla graczy w stylu Data-Slate — **robi je skrypt**, nie edytuj ręcznie | tak |
 | rysunek od MG, np. `Rysunki_*.svg` | wzór od Mistrza Gry, **zawiera spoilery** | **nie** |
-| `README.md` | opis scenariusza | nie |
+| `README.md` | opis kampanii | nie |
 
 Na stronę trafia tylko to, co wskazuje manifest (kontroluje to
 [`narzedzia/zbuduj_strone.py`](../narzedzia/zbuduj_strone.py)). Pliki o innych
@@ -44,12 +44,12 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 
 ## Nowa wersja rysunku — krok po kroku
 
-1. Wgraj nowy rysunek do folderu scenariusza (pod tą samą nazwą co poprzedni albo
+1. Wgraj nowy rysunek do folderu kampanii (pod tą samą nazwą co poprzedni albo
    pod nową — wtedy popraw `zrodlo.plik` w manifeście).
 2. Uruchom skrypt (z katalogu głównego repozytorium; wystarczy Python 3.9+):
 
    ```bash
-   python3 narzedzia/przygotuj_mape.py Scenariusze/Iliac --sprawdz
+   python3 narzedzia/przygotuj_mape.py kampanie/Iliac --sprawdz
    ```
 
    Tryb `--sprawdz` niczego nie zapisuje — tylko pokazuje raport.
@@ -64,7 +64,7 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 4. Gdy raport jest w porządku, wygeneruj mapy:
 
    ```bash
-   python3 narzedzia/przygotuj_mape.py Scenariusze/Iliac
+   python3 narzedzia/przygotuj_mape.py kampanie/Iliac
    ```
 
 5. Zmień `wersjaMapy` w manifeście (data), zapisz zmiany i wypchnij je na `main` —
@@ -75,15 +75,16 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 
 **Nowe miejsce:** nowa grupa `<g data-element="…">` na rysunku + nowy wpis w manifeście.
 
-## Nowy scenariusz — krok po kroku
+## Nowa kampania — krok po kroku
 
-1. Utwórz folder `Scenariusze/NazwaScenariusza/`.
-2. Skopiuj do niego szablon [`narzedzia/szablon_scenariusza/kampania.json`](../narzedzia/szablon_scenariusza/kampania.json)
+1. Utwórz folder `kampanie/NazwaKampanii/`.
+2. Skopiuj do niego szablon [`narzedzia/szablon_kampanii/kampania.json`](../narzedzia/szablon_kampanii/kampania.json)
    i uzupełnij (opis pól niżej). Wgraj rysunek od MG ze znacznikami.
-3. Dopisz scenariusz do [`kampanie.json`](../kampanie.json):
-   `{ "id": "nazwa", "nazwa": "Nazwa", "folder": "Scenariusze/NazwaScenariusza", "opis": "…" }`.
-   `id` — małe litery bez polskich znaków; pod nim zapiszą się dane w bazie
-   (`kampanie/{id}`) i **nie należy go potem zmieniać**.
+3. Dopisz kampanię do [`kampanie.json`](../kampanie.json):
+   `{ "id": "nazwa", "nazwa": "Nazwa", "folder": "kampanie/NazwaKampanii", "opis": "…" }`.
+   `id` — małe litery bez polskich znaków, cyfry i myślniki, najwyżej 40 znaków
+   (tego pilnują reguły bazy); pod nim zapiszą się dane w bazie (`kampanie/{id}`) i
+   **nie należy go potem zmieniać**.
 4. Uruchom skrypt map (jak wyżej). Kod aplikacji się nie zmienia.
 
 ## Manifest `kampania.json` — pola

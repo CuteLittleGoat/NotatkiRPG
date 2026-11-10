@@ -9,5 +9,7 @@ testy/e2e/wyniki/
 __pycache__/
 *.pyc
 node_modules/
+testy/reguly/package-lock.json
+*-debug.log
 .DS_Store
 Thumbs.db

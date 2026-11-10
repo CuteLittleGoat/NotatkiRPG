@@ -69,9 +69,14 @@ export async function pobierzKopie({ kampanie, zSecrets = false, przedrostek = "
   return { nazwa, liczba: dokumenty.length, podsumowanie: podsumuj(dokumenty) };
 }
 
+/** Konta (admins, secrets) — reguły bazy pozwalają je tylko czytać. */
+export function czyKonto(sciezka) {
+  return sciezka.startsWith(`${KOLEKCJA_ADMINOW}/`) || sciezka.startsWith(`${KOLEKCJA_SEKRETOW}/`);
+}
+
 /**
  * Analiza pliku przed przywróceniem — do podglądu.
- * @returns {{meta, dokumenty, podsumowanie, kampanie, maAdmins, maSecrets}}
+ * @returns {{meta, dokumenty, podsumowanie, kampanie, maAdmins, maSecrets, konta}}
  */
 export function przeanalizujPlik(tekst) {
   const { meta, dokumenty } = wczytajPlik(tekst);
@@ -86,7 +91,8 @@ export function przeanalizujPlik(tekst) {
     podsumowanie: podsumuj(dokumenty),
     kampanie: [...kampanie].sort(),
     maAdmins: dokumenty.some((d) => d.sciezka.startsWith(`${KOLEKCJA_ADMINOW}/`)),
-    maSecrets: dokumenty.some((d) => d.sciezka.startsWith(`${KOLEKCJA_SEKRETOW}/`))
+    maSecrets: dokumenty.some((d) => d.sciezka.startsWith(`${KOLEKCJA_SEKRETOW}/`)),
+    konta: dokumenty.filter((d) => czyKonto(d.sciezka)).length
   };
 }
 
@@ -94,19 +100,22 @@ export function przeanalizujPlik(tekst) {
  * Przywraca dane z pliku.
  * tryb "scal": zapisuje dokumenty z pliku (nadpisuje te same), resztę zostawia.
  * tryb "zastap": usuwa dokumenty z kolekcji objętych kopią, których nie ma w pliku,
- *   potem zapisuje dokumenty z pliku. Kolekcje admins i secrets zmienia tylko wtedy,
- *   gdy plik zawiera z nich jakikolwiek dokument (żeby nie skasować kont).
+ *   potem zapisuje dokumenty z pliku.
+ * Kont (admins, secrets) NIE przywraca nigdy — reguły bazy pozwalają je tylko czytać;
+ * zmienia się je ręcznie w konsoli Firebase. Kopia nadal je zawiera (dla porządku).
  * Zapis partiami po najwyżej 500 operacji; przy błędzie zatrzymuje się.
  *
- * @returns {{ok: boolean, wykonane: {usuniete: Map, zapisane: Map}, partie: number, wszystkiePartie: number, blad?: string}}
+ * @returns {{ok: boolean, wykonane: {usuniete: Map, zapisane: Map}, pominieteKonta: number, partie: number, wszystkiePartie: number, blad?: string}}
  */
 export async function przywroc(analiza, tryb, postep = () => {}) {
   if (tryb !== "scal" && tryb !== "zastap") throw new BladKopii("Nieznany tryb przywracania.");
-  const wPliku = new Set(analiza.dokumenty.map((d) => d.sciezka));
+  const doPrzywrocenia = analiza.dokumenty.filter((d) => !czyKonto(d.sciezka));
+  const pominieteKonta = analiza.dokumenty.length - doPrzywrocenia.length;
+  const wPliku = new Set(doPrzywrocenia.map((d) => d.sciezka));
   const operacje = [];
 
   // Odkodowanie wszystkiego PRZED pierwszym zapisem — błąd w pliku nie zostawi połowy zmian.
-  const zapisy = analiza.dokumenty.map((d) => ({ rodzaj: "zapis", sciezka: d.sciezka, dane: odkodujWartosc(d.dane, FABRYKA) }));
+  const zapisy = doPrzywrocenia.map((d) => ({ rodzaj: "zapis", sciezka: d.sciezka, dane: odkodujWartosc(d.dane, FABRYKA) }));
 
   if (tryb === "zastap") {
     postep("Sprawdzam, co trzeba usunąć…");
@@ -114,12 +123,10 @@ export async function przywroc(analiza, tryb, postep = () => {}) {
     for (const id of analiza.kampanie) {
       for (const sub of PODKOLEKCJE) doWyczyszczenia.add(`${KOLEKCJA_KAMPANII}/${id}/${sub}`);
     }
-    for (const d of analiza.dokumenty) {
+    for (const d of doPrzywrocenia) {
       const k = kolekcjaDokumentu(d.sciezka);
       if (k !== KOLEKCJA_KAMPANII) doWyczyszczenia.add(k);
     }
-    if (!analiza.maAdmins) doWyczyszczenia.delete(KOLEKCJA_ADMINOW);
-    if (!analiza.maSecrets) doWyczyszczenia.delete(KOLEKCJA_SEKRETOW);
     for (const sciezkaKolekcji of [...doWyczyszczenia].sort()) {
       const zdjecie = await getDocs(collection(db, sciezkaKolekcji));
       zdjecie.forEach((d) => {
@@ -153,9 +160,9 @@ export async function przywroc(analiza, tryb, postep = () => {}) {
     try {
       await partia.commit();
     } catch (e) {
-      return { ok: false, wykonane, partie: i, wszystkiePartie: partie.length, blad: e };
+      return { ok: false, wykonane, pominieteKonta, partie: i, wszystkiePartie: partie.length, blad: e };
     }
     for (const op of partie[i]) dolicz(op.rodzaj === "usuniecie" ? wykonane.usuniete : wykonane.zapisane, op.sciezka);
   }
-  return { ok: true, wykonane, partie: partie.length, wszystkiePartie: partie.length };
+  return { ok: true, wykonane, pominieteKonta, partie: partie.length, wszystkiePartie: partie.length };
 }
