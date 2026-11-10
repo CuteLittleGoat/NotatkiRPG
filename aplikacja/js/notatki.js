@@ -1,7 +1,6 @@
 // Zakładka „Notatki”: wszystkie notatki z filtrami i wyszukiwarką (w przeglądarce).
-// Szukanie obejmuje tytuł, treść, podpis, kategorię oraz nazwę i aliasy miejsca —
+// Szukanie obejmuje tytuł, treść, podpis oraz nazwę i aliasy miejsca —
 // ale tylko miejsc dostępnych dla bieżącego użytkownika (bez spoilerów).
-import { KATEGORIE_NOTATEK, etykieta } from "./konfiguracja.js";
 import { el, opoznij, pasuje, wyczysc } from "./narzedzia.js";
 import { mozeEdytowac } from "./sesja.js";
 import { kartaNotatki, odNajnowszych } from "./karty.js";
@@ -23,21 +22,17 @@ export class WidokNotatek {
     });
     this.szukaj = el("input.pole", { atrybuty: { type: "search", placeholder: "Szukaj w notatkach…", "aria-label": "Szukaj w notatkach" } });
     this.miejsce = el("select.pole", { atrybuty: { "aria-label": "Filtr: miejsce" } });
-    this.kategoria = el("select.pole", { atrybuty: { "aria-label": "Filtr: kategoria" } }, [
-      el("option", { tekst: "Wszystkie kategorie", atrybuty: { value: "" } }),
-      ...KATEGORIE_NOTATEK.map(([k, v]) => el("option", { tekst: v, atrybuty: { value: k } }))
-    ]);
     this.podpis = el("select.pole", { atrybuty: { "aria-label": "Filtr: podpis" } });
     const odswiez = opoznij(() => this.renderListy(), 120);
     this.szukaj.addEventListener("input", odswiez);
-    for (const s of [this.miejsce, this.kategoria, this.podpis]) s.addEventListener("change", () => this.renderListy());
+    for (const s of [this.miejsce, this.podpis]) s.addEventListener("change", () => this.renderListy());
     this.info = el("p.przygaszony", { atrybuty: { "aria-live": "polite" } });
     this.lista = el("div.lista-wpisow");
     this.naglowek = el("div.widok-naglowek", [el("h2", { tekst: "▤ NOTATKI" }), this.przyciskNowa]);
     this.kontener.append(
       el("div.tresc-widoku", [
         this.naglowek,
-        el("div.filtry", [this.szukaj, this.miejsce, this.kategoria, this.podpis]),
+        el("div.filtry", [this.szukaj, this.miejsce, this.podpis]),
         this.info,
         this.lista
       ])
@@ -89,7 +84,6 @@ export class WidokNotatek {
     const { stan, dane, onMiejsce } = this.opcje;
     const zapytanie = this.szukaj.value;
     const filtrMiejsca = this.miejsce.value;
-    const filtrKategorii = this.kategoria.value;
     const filtrPodpisu = this.podpis.value;
 
     const pasujace = stan.notatki
@@ -98,17 +92,9 @@ export class WidokNotatek {
         if (filtrMiejsca === "ogolne" && rodzaj !== "ogolna") return false;
         if (filtrMiejsca === "bez-miejsca" && rodzaj !== "bez-miejsca") return false;
         if (filtrMiejsca && !["ogolne", "bez-miejsca"].includes(filtrMiejsca) && n.elementId !== filtrMiejsca) return false;
-        if (filtrKategorii && n.kategoria !== filtrKategorii) return false;
         if (filtrPodpisu && n.podpis !== filtrPodpisu) return false;
         const element = rodzaj === "miejsce" ? stan.elementyWgId.get(n.elementId) : null;
-        return pasuje(
-          zapytanie,
-          n.tytul,
-          n.tresc,
-          n.podpis,
-          etykieta(KATEGORIE_NOTATEK, n.kategoria),
-          element ? [element.nazwa, ...(element.aliasy || [])] : []
-        );
+        return pasuje(zapytanie, n.tytul, n.tresc, n.podpis, element ? [element.nazwa, ...(element.aliasy || [])] : []);
       })
       .sort(odNajnowszych);
 
@@ -139,7 +125,7 @@ export class WidokNotatek {
               })
             ])
           );
-          for (const n of wgMiejsca.get(id)) s.append(kartaNotatki(n, { ...kontekst, pokazMiejsce: false }));
+          for (const n of wgMiejsca.get(id)) s.append(kartaNotatki(n, kontekst));
         }
       } else {
         for (const n of wpisy) s.append(kartaNotatki(n, kontekst));

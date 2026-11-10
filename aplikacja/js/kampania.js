@@ -1,26 +1,19 @@
-// Strona kampanii (kampania.html?k=iliac): zakładki z mapami, indeks, panel miejsca,
-// notatki, postęp, powiązania i panel admina. Łączy wszystkie moduły w całość.
+// Strona kampanii (kampania.html?k=iliac): zakładki (Notatki, mapy, Admin), indeks,
+// karta miejsca i panel admina. Łączy wszystkie moduły w całość.
 import { DaneKampanii } from "./dane.js";
 import { Stan } from "./stan.js";
 import { PrzegladarkaMapy } from "./mapa.js";
 import { Indeks } from "./indeks.js";
 import { PanelElementu } from "./panel.js";
 import { WidokNotatek } from "./notatki.js";
-import { WidokPostepu } from "./postep.js";
-import { WidokPowiazan } from "./powiazania.js";
 import { WidokAdmina } from "./admin.js";
 import { oknoLogowania } from "./logowanie.js";
 import { jestAdminem, mozeEdytowac, naZmianeSesji, opisRoli, pobierzSesje, wyczyscSesje } from "./sesja.js";
-import { KLUCZ_INDEKSU, MOTYWY } from "./konfiguracja.js";
+import { KLUCZ_INDEKSU, MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
 import { el, komunikat, opisBledu, pamiecOdczyt, pamiecZapis, parametrAdresu, wczytajJson, wyczysc } from "./narzedzia.js";
 
 // Indeks jako stała kolumna obok mapy dopiero od 1280 px — węziej wysuwa się nad mapę.
 const SZEROKI = window.matchMedia("(min-width: 1280px)");
-const WIDOKI = [
-  { id: "notatki", nazwa: "Notatki" },
-  { id: "postep", nazwa: "Postęp" },
-  { id: "powiazania", nazwa: "Powiązania" }
-];
 
 const $ = (id) => document.getElementById(id);
 
@@ -94,8 +87,6 @@ async function start() {
     onMiejsce: (id) => pokazElement(id)
   });
   const notatki = new WidokNotatek($("widok-notatki"), { stan, dane, onMiejsce: (id) => pokazElement(id) });
-  const postep = new WidokPostepu($("widok-postep"), { stan, dane });
-  const powiazania = new WidokPowiazan($("widok-powiazania"), { stan, dane });
   let admin = null;
 
   // ------------------------------------------------------------- indeks
@@ -149,7 +140,12 @@ async function start() {
     const stany = new Map();
     for (const e of manifest.elementy || []) {
       if (e.mapa !== mapa.id) continue;
-      stany.set(e.id, { klikalny: stan.elementDlaUzytkownika(e), ukryty: !stan.elementDostepnyDlaGraczy(e), nazwa: e.nazwa });
+      stany.set(e.id, {
+        klikalny: stan.elementDlaUzytkownika(e),
+        ukryty: !stan.elementDostepnyDlaGraczy(e),
+        kropka: stan.elementMaKropke(e),
+        nazwa: e.nazwa
+      });
     }
     return stany;
   }
@@ -193,11 +189,27 @@ async function start() {
   }
 
   // ------------------------------------------------------------- zakładki
+  // Kolejność: Notatki (i inne stałe zakładki), mapy, na końcu Admin.
   function zakladki() {
-    const lista = stan.mapyDlaUzytkownika().map((m) => ({ rodzaj: "mapa", id: m.id, nazwa: m.nazwa, ukryta: !stan.mapaWidocznaDlaGraczy(m) }));
-    for (const w of WIDOKI) lista.push({ rodzaj: "widok", ...w });
-    if (jestAdminem(stan.sesja)) lista.push({ rodzaj: "widok", id: "admin", nazwa: "Admin" });
+    const lista = [];
+    for (const z of ZAKLADKI_STALE) {
+      if (stan.zakladkaDlaUzytkownika(z.id)) lista.push({ rodzaj: "widok", id: z.id, nazwa: z.nazwa, ukryta: !stan.zakladkaWidocznaDlaGraczy(z.id) });
+    }
+    for (const m of stan.mapyDlaUzytkownika()) lista.push({ rodzaj: "mapa", id: m.id, nazwa: m.nazwa, ukryta: !stan.mapaWidocznaDlaGraczy(m) });
+    if (jestAdminem(stan.sesja)) lista.push({ rodzaj: "widok", id: "admin", nazwa: "Admin", stala: true });
     return lista;
+  }
+
+  /** Admin: widoczność zakładki dla graczy (mapa albo zakładka stała). */
+  async function ustawWidocznoscZakladki(z, widoczna) {
+    const zmiana = z.rodzaj === "mapa" ? { mapy: { [z.id]: { widoczna } } } : { zakladki: { [z.id]: widoczna } };
+    try {
+      await dane.zapiszUstawienia(zmiana, stan.sesja);
+      komunikat(widoczna ? `Zakładka „${z.nazwa}” widoczna dla graczy.` : `Zakładka „${z.nazwa}” ukryta przed graczami.`, "ok");
+    } catch (e) {
+      komunikat(opisBledu(e), "blad", 8000);
+      renderZakladek();
+    }
   }
 
   function renderZakladek() {
@@ -221,16 +233,41 @@ async function start() {
         z.nazwa.toUpperCase(),
         z.ukryta ? el("span.znacznik-ukrycia", { tekst: " ⊘", atrybuty: { "aria-label": "(ukryta przed graczami)" } }) : null
       ]);
-      pasek.append(przycisk);
+      // Admin: stały przełącznik przy każdej zakładce — zaznaczone = widoczna dla graczy.
+      if (stan.widokAdmina() && !z.stala) {
+        const pole = el("input.przelacznik.zakladka-pole", {
+          atrybuty: {
+            type: "checkbox",
+            checked: !z.ukryta,
+            title: "Widoczna dla graczy",
+            "aria-label": `Widoczna dla graczy: ${z.nazwa}`
+          }
+        });
+        pole.addEventListener("change", () => ustawWidocznoscZakladki(z, pole.checked));
+        pasek.append(el("span.zakladka-grupa", { klasa: z.ukryta ? "zakladka-grupa-ukryta" : "" }, [pole, przycisk]));
+      } else {
+        pasek.append(przycisk);
+      }
     }
+    // Gracz bez żadnej udostępnionej zakładki — informacja zamiast pustego ekranu.
+    $("widok-pusto").hidden = lista.length > 0;
     // Brak udostępnionych map — informacja zamiast pustej planszy.
     brakMap.hidden = stan.mapyDlaUzytkownika().length > 0;
   }
 
   async function przelacz(cel, { zHasha = false } = {}) {
     const lista = zakladki();
-    let wybor = lista.find((z) => z.rodzaj === cel.rodzaj && z.id === cel.id);
-    if (!wybor) wybor = lista.find((z) => z.rodzaj === "mapa") || lista.find((z) => z.id === "notatki");
+    let wybor = cel && lista.find((z) => z.rodzaj === cel.rodzaj && z.id === cel.id);
+    if (!wybor) wybor = lista[0];
+    if (!wybor) {
+      // Nic nie jest udostępnione (gracz/gość, wszystkie zakładki ukryte).
+      biezaca = null;
+      for (const s of document.querySelectorAll(".widok")) s.hidden = true;
+      zamknijPanel({ bezHasha: true });
+      renderZakladek();
+      ustawMotyw(stan.kolorKampanii());
+      return;
+    }
     const zmiana = !biezaca || biezaca.rodzaj !== wybor.rodzaj || biezaca.id !== wybor.id;
     biezaca = { rodzaj: wybor.rodzaj, id: wybor.id };
     for (const s of document.querySelectorAll(".widok")) s.hidden = true;
@@ -254,8 +291,6 @@ async function start() {
         admin.render();
       }
       if (wybor.id === "notatki") notatki.render();
-      if (wybor.id === "postep") postep.render();
-      if (wybor.id === "powiazania") powiazania.render();
     }
     renderZakladek();
     odswiezPasekUkrycia();
@@ -395,9 +430,10 @@ async function start() {
     if (co === "ustawienia" || co === "sesja" || co === "podglad") {
       renderKonta();
       odswiezMapy();
-      // Bieżąca zakładka mogła zniknąć (admin ukrył mapę) — przełącz na dostępną.
+      // Bieżąca zakładka mogła zniknąć (admin ją ukrył) albo pojawić się pierwsza
+      // (admin odsłonił zakładkę, gdy gracz nie miał żadnej) — przełącz na dostępną.
       const lista = zakladki();
-      if (biezaca && !lista.some((z) => z.rodzaj === biezaca.rodzaj && z.id === biezaca.id)) {
+      if (!biezaca ? lista.length > 0 : !lista.some((z) => z.rodzaj === biezaca.rodzaj && z.id === biezaca.id)) {
         przelacz(biezaca);
       } else if (biezaca?.rodzaj === "mapa") {
         ustawMotyw(stan.kolorMapy(stan.mapyWgId.get(biezaca.id)));
@@ -409,17 +445,14 @@ async function start() {
       indeks.render();
       panel.render();
       notatki.render();
-      postep.render();
-      powiazania.render();
       admin?.render();
     }
     if (co === "notatki") {
+      odswiezMapy(); // czerwone kropki przy miejscach z notatkami
       indeks.render();
       panel.render();
       notatki.render();
     }
-    if (co === "postep") postep.render();
-    if (co === "powiazania") powiazania.render();
     renderStatusu();
   });
 
@@ -432,14 +465,23 @@ async function start() {
     stan.ustaw("ustawienia", u);
   }, pokazBlad);
   dane.subskrybuj("notatki", (w) => stan.ustaw("notatki", w), pokazBlad);
-  dane.subskrybuj("postep", (w) => stan.ustaw("postep", w), pokazBlad);
-  dane.subskrybuj("powiazania", (w) => stan.ustaw("powiazania", w), pokazBlad);
 
   // Zakładka z adresu (#okolice, #okolice/kopiec-iliac, #notatki…).
-  const [czesc, elementZHasha] = decodeURIComponent((location.hash || "").slice(1)).split("/");
-  const cel = stan.mapyWgId.has(czesc) ? { rodzaj: "mapa", id: czesc } : czesc ? { rodzaj: "widok", id: czesc } : { rodzaj: "mapa", id: (manifest.mapy || [])[0]?.id };
-  await przelacz(cel, { zHasha: true });
-  if (elementZHasha) pokazElement(elementZHasha);
+  // Bez adresu zakładki: pierwsza dostępna (Notatki).
+  const celZHasha = () => {
+    const [czesc, element] = decodeURIComponent((location.hash || "").slice(1)).split("/");
+    const cel = stan.mapyWgId.has(czesc) ? { rodzaj: "mapa", id: czesc } : czesc ? { rodzaj: "widok", id: czesc } : null;
+    return { cel, element };
+  };
+  const poczatek = celZHasha();
+  await przelacz(poczatek.cel, { zHasha: true });
+  if (poczatek.element) pokazElement(poczatek.element);
+  // Ręczna zmiana adresu albo przycisk „wstecz” w obrębie strony.
+  window.addEventListener("hashchange", async () => {
+    const nowy = celZHasha();
+    await przelacz(nowy.cel, { zHasha: true });
+    if (nowy.element) pokazElement(nowy.element);
+  });
 }
 
 start();

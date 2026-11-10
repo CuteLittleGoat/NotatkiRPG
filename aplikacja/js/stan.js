@@ -1,6 +1,6 @@
 // Wspólny stan strony kampanii: manifest, ustawienia admina, wpisy z bazy, sesja.
 // Moduły widoków subskrybują zmiany i odświeżają się same.
-import { MOTYW_DOMYSLNY, MOTYWY } from "./konfiguracja.js";
+import { MOTYW_DOMYSLNY, MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
 import { jestAdminem } from "./sesja.js";
 
 export class Stan {
@@ -12,9 +12,7 @@ export class Stan {
     this.podgladGracza = false; // admin: „pokaż tak, jak widzi gracz”
     this.ustawienia = {};
     this.notatki = [];
-    this.postep = [];
-    this.powiazania = [];
-    this.wczytano = { ustawienia: false, notatki: false, postep: false, powiazania: false };
+    this.wczytano = { ustawienia: false, notatki: false };
     this.polaczenie = "laczenie"; // laczenie | na-zywo | pamiec | blad
     this.sluchacze = new Set();
     this.elementyWgId = new Map((manifest.elementy || []).map((e) => [e.id, e]));
@@ -48,6 +46,18 @@ export class Stan {
   }
 
   // ---- ustawienia z domyślnymi wartościami z manifestu ----
+
+  /** Zakładka inna niż mapa (np. „notatki”): czy widoczna dla graczy. */
+  zakladkaWidocznaDlaGraczy(id) {
+    const wartosc = this.ustawienia?.zakladki?.[id];
+    if (typeof wartosc === "boolean") return wartosc;
+    const opis = ZAKLADKI_STALE.find((z) => z.id === id);
+    return opis ? opis.widocznaDomyslnie !== false : true;
+  }
+
+  zakladkaDlaUzytkownika(id) {
+    return this.widokAdmina() || this.zakladkaWidocznaDlaGraczy(id);
+  }
 
   mapaWidocznaDlaGraczy(mapa) {
     const wartosc = this.ustawienia?.mapy?.[mapa.id]?.widoczna;
@@ -108,5 +118,10 @@ export class Stan {
 
   notatkiElementu(id) {
     return this.notatki.filter((n) => n.elementId === id);
+  }
+
+  /** Czerwona kropka przy miejscu: są notatki, a admin zaznaczył miejsce jako dostępne. */
+  elementMaKropke(element) {
+    return this.elementZaznaczony(element) && this.notatki.some((n) => n.elementId === element.id);
   }
 }

@@ -27,8 +27,9 @@ Pierwsze dwa uruchamia też GitHub Actions po każdej zmianie na `main` (zakład
 
 * Uruchamia lokalny **emulator Firestore** w trybie „demo” — nie łączy się z prawdziwym
   projektem. Przy pierwszym uruchomieniu pobiera emulator (ok. 60 MB).
-* Odtwarza dokładnie zapisy aplikacji (logowanie, notatki, postęp, powiązania,
-  ustawienia admina, kopia i przywracanie) i sprawdza, że przechodzą, a zapisy
-  niedozwolone (obce pola, za długie teksty, nieznane kolekcje, zmiany kont) — nie.
+* Odtwarza dokładnie zapisy aplikacji (logowanie, notatki, ustawienia admina z
+  widocznością zakładek, kopia i przywracanie) i sprawdza, że przechodzą, a zapisy
+  niedozwolone (obce pola, za długie teksty, nieznane kolekcje — także usunięte
+  `postep` i `powiazania` — zmiany kont) — nie.
 * Po każdej zmianie reguł albo pól zapisywanych przez aplikację: popraw test, uruchom go,
   a potem wklej nowe reguły w konsoli Firebase (`firebase/README.md`).

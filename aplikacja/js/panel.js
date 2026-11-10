@@ -98,7 +98,7 @@ export class PanelElementu {
       );
     }
     for (const n of notatki) {
-      this.tresc.append(kartaNotatki(n, { stan, dane, sesja, pokazMiejsce: false }));
+      this.tresc.append(kartaNotatki(n, { stan, dane, sesja }));
     }
   }
 

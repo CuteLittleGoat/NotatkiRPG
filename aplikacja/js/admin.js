@@ -1,7 +1,7 @@
-// Zakładka „Admin”: widoczność zakładek z mapami, dostępność miejsc dla graczy,
+// Zakładka „Admin”: widoczność zakładek, dostępność miejsc dla graczy,
 // kolory ekranu, kopia zapasowa i przywracanie bazy.
 // Admin NIE edytuje wpisów graczy — tylko je przegląda (rozdz. 3 polecenia).
-import { MOTYWY } from "./konfiguracja.js";
+import { MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
 import { el, komunikat, opisBledu, potwierdz, wyczysc } from "./narzedzia.js";
 import { pobierzKopie, przeanalizujPlik, przywroc } from "./kopia.js";
 import { sprawdzAppCheck } from "./firebase.js";
@@ -17,7 +17,7 @@ export class WidokAdmina {
   constructor(kontener, opcje) {
     this.kontener = kontener;
     this.opcje = opcje;
-    this.pola = { mapy: new Map(), kolory: new Map(), elementy: new Map() };
+    this.pola = { zakladki: new Map(), kolory: new Map(), elementy: new Map() };
     this.analiza = null;
     this.zbuduj();
   }
@@ -49,27 +49,41 @@ export class WidokAdmina {
       })
     );
 
+    // ---- zakładki ----
+    const listaZakladek = el("ul.lista-elementow");
+    const dodajZakladke = (id, nazwa, zapis) => {
+      const pole = el("input.przelacznik", { atrybuty: { type: "checkbox", id: `admin-zakladka-${id}`, "aria-label": `Zakładka ${nazwa} widoczna dla graczy` } });
+      pole.addEventListener("change", () =>
+        this.zapisz(zapis(pole.checked), pole.checked ? `Zakładka „${nazwa}” widoczna dla graczy.` : `Zakładka „${nazwa}” ukryta przed graczami.`)
+      );
+      this.pola.zakladki.set(id, pole);
+      listaZakladek.append(el("li", [el("label.przelacznik-etykieta", { atrybuty: { for: `admin-zakladka-${id}` } }, [pole, el("span", { tekst: nazwa })])]));
+    };
+    for (const z of ZAKLADKI_STALE) dodajZakladke(z.id, z.nazwa, (w) => ({ zakladki: { [z.id]: w } }));
+    for (const mapa of stan.manifest.mapy || []) dodajZakladke(`mapa-${mapa.id}`, mapa.nazwa, (w) => ({ mapy: { [mapa.id]: { widoczna: w } } }));
+    tresc.append(
+      el("section.panel-ramka", [
+        el("h3.sekcja-tytul", { tekst: "ZAKŁADKI — WIDOCZNE DLA GRACZY" }),
+        el("p.przygaszony", {
+          tekst: "Zaznaczona zakładka jest widoczna dla graczy, odznaczona — ukryta. To samo pole jest przy każdej zakładce w pasku na górze ekranu (widzi je tylko admin)."
+        }),
+        listaZakladek
+      ])
+    );
+
     // ---- mapy i miejsca ----
     const sekcjaMap = el("section.panel-ramka", [
-      el("h3.sekcja-tytul", { tekst: "ZAKŁADKI MAP I MIEJSCA" }),
-      el("p.przygaszony", { tekst: "Widoczność zakładki i miejsc zmienisz też w indeksie obok mapy (pola wyboru) albo paskiem na ukrytej mapie." })
+      el("h3.sekcja-tytul", { tekst: "MAPY I MIEJSCA" }),
+      el("p.przygaszony", { tekst: "Dostępność miejsc zmienisz też w indeksie obok mapy (pola wyboru) albo w karcie miejsca." })
     ]);
     this.kolorKampanii = this.listaKolorow(stan.kolorKampanii());
     this.kolorKampanii.addEventListener("change", () => this.zapisz({ kolor: this.kolorKampanii.value }, "Zmieniono kolor ekranu."));
     sekcjaMap.append(el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor ekranu poza mapami:" }), this.kolorKampanii]));
 
     for (const mapa of stan.manifest.mapy || []) {
-      const widoczna = el("input.przelacznik", { atrybuty: { type: "checkbox", "aria-label": `Zakładka ${mapa.nazwa} widoczna dla graczy` } });
-      widoczna.addEventListener("change", () =>
-        this.zapisz(
-          { mapy: { [mapa.id]: { widoczna: widoczna.checked } } },
-          widoczna.checked ? `Zakładka „${mapa.nazwa}” widoczna dla graczy.` : `Zakładka „${mapa.nazwa}” ukryta przed graczami.`
-        )
-      );
       const kolor = this.listaKolorow(stan.kolorMapy(mapa));
       kolor.setAttribute("aria-label", `Kolor mapy ${mapa.nazwa}`);
       kolor.addEventListener("change", () => this.zapisz({ mapy: { [mapa.id]: { kolor: kolor.value } } }, `Zmieniono kolor mapy „${mapa.nazwa}”.`));
-      this.pola.mapy.set(mapa.id, widoczna);
       this.pola.kolory.set(mapa.id, kolor);
 
       const elementy = (stan.manifest.elementy || []).filter((e) => e.mapa === mapa.id);
@@ -93,10 +107,7 @@ export class WidokAdmina {
       sekcjaMap.append(
         el("div.admin-mapa", [
           el("h4.podsekcja", { tekst: `◈ ${mapa.nazwa.toUpperCase()}` }),
-          el("div.admin-wiersz", [
-            el("label.przelacznik-etykieta", [widoczna, el("span", { tekst: "Zakładka widoczna dla graczy" })]),
-            el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor mapy:" }), kolor])
-          ]),
+          el("div.admin-wiersz", [el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor mapy:" }), kolor])]),
           el("p.przygaszony", { tekst: "Zaznaczone miejsca są dla graczy klikalne i można przy nich robić notatki. Odznaczone wyglądają jak zwykłe tło mapy." }),
           el("div.admin-wiersz", [
             el("button.przycisk.przycisk-maly", { tekst: "ZAZNACZ WSZYSTKIE", atrybuty: { type: "button" }, zdarzenia: { click: () => ustawWszystkie(true) } }),
@@ -117,7 +128,7 @@ export class WidokAdmina {
     tresc.append(
       el("section.panel-ramka", [
         el("h3.sekcja-tytul", { tekst: "KOPIA ZAPASOWA" }),
-        el("p", { tekst: "Kopia obejmuje dane wszystkich kampanii z rejestru (notatki, postęp, powiązania, ustawienia map) oraz kolekcję admins." }),
+        el("p", { tekst: "Kopia obejmuje dane wszystkich kampanii z rejestru (notatki i ustawienia map) oraz kolekcję admins." }),
         el("label.przelacznik-etykieta", { atrybuty: { for: "kopia-secrets" } }, [this.zSecrets, el("span", { tekst: "Dołącz kolekcję secrets (loginy i hasła)" })]),
         el("p.ostrzezenie", { tekst: "Uwaga: z tą opcją plik będzie zawierał hasła zapisane zwykłym tekstem. Nie wysyłaj go nikomu i nie wrzucaj do repozytorium." }),
         el("div.admin-wiersz", [przyciskKopii]),
@@ -208,8 +219,9 @@ export class WidokAdmina {
   render() {
     const { stan } = this.opcje;
     this.kolorKampanii.value = stan.kolorKampanii();
+    for (const z of ZAKLADKI_STALE) this.pola.zakladki.get(z.id).checked = stan.zakladkaWidocznaDlaGraczy(z.id);
     for (const mapa of stan.manifest.mapy || []) {
-      this.pola.mapy.get(mapa.id).checked = stan.mapaWidocznaDlaGraczy(mapa);
+      this.pola.zakladki.get(`mapa-${mapa.id}`).checked = stan.mapaWidocznaDlaGraczy(mapa);
       this.pola.kolory.get(mapa.id).value = stan.kolorMapy(mapa);
     }
     for (const e of stan.manifest.elementy || []) {

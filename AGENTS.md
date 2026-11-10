@@ -101,6 +101,7 @@ wzoru (`dokumentacja/Kod_Wzoru.txt`). Każde naprawia błąd widziany na tableta
 | wygląd | `aplikacja/css/slate.css` |
 | zachowanie mapy | `aplikacja/js/mapa.js` |
 | zakładki, przepływ strony kampanii | `aplikacja/js/kampania.js` |
+| nowa zakładka (inna niż mapa) | wpis w `ZAKLADKI_STALE` (`aplikacja/js/konfiguracja.js`), sekcja `widok-{id}` w `kampania.html`, obsługa w `przelacz()` w `kampania.js`; widoczność dla graczy zapisuje się sama w `ustawienia/mapy` → `zakladki.{id}` |
 | widoczność (domyślne z manifestu + ustawienia admina) | `aplikacja/js/stan.js` |
 | zapis/odczyt bazy | `aplikacja/js/dane.js` |
 | kopia i przywracanie | `aplikacja/js/kopia.js`, format: `aplikacja/js/kopia-format.js` |

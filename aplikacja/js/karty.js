@@ -1,39 +1,28 @@
-// Karty wpisów (notatka, cel, powiązanie) używane w panelu miejsca i w zakładkach.
-// Treść zawsze przez textContent (z zachowaniem podziałów wierszy w CSS: white-space: pre-wrap).
-import { KATEGORIE_NOTATEK, RODZAJE_POWIAZAN, STANY_POSTEPU, etykieta } from "./konfiguracja.js";
+// Karta notatki — w karcie miejsca i w zakładce „Notatki”.
+// Treść zawsze przez textContent (podziały wierszy zachowuje CSS: white-space: pre-wrap).
 import { el, formatujDate, komunikat, opisBledu, potwierdz } from "./narzedzia.js";
-import { mozeEdytowac } from "./sesja.js";
-import { oknoNotatki, oknoPostepu, oknoPowiazania } from "./formularze.js";
+import { jestAdminem, mozeEdytowac } from "./sesja.js";
+import { oknoNotatki } from "./formularze.js";
 
-function metadane(wpis, dodatki = []) {
-  const czesci = [...dodatki];
-  if (wpis.podpis) czesci.push(`podpis: ${wpis.podpis}`);
-  const data = formatujDate(wpis.zmieniono || wpis.utworzono);
-  if (data) czesci.push(data);
-  return el("p.karta-meta", { tekst: czesci.filter(Boolean).join(" · ") });
+/** Opis miejsca notatki: nazwa miejsca, „notatka ogólna” albo „miejsce niedostępne”. */
+function opisMiejsca(notatka, stan) {
+  const rodzaj = stan.rodzajNotatki(notatka);
+  if (rodzaj === "ogolna") return "notatka ogólna";
+  if (rodzaj === "bez-miejsca") return "miejsce niedostępne na mapie";
+  const element = stan.elementyWgId.get(notatka.elementId);
+  const ukryte = jestAdminem(stan.sesja) && !stan.elementDostepnyDlaGraczy(element);
+  return `◈ ${element.nazwa}${ukryte ? " (ukryte przed graczami)" : ""}`;
 }
 
-function przyciskiEdycji({ sesja, naEdycje, naUsuniecie, nazwa }) {
-  if (!mozeEdytowac(sesja)) return null;
-  return el("div.karta-przyciski", [
-    el("button.przycisk.przycisk-maly", { tekst: "EDYTUJ", atrybuty: { type: "button", "aria-label": `Edytuj: ${nazwa}` }, zdarzenia: { click: naEdycje } }),
-    el("button.przycisk.przycisk-maly.przycisk-niebezpieczny", {
-      tekst: "USUŃ",
-      atrybuty: { type: "button", "aria-label": `Usuń: ${nazwa}` },
-      zdarzenia: { click: naUsuniecie }
-    })
-  ]);
-}
-
-async function usunWpis(dane, kolekcja, wpis, opis) {
-  const ok = await potwierdz(`Usunąć ${opis} „${wpis.tytul || wpis.od || ""}”? Tej operacji nie da się cofnąć.`, {
+async function usunNotatke(dane, notatka) {
+  const ok = await potwierdz(`Usunąć notatkę „${notatka.tytul || ""}”? Tej operacji nie da się cofnąć.`, {
     tak: "USUŃ",
     niebezpieczne: true
   });
   if (!ok) return;
   try {
-    await dane.usun(kolekcja, wpis.id);
-    komunikat("Usunięto.", "ok");
+    await dane.usun("notatki", notatka.id);
+    komunikat("Usunięto notatkę.", "ok");
   } catch (e) {
     komunikat(opisBledu(e), "blad", 8000);
   }
@@ -41,70 +30,34 @@ async function usunWpis(dane, kolekcja, wpis, opis) {
 
 /**
  * @param {object} notatka
- * @param {object} kontekst { stan, dane, sesja, pokazMiejsce, naMiejsce(id) }
+ * @param {object} kontekst { stan, dane, sesja }
  */
-export function kartaNotatki(notatka, { stan, dane, sesja, pokazMiejsce = true, naMiejsce = null }) {
-  const dodatki = [etykieta(KATEGORIE_NOTATEK, notatka.kategoria)];
-  let odnosnik = null;
-  if (pokazMiejsce) {
-    const rodzaj = stan.rodzajNotatki(notatka);
-    if (rodzaj === "miejsce") {
-      const element = stan.elementyWgId.get(notatka.elementId);
-      odnosnik = el("button.odnosnik", {
-        tekst: `◈ ${element.nazwa}`,
-        atrybuty: { type: "button", title: "Pokaż na mapie" },
-        zdarzenia: { click: () => naMiejsce?.(element.id) }
-      });
-      if (!stan.elementDostepnyDlaGraczy(element)) dodatki.push("miejsce ukryte przed graczami");
-    } else if (rodzaj === "bez-miejsca") {
-      dodatki.push("miejsce niedostępne na mapie");
-    } else {
-      dodatki.push("notatka ogólna");
-    }
-  }
+export function kartaNotatki(notatka, { stan, dane, sesja }) {
+  const meta = [opisMiejsca(notatka, stan)];
+  if (notatka.podpis) meta.push(`podpis: ${notatka.podpis}`);
+  const data = formatujDate(notatka.zmieniono || notatka.utworzono);
+  if (data) meta.push(data);
+
+  const przyciski = mozeEdytowac(sesja)
+    ? el("div.karta-przyciski", [
+        el("button.przycisk.przycisk-maly", {
+          tekst: "EDYTUJ",
+          atrybuty: { type: "button", "aria-label": `Edytuj: ${notatka.tytul}` },
+          zdarzenia: { click: () => oknoNotatki({ stan, dane, sesja, notatka }) }
+        }),
+        el("button.przycisk.przycisk-maly.przycisk-niebezpieczny", {
+          tekst: "USUŃ",
+          atrybuty: { type: "button", "aria-label": `Usuń: ${notatka.tytul}` },
+          zdarzenia: { click: () => usunNotatke(dane, notatka) }
+        })
+      ])
+    : null;
+
   return el("article.karta", { dane: { id: notatka.id } }, [
     el("h4.karta-tytul", { tekst: notatka.tytul || "(bez tytułu)" }),
-    odnosnik,
-    metadane(notatka, dodatki),
+    el("p.karta-meta", { tekst: meta.join(" · ") }),
     notatka.tresc ? el("p.karta-tresc", { tekst: notatka.tresc }) : null,
-    przyciskiEdycji({
-      sesja,
-      nazwa: notatka.tytul,
-      naEdycje: () => oknoNotatki({ stan, dane, sesja, notatka }),
-      naUsuniecie: () => usunWpis(dane, "notatki", notatka, "notatkę")
-    })
-  ]);
-}
-
-export function kartaPostepu(wpis, { stan, dane, sesja }) {
-  return el("article.karta", { klasa: `karta-stan-${wpis.stan}`, dane: { id: wpis.id } }, [
-    el("h4.karta-tytul", [el("span.znacznik-stanu", { tekst: `[${etykieta(STANY_POSTEPU, wpis.stan).toUpperCase()}]` }), " ", wpis.tytul || "(bez tytułu)"]),
-    metadane(wpis),
-    wpis.opis ? el("p.karta-tresc", { tekst: wpis.opis }) : null,
-    przyciskiEdycji({
-      sesja,
-      nazwa: wpis.tytul,
-      naEdycje: () => oknoPostepu({ stan, dane, sesja, wpis }),
-      naUsuniecie: () => usunWpis(dane, "postep", wpis, "cel")
-    })
-  ]);
-}
-
-export function kartaPowiazania(wpis, { stan, dane, sesja }) {
-  return el("article.karta.karta-powiazanie", { klasa: `rodzaj-${wpis.rodzaj}`, dane: { id: wpis.id } }, [
-    el("h4.karta-tytul", [
-      el("span", { tekst: wpis.od }),
-      el("span.relacja", { tekst: ` —[ ${etykieta(RODZAJE_POWIAZAN, wpis.rodzaj).toUpperCase()} ]→ ` }),
-      el("span", { tekst: wpis.do })
-    ]),
-    metadane(wpis),
-    wpis.opis ? el("p.karta-tresc", { tekst: wpis.opis }) : null,
-    przyciskiEdycji({
-      sesja,
-      nazwa: `${wpis.od} – ${wpis.do}`,
-      naEdycje: () => oknoPowiazania({ stan, dane, sesja, wpis }),
-      naUsuniecie: () => usunWpis(dane, "powiazania", { ...wpis, tytul: `${wpis.od} – ${wpis.do}` }, "powiązanie")
-    })
+    przyciski
   ]);
 }
 

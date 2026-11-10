@@ -22,6 +22,7 @@
   --cien-tekstu: 0 0 6px rgba(108, 245, 140, 0.5);
   --klik: #ffd24a;
   --blad: #ff6b5f;
+  --kropka: #ff2d2d;
   --zebra: rgba(108, 245, 140, 0.05);
   --font: "Ubuntu Mono", "DejaVu Sans Mono", Consolas, "Fira Code", monospace;
   --font-hud: "VT323", "Ubuntu Mono", Consolas, monospace;
@@ -292,6 +293,26 @@ a {
 }
 .zakladka-ukryta {
   border-style: dashed;
+}
+/* Admin: pole „widoczna dla graczy” przy każdej zakładce. */
+.zakladka-grupa {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 6px;
+  border: 1px solid var(--linia);
+  border-radius: 7px;
+}
+.zakladka-grupa-ukryta {
+  border-style: dashed;
+  border-color: var(--klik);
+}
+.zakladka-grupa .zakladka {
+  border: none;
+}
+.zakladka-pole {
+  width: 20px;
+  height: 20px;
 }
 .znacznik-ukrycia {
   color: var(--klik);
@@ -619,7 +640,7 @@ dialog.okno-male > .okno-przyciski {
 }
 .karta-meta {
   margin: 2px 0 6px;
-  font-size: 14px;
+  font-size: 12.5px;
   color: var(--przygaszony);
   overflow-wrap: anywhere;
 }
@@ -634,27 +655,6 @@ dialog.okno-male > .okno-przyciski {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 8px;
-}
-.karta-stan-zamkniete {
-  opacity: 0.7;
-  border-left-color: var(--przygaszony);
-}
-.karta-stan-w-toku {
-  border-left-color: var(--klik);
-}
-.znacznik-stanu {
-  font-size: 14px;
-  color: var(--akcent);
-}
-.relacja {
-  color: var(--przygaszony);
-  font-weight: normal;
-}
-.karta-powiazanie.rodzaj-wrogosc {
-  border-left-color: var(--blad);
-}
-.karta-powiazanie.rodzaj-niepewne {
-  border-left-style: dashed;
 }
 
 /* ---------------------------------------------------------------- widok map */
@@ -717,6 +717,19 @@ dialog.okno-male > .okno-przyciski {
   left: 16px;
   right: 16px;
   text-align: center;
+}
+.widok-pusto {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--przygaszony);
+  letter-spacing: 0.05em;
 }
 .brak-map {
   position: absolute;
@@ -827,6 +840,28 @@ dialog.okno-male > .okno-przyciski {
 .plansza svg.mapa-slate .el-ukryty .el-naroznik {
   stroke: var(--przygaszony);
   stroke-dasharray: 3 3;
+}
+/* Czerwona kropka: przy miejscu są notatki (tylko miejsca dostępne dla graczy). */
+.plansza svg .el-kropka {
+  display: none;
+  fill: var(--kropka);
+  stroke: var(--tlo);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+.plansza svg .el-dostepny.el-ma-notatki .el-kropka {
+  display: inline;
+  filter: drop-shadow(0 0 3px var(--kropka));
+  animation: kropka 2.4s ease-in-out infinite;
+}
+@keyframes kropka {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 .plansza svg.mapa-slate .el-ukryty:hover .el-naroznik,
 .plansza svg.mapa-slate .el-ukryty.wybrany .el-naroznik {
@@ -1068,49 +1103,6 @@ dialog.okno-male > .okno-przyciski {
   border-radius: 6px;
 }
 
-/* ---------------------------------------------------------------- graf powiązań */
-.graf {
-  margin: 10px 0;
-  overflow: hidden;
-  background: #000;
-  border: 1px solid var(--linia);
-  border-radius: 8px;
-}
-.graf-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 80vh;
-  font-family: var(--font);
-}
-.graf-krawedz {
-  stroke: var(--fosfor);
-  stroke-width: 1.6;
-  opacity: 0.75;
-}
-.graf-krawedz.rodzaj-wrogosc {
-  stroke: var(--blad);
-}
-.graf-krawedz.rodzaj-niepewne {
-  stroke-dasharray: 6 5;
-  opacity: 0.55;
-}
-.graf-krawedz.rodzaj-dlug,
-.graf-krawedz.rodzaj-zaleznosc {
-  stroke: var(--klik);
-}
-.graf-wezel {
-  fill: var(--fosfor);
-}
-.graf-nazwa {
-  fill: var(--tekst);
-  font-size: 16px;
-}
-.graf-rodzaj {
-  fill: var(--przygaszony);
-  font-size: 13px;
-}
-
 /* ---------------------------------------------------------------- strona startowa */
 .lista-kampanii {
   margin: 0;
@@ -1216,7 +1208,8 @@ dialog.okno-male > .okno-przyciski {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skan {
+  .skan,
+  .plansza svg .el-dostepny.el-ma-notatki .el-kropka {
     animation: none;
   }
 }

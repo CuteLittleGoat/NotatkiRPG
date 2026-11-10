@@ -5,7 +5,7 @@ W tym folderze:
 | Plik | Co to jest |
 |---|---|
 | `firebase-config.js` | Adres projektu Firebase (`notatkirpg-b601c`) i klucz witryny reCAPTCHA dla App Check. **Oba klucze są publiczne** — z założenia trafiają do przeglądarki każdego gościa strony. |
-| `firestore.rules` | Reguły bazy danych (wersja 2). **Trzeba je ręcznie wkleić w konsoli Firebase** — instrukcja niżej. Aplikacja sama ich nie publikuje. |
+| `firestore.rules` | Reguły bazy danych (wersja 3 — z widocznością zakładek; bez usuniętych zakładek Postęp i Powiązania). **Trzeba je ręcznie wkleić w konsoli Firebase** — instrukcja niżej. Aplikacja sama ich nie publikuje. |
 
 ## Reguły bazy — co robią (wyjaśnienie bez żargonu)
 
@@ -14,10 +14,10 @@ się przez kolekcję `secrets` (a nie przez logowanie Firebase), baza **nie wie,
 kto pyta** — nie odróżni gracza od gościa ani od admina. Reguły pilnują więc
 tego, **co** wolno zrobić:
 
-* **Odczyt** — wszystko, czego potrzebuje aplikacja (mapy, notatki, postęp,
-  powiązania, ustawienia, a także konta — bez tego nie działałoby logowanie).
-* **Zapis** — tylko w miejscach, których używa aplikacja (notatki, postęp,
-  powiązania, ustawienia map), i tylko we właściwym kształcie: znane pola,
+* **Odczyt** — wszystko, czego potrzebuje aplikacja (notatki, ustawienia map i
+  zakładek, a także konta — bez tego nie działałoby logowanie).
+* **Zapis** — tylko w miejscach, których używa aplikacja (notatki, ustawienia map
+  i zakładek), i tylko we właściwym kształcie: znane pola,
   rozsądna długość tekstów (np. tytuł do 200 znaków, treść do 20 000).
 * **Wszystko inne jest zablokowane** — nikt nie dopisze do bazy własnych kolekcji
   ani dziwnych pól.

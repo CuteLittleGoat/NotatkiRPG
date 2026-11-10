@@ -83,6 +83,10 @@ export class Indeks {
       this.lista.append(sekcja);
     }
 
+    if (!stan.zakladkaDlaUzytkownika("notatki")) {
+      this.ustawInfo(ile, zapytanie);
+      return;
+    }
     const ogolne = stan.notatki.filter((n) => stan.rodzajNotatki(n) === "ogolna").length;
     const bezMiejsca = stan.notatki.filter((n) => stan.rodzajNotatki(n) === "bez-miejsca").length;
     const stopka = el("section.indeks-mapa", [el("h3.indeks-naglowek", { tekst: "▤ NOTATKI" })]);
@@ -109,11 +113,14 @@ export class Indeks {
       );
     }
     this.lista.append(stopka);
+    this.ustawInfo(ile, zapytanie);
+  }
 
-    const mapy = stan.mapyDlaUzytkownika().length;
-    if (!mapy) this.info.textContent = "Żadna mapa nie jest jeszcze udostępniona.";
+  ustawInfo(ile, zapytanie) {
+    const { stan } = this.opcje;
+    if (!stan.mapyDlaUzytkownika().length) this.info.textContent = "Żadna mapa nie jest jeszcze udostępniona.";
     else if (zapytanie.trim()) this.info.textContent = `Znalezione miejsca: ${ile}`;
-    else this.info.textContent = admin ? "Widok admina: wszystkie miejsca. ☑ = dostępne dla graczy." : `Dostępne miejsca: ${ile}`;
+    else this.info.textContent = stan.widokAdmina() ? "Widok admina: wszystkie miejsca. ☑ = dostępne dla graczy." : `Dostępne miejsca: ${ile}`;
   }
 
   pasujeElement(e, zapytanie) {

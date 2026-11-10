@@ -127,13 +127,18 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(t.includes("Nieprawidłowy login lub hasło"), `zły komunikat: ${t}`);
   });
 
-  await krok("gość: tylko zakładka Okolice (Kopiec ukryty), bez Admin", async () => {
+  await krok("gość: Notatki jako pierwsza i domyślna zakładka, potem Okolice; bez Kopca, Admina, Postępu i Powiązań", async () => {
     await s.goto(`${ADRES}/kampania.html?k=iliac`);
-    await s.waitForSelector(".plansza svg .el");
+    await s.waitForSelector("#widok-notatki:not([hidden]) .lista-wpisow");
     const zakladki = await s.$$eval("#zakladki .zakladka", (z) => z.map((x) => x.textContent.trim()));
+    zalozenie(zakladki[0].includes("NOTATKI"), `pierwsza zakładka: ${zakladki[0]}`);
     zalozenie(zakladki.some((z) => z.includes("OKOLICE")), `brak Okolic: ${zakladki}`);
-    zalozenie(!zakladki.some((z) => z.includes("KOPIEC")), `zakładka Kopiec widoczna dla gościa: ${zakladki}`);
-    zalozenie(!zakladki.some((z) => z.includes("ADMIN")), "zakładka Admin widoczna dla gościa");
+    zalozenie(!zakladki.some((z) => /KOPIEC|ADMIN|POSTĘP|POWIĄZANIA/.test(z)), `nieoczekiwane zakładki: ${zakladki}`);
+    zalozenie((await s.textContent('#zakladki [aria-selected="true"]')).includes("NOTATKI"), "domyślnie nie otwiera się zakładka Notatki");
+    zalozenie((await s.$$("#zakladki .zakladka-pole")).length === 0, "gość widzi przełączniki widoczności zakładek");
+    zalozenie((await s.$$("#widok-notatki select")).length === 2, "filtr kategorii nadal jest w zakładce Notatki");
+    await s.click("#zakladki .zakladka:has-text('OKOLICE')");
+    await s.waitForSelector(".plansza svg .el");
   });
 
   await krok("gość: część miejsc klikalna, część jak tło", async () => {
@@ -170,13 +175,14 @@ async function bezPrzewijaniaWBok(strona) {
     await s.fill("#indeks .indeks-szukaj", "");
   });
 
-  await krok("gość: adres #kopiec (ukryta mapa) → wraca do Okolic", async () => {
+  await krok("gość: adres #kopiec (ukryta mapa) → pierwsza dostępna zakładka", async () => {
     await s.goto(`${ADRES}/kampania.html?k=iliac#kopiec`);
-    await s.waitForSelector(".plansza svg");
+    await s.waitForSelector("#widok-notatki:not([hidden])");
     const aktywna = await s.textContent('#zakladki [aria-selected="true"]');
-    zalozenie(aktywna.includes("OKOLICE"), `aktywna zakładka: ${aktywna}`);
-    const mapa = await s.$eval(".plansza:not([hidden]) svg", (x) => x.dataset.mapa);
-    zalozenie(mapa === "okolice", `wczytana mapa: ${mapa}`);
+    zalozenie(aktywna.includes("NOTATKI"), `aktywna zakładka: ${aktywna}`);
+    zalozenie((await s.$$('.plansza svg[data-mapa="kopiec"]')).length === 0, "ukryta mapa została wczytana");
+    await s.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
+    await s.waitForSelector('.plansza:not([hidden]) svg[data-mapa="okolice"]');
   });
 
   await krok("gość: kliknięcie miejsca otwiera kartę bez „Dodaj notatkę”", async () => {
@@ -216,6 +222,9 @@ async function bezPrzewijaniaWBok(strona) {
     await s.click('[data-element="trakt"] text >> nth=0');
     await s.waitForSelector("#panel button:has-text('DODAJ NOTATKĘ')");
     await s.click("#panel button:has-text('DODAJ NOTATKĘ')");
+    await s.waitForSelector("dialog textarea");
+    zalozenie((await s.evaluate(() => document.activeElement.tagName)) === "TEXTAREA", "kursor nie stoi w polu „Treść”");
+    zalozenie((await s.$$("dialog select")).length === 1, "w formularzu nadal jest pole kategorii");
     await s.fill("dialog input >> nth=0", "Przemytnicy na Trakcie");
     await s.fill("dialog textarea", 'Pierwszy wiersz\nDrugi wiersz <img src=x onerror="window.__xss=1">');
     await s.fill("dialog input[list]", "Brat Kael");
@@ -228,7 +237,14 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie((await s.$$("#panel .karta-tresc img")).length === 0, "w karcie powstał element <img>");
     const ws = await s.$eval("#panel .karta-tresc", (x) => getComputedStyle(x).whiteSpace);
     zalozenie(ws === "pre-wrap", "podziały wierszy nie są zachowane");
-    zalozenie((await s.textContent("#panel .karta-meta")).includes("Brat Kael"), "brak podpisu");
+    const meta = await s.textContent("#panel .karta-meta");
+    zalozenie(meta.includes("Brat Kael"), "brak podpisu");
+    zalozenie(meta.startsWith("◈ Trakt"), `etykieta notatki nie pokazuje miejsca: ${meta}`);
+    zalozenie(!meta.includes("Miejsce ·"), `etykieta nadal pokazuje kategorię: ${meta}`);
+    // Czerwona kropka przy miejscu z notatką.
+    await s.waitForSelector('[data-element="trakt"].el-ma-notatki');
+    const kropka = await s.$eval('[data-element="trakt"] .el-kropka', (k) => k.getBoundingClientRect().width);
+    zalozenie(kropka > 0, "brak czerwonej kropki przy miejscu z notatką");
     await s.screenshot({ path: path.join(WYNIKI, "03_gracz_karta_miejsca.png") });
   });
 
@@ -243,41 +259,16 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector("#panel .karta-tytul:has-text('(potwierdzone)')");
   });
 
-  await krok("gracz: notatka ogólna, cel w Postępie i powiązanie", async () => {
+  await krok("gracz: notatka ogólna (etykieta „notatka ogólna”)", async () => {
     await s.click("#zakladki .zakladka:has-text('NOTATKI')");
     await s.click("#widok-notatki button:has-text('NOWA NOTATKA')");
     await s.fill("dialog input >> nth=0", "Plan na następną sesję");
     await s.fill("dialog textarea", "Zapytać o Iglicę Cumowniczą.");
     await s.click("dialog button[type=submit]");
     await s.waitForSelector("#widok-notatki .sekcja-tytul:has-text('NOTATKI OGÓLNE')");
-    await s.click("#zakladki .zakladka:has-text('POSTĘP')");
-    await s.click("#widok-postep button:has-text('NOWY CEL')");
-    await s.fill("dialog input >> nth=0", "Odnaleźć kontakt w porcie");
-    await s.selectOption("dialog select", "w-toku");
-    await s.click("dialog button[type=submit]");
-    await s.waitForSelector("#widok-postep .karta-tytul:has-text('Odnaleźć kontakt')");
-    await s.click("#zakladki .zakladka:has-text('POWIĄZANIA')");
-    await s.click("#widok-powiazania button:has-text('NOWE POWIĄZANIE')");
-    await s.fill("dialog input >> nth=0", "Ród Smoka");
-    await s.fill("dialog input >> nth=1", "Ród Róży");
-    await s.selectOption("dialog select", "wrogosc");
-    await s.click("dialog button[type=submit]");
-    await s.waitForSelector("#widok-powiazania .karta-tytul:has-text('Ród Smoka')");
-    await s.click("#widok-powiazania button:has-text('POKAŻ GRAF')");
-    await s.waitForSelector("#widok-powiazania .graf-svg");
-    await s.screenshot({ path: path.join(WYNIKI, "04_powiazania_graf.png") });
+    const meta = await s.textContent("#widok-notatki .karta:has-text('Plan na następną sesję') .karta-meta");
+    zalozenie(meta.startsWith("notatka ogólna"), `etykieta notatki ogólnej: ${meta}`);
   });
-
-  await krok("gracz: filtr strony relacji", async () => {
-    await s.fill("#widok-powiazania input[type=search]", "róży");
-    await s.waitForTimeout(300);
-    zalozenie((await s.$$("#widok-powiazania .karta")).length === 1, "filtr po stronie relacji nie działa");
-    await s.fill("#widok-powiazania input[type=search]", "nikt-taki");
-    await s.waitForTimeout(300);
-    zalozenie((await s.$$("#widok-powiazania .karta")).length === 0, "filtr przepuszcza niepasujące");
-    await s.fill("#widok-powiazania input[type=search]", "");
-  });
-
   await krok("gracz: wyszukiwarka notatek (bez polskich znaków, po nazwie miejsca)", async () => {
     await s.click("#zakladki .zakladka:has-text('NOTATKI')");
     await s.fill("#widok-notatki input[type=search]", "nastepna sesje");
@@ -322,13 +313,16 @@ async function bezPrzewijaniaWBok(strona) {
 
   // ---- admin
   const sa = await nowaStrona(ctx, bledy);
-  await krok("admin: logowanie, zakładki Kopiec (ukryta) i Admin", async () => {
-    await sa.goto(`${ADRES}/kampania.html?k=iliac`);
+  await krok("admin: logowanie, zakładki Kopiec (ukryta) i Admin, przełącznik przy każdej zakładce", async () => {
+    await sa.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
     await sa.waitForSelector(".plansza svg");
     await zaloguj(sa, "test-admin", "haslo-admina");
     const zakladki = await sa.$$eval("#zakladki .zakladka", (z) => z.map((x) => x.textContent.trim()));
     zalozenie(zakladki.some((z) => z.includes("KOPIEC") && z.includes("⊘")), `brak ukrytej zakładki Kopiec: ${zakladki}`);
     zalozenie(zakladki.some((z) => z.includes("ADMIN")), "brak zakładki Admin");
+    const pola = await sa.$$eval("#zakladki .zakladka-pole", (p) => p.map((x) => [x.getAttribute("aria-label"), x.checked]));
+    zalozenie(pola.length === 3, `oczekiwano 3 przełączników (Notatki, Okolice, Kopiec): ${JSON.stringify(pola)}`);
+    zalozenie(JSON.stringify(pola) === JSON.stringify([["Widoczna dla graczy: Notatki", true], ["Widoczna dla graczy: Okolice", true], ["Widoczna dla graczy: Kopiec", false]]), `stan przełączników: ${JSON.stringify(pola)}`);
   });
 
   await krok("admin: indeks pokazuje wszystkie miejsca z polami wyboru", async () => {
@@ -349,12 +343,24 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie((await sa.$$("#panel .panel-admin input[type=checkbox]")).length === 1, "brak pola „dostępne dla graczy” w karcie");
   });
 
-  await krok("admin → gracz na żywo: zaznaczenie miejsca w indeksie", async () => {
-    await s.goto(`${ADRES}/kampania.html?k=iliac`);
+  await krok("admin → gracz na żywo: zaznaczenie miejsca w indeksie (z czerwoną kropką, bo są notatki)", async () => {
+    await s.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
     await s.waitForSelector('.plansza svg [data-element="brassyl"]');
+    await s.waitForTimeout(400);
+    zalozenie(!(await s.$eval('[data-element="brassyl"]', (g) => g.classList.contains("el-ma-notatki"))), "kropka przy miejscu ukrytym przed graczami");
     await sa.click('#indeks li:has-text("Brassyl") input[type=checkbox]');
     await s.waitForSelector('.plansza svg [data-element="brassyl"].el-dostepny', { timeout: 4000 });
     await s.waitForSelector('#indeks .indeks-nazwa:has-text("Brassyl")', { timeout: 4000 });
+    await s.waitForSelector('[data-element="brassyl"].el-ma-notatki', { timeout: 4000 });
+    zalozenie((await s.$eval('[data-element="brassyl"] .el-kropka', (k) => k.getBoundingClientRect().width)) > 0, "kropka niewidoczna");
+  });
+
+  await krok("czerwona kropka znika, gdy admin wyłączy miejsce", async () => {
+    await sa.click('#indeks li:has-text("Brassyl") input[type=checkbox]');
+    await s.waitForFunction(() => !document.querySelector('[data-element="brassyl"]').classList.contains("el-dostepny"), null, { timeout: 4000 });
+    zalozenie((await s.$eval('[data-element="brassyl"] .el-kropka', (k) => k.getBoundingClientRect().width)) === 0, "kropka widoczna przy wyłączonym miejscu");
+    await sa.click('#indeks li:has-text("Brassyl") input[type=checkbox]');
+    await s.waitForSelector('[data-element="brassyl"].el-dostepny.el-ma-notatki', { timeout: 4000 });
   });
 
   await krok("admin → gracz na żywo: odsłonięcie zakładki Kopiec i kolor bursztynowy", async () => {
@@ -372,6 +378,16 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(dostepne.includes("iglica-sentinel") && !dostepne.includes("wrothgar"), `dostępne na Kopcu: ${dostepne}`);
     await s.waitForTimeout(500);
     await s.screenshot({ path: path.join(WYNIKI, "07_gracz_kopiec.png") });
+  });
+
+  await krok("admin: przełącznik przy zakładce Notatki ukrywa ją i odsłania graczom (na żywo)", async () => {
+    const pole = '#zakladki input[aria-label="Widoczna dla graczy: Notatki"]';
+    await sa.uncheck(pole);
+    await s.waitForFunction(() => ![...document.querySelectorAll("#zakladki .zakladka")].some((z) => z.textContent.includes("NOTATKI")), null, { timeout: 4000 });
+    await sa.waitForSelector("#zakladki .zakladka-grupa-ukryta:has-text('NOTATKI')", { timeout: 4000 });
+    await sa.screenshot({ path: path.join(WYNIKI, "08b_admin_przelaczniki_zakladek.png") });
+    await sa.check(pole);
+    await s.waitForSelector("#zakladki .zakladka:has-text('NOTATKI')", { timeout: 4000 });
   });
 
   await krok("admin: ukrycie zakładki w indeksie i odsłonięcie paskiem na mapie (na żywo u gracza)", async () => {
@@ -537,7 +553,7 @@ async function bezPrzewijaniaWBok(strona) {
       await t.screenshot({ path: path.join(WYNIKI, `10_${plik}_start.png`) });
     });
     await krok(`${nazwa}: mapa — przeciąganie palcem przesuwa mapę`, async () => {
-      await t.goto(`${ADRES}/kampania.html?k=iliac`);
+      await t.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
       await t.waitForSelector(".plansza svg .el-dostepny");
       await t.waitForTimeout(500);
       await bezPrzewijaniaWBok(t);
@@ -595,7 +611,7 @@ async function bezPrzewijaniaWBok(strona) {
       await t.click("#indeks .indeks-pozycja:has-text('Trakt')");
       await t.waitForSelector("#panel:not([hidden]) .panel-nazwa:has-text('Trakt')");
       await t.click("#panel .przycisk-ikona");
-      for (const z of ["NOTATKI", "POSTĘP", "POWIĄZANIA"]) {
+      for (const z of ["NOTATKI"]) {
         await t.click(`#zakladki .zakladka:has-text('${z}')`);
         await t.waitForTimeout(150);
         await bezPrzewijaniaWBok(t);

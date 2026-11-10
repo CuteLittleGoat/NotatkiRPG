@@ -1,4 +1,4 @@
-// Dane kampanii w Firestore: kampanie/{kampaniaId}/(notatki|postep|powiazania|ustawienia).
+// Dane kampanii w Firestore: kampanie/{kampaniaId}/(notatki|ustawienia).
 // Zmiany przychodzą na żywo (onSnapshot), więc gracze widzą nawzajem swoje wpisy.
 import {
   db,

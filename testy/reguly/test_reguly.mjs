@@ -58,7 +58,6 @@ const NOTATKI = collection(db, "kampanie", "iliac", "notatki");
 const notatka = (dodatki = {}) => ({
   tytul: "Konwój na Trakcie",
   tresc: "Wiersz 1\nWiersz 2",
-  kategoria: "miejsce",
   elementId: "trakt",
   podpis: "Brat Kael",
   kontoId: "Player2",
@@ -78,7 +77,7 @@ await test("odczyt danych kampanii (lista i pojedynczy dokument)", async () => {
   await assertSucceeds(getDoc(doc(db, "kampanie", "iliac", "ustawienia", "mapy")));
 });
 await test("kopia zapasowa: odczyt wszystkich znanych kolekcji", async () => {
-  for (const k of ["notatki", "postep", "powiazania", "ustawienia"]) await assertSucceeds(getDocs(collection(db, "kampanie", "iliac", k)));
+  for (const k of ["notatki", "ustawienia"]) await assertSucceeds(getDocs(collection(db, "kampanie", "iliac", k)));
   await assertSucceeds(getDocs(collection(db, "admins")));
   await assertSucceeds(getDocs(collection(db, "secrets")));
 });
@@ -96,14 +95,13 @@ await test("gracz: nowa notatka przy miejscu", async () => {
   idNotatki = ref.id;
 });
 await test("gracz: notatka ogólna (elementId = null), pusty podpis", async () => {
-  await assertSucceeds(addDoc(NOTATKI, notatka({ elementId: null, podpis: "", kategoria: "inne" })));
+  await assertSucceeds(addDoc(NOTATKI, notatka({ elementId: null, podpis: "" })));
 });
 await test("gracz: edycja notatki (updateDoc jak w aplikacji)", async () => {
   await assertSucceeds(
     updateDoc(doc(NOTATKI, idNotatki), {
       tytul: "Konwój (potwierdzone)",
       tresc: "nowa treść",
-      kategoria: "watek",
       elementId: "trakt",
       podpis: "Mira",
       kontoIdZmiany: "Player2",
@@ -111,39 +109,17 @@ await test("gracz: edycja notatki (updateDoc jak w aplikacji)", async () => {
     })
   );
 });
+await test("gracz: edycja starszej notatki, która ma jeszcze pole kategoria", async () => {
+  await srodowisko.withSecurityRulesDisabled(async (k) => {
+    await setDoc(doc(k.firestore(), "kampanie/iliac/notatki/stara"), { tytul: "Stara", tresc: "", kategoria: "miejsce", elementId: "trakt", podpis: "", kontoId: "Player2" });
+  });
+  await assertSucceeds(updateDoc(doc(NOTATKI, "stara"), { tytul: "Stara (zmieniona)", tresc: "x", elementId: "trakt", podpis: "Ola", kontoIdZmiany: "Player2", zmieniono: serverTimestamp() }));
+});
 await test("gracz: najdłuższe dozwolone teksty", async () => {
   await assertSucceeds(addDoc(NOTATKI, notatka({ tytul: "T".repeat(200), tresc: "x".repeat(20000), podpis: "P".repeat(80) })));
 });
 await test("gracz: usunięcie notatki", async () => {
   await assertSucceeds(deleteDoc(doc(NOTATKI, idNotatki)));
-});
-await test("gracz: cel w postępie (dodanie i zmiana stanu)", async () => {
-  const ref = await assertSucceeds(
-    addDoc(collection(db, "kampanie", "iliac", "postep"), {
-      tytul: "Odnaleźć kontakt",
-      opis: "",
-      stan: "otwarte",
-      podpis: "",
-      kontoId: "Player2",
-      utworzono: serverTimestamp(),
-      zmieniono: serverTimestamp()
-    })
-  );
-  await assertSucceeds(updateDoc(ref, { tytul: "Odnaleźć kontakt", opis: "w porcie", stan: "w-toku", podpis: "Ola", kontoIdZmiany: "Player2", zmieniono: serverTimestamp() }));
-});
-await test("gracz: powiązanie", async () => {
-  await assertSucceeds(
-    addDoc(collection(db, "kampanie", "iliac", "powiazania"), {
-      od: "Ród Smoka",
-      do: "Ród Róży",
-      rodzaj: "wrogosc",
-      opis: "",
-      podpis: "",
-      kontoId: "Player2",
-      utworzono: serverTimestamp(),
-      zmieniono: serverTimestamp()
-    })
-  );
 });
 const USTAWIENIA = doc(db, "kampanie", "iliac", "ustawienia", "mapy");
 await test("admin: odsłonięcie miejsca, zakładki i zmiana kolorów (setDoc ze scalaniem)", async () => {
@@ -154,6 +130,11 @@ await test("admin: odsłonięcie miejsca, zakładki i zmiana kolorów (setDoc ze
   await assertSucceeds(
     setDoc(USTAWIENIA, { elementy: { trakt: false, kanion: true, brassyl: false }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true })
   );
+});
+await test("admin: ukrycie i odsłonięcie zakładki Notatki (pole zakladki)", async () => {
+  await assertSucceeds(setDoc(USTAWIENIA, { zakladki: { notatki: false }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true }));
+  await assertSucceeds(setDoc(USTAWIENIA, { zakladki: { notatki: true }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true }));
+  await assertSucceeds(setDoc(USTAWIENIA, { zakladki: { notatki: deleteField() }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true }));
 });
 await test("admin: przywrócenie ustawień domyślnych (deleteField)", async () => {
   await assertSucceeds(
@@ -183,13 +164,16 @@ await test("notatka bez tytułu / tytuł za długi / treść za długa / zły ty
   await assertFails(addDoc(NOTATKI, notatka({ tresc: 123 })));
   await assertFails(addDoc(NOTATKI, notatka({ utworzono: "wczoraj" })));
 });
-await test("powiązanie bez drugiej strony", async () => {
-  await assertFails(addDoc(collection(db, "kampanie", "iliac", "powiazania"), { od: "Ród Smoka", rodzaj: "sojusz", utworzono: serverTimestamp(), zmieniono: serverTimestamp() }));
-});
 await test("ustawienia: wartość inna niż tak/nie, obce pole, inny dokument", async () => {
   await assertFails(setDoc(USTAWIENIA, { elementy: { brassyl: "tak" } }, { merge: true }));
+  await assertFails(setDoc(USTAWIENIA, { zakladki: { notatki: "nie" } }, { merge: true }));
   await assertFails(setDoc(USTAWIENIA, { obce: 1 }, { merge: true }));
   await assertFails(setDoc(doc(db, "kampanie", "iliac", "ustawienia", "inne"), { kolor: "zielony" }));
+});
+await test("usunięte zakładki: postęp i powiązania są zablokowane", async () => {
+  await assertFails(addDoc(collection(db, "kampanie", "iliac", "postep"), { tytul: "x", stan: "otwarte" }));
+  await assertFails(addDoc(collection(db, "kampanie", "iliac", "powiazania"), { od: "a", do: "b", rodzaj: "sojusz" }));
+  await assertFails(getDocs(collection(db, "kampanie", "iliac", "postep")));
 });
 await test("nieznane kolekcje i podkolekcje", async () => {
   await assertFails(setDoc(doc(db, "inne", "x"), { a: 1 }));

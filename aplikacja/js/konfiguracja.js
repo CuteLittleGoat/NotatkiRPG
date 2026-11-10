@@ -2,11 +2,11 @@
 
 /** Kolekcje kampanii: kampanie/{kampaniaId}/{podkolekcja}/{dokument}. */
 export const KOLEKCJA_KAMPANII = "kampanie";
-export const PODKOLEKCJE = ["notatki", "postep", "powiazania", "ustawienia"];
+export const PODKOLEKCJE = ["notatki", "ustawienia"];
 export const DOKUMENT_USTAWIEN = "mapy"; // kampanie/{id}/ustawienia/mapy
 
-/** Kolekcje kont — utworzone ręcznie przez właściciela. Aplikacja ich NIE zmienia
- *  (wyjątek: przywracanie kopii, jeśli plik je zawiera — rozdz. 8 polecenia). */
+/** Kolekcje kont — utworzone ręcznie przez właściciela. Aplikacja je tylko czyta
+ *  (reguły bazy nie pozwalają ich zmieniać; przywracanie kopii je pomija). */
 export const KOLEKCJA_ADMINOW = "admins";
 export const KOLEKCJA_SEKRETOW = "secrets";
 
@@ -18,44 +18,18 @@ export const MOTYWY = {
 };
 export const MOTYW_DOMYSLNY = "zielony";
 
-export const KATEGORIE_NOTATEK = [
-  ["miejsce", "Miejsce"],
-  ["rod", "Ród"],
-  ["postac", "Postać"],
-  ["organizacja", "Organizacja"],
-  ["watek", "Wątek"],
-  ["inne", "Inne"]
-];
-
-export const STANY_POSTEPU = [
-  ["otwarte", "Otwarte"],
-  ["w-toku", "W toku"],
-  ["zamkniete", "Zamknięte"]
-];
-
-export const RODZAJE_POWIAZAN = [
-  ["sojusz", "Sojusz"],
-  ["wrogosc", "Wrogość"],
-  ["dlug", "Dług"],
-  ["malzenstwo", "Małżeństwo"],
-  ["zaleznosc", "Zależność"],
-  ["niepewne", "Niepewne"],
-  ["inne", "Inne"]
-];
+/** Zakładki inne niż mapy. Każdą admin może ukryć albo odsłonić graczom
+ *  (ustawienia: kampanie/{id}/ustawienia/mapy → pole „zakladki”). Kolejność = kolejność
+ *  w pasku zakładek (przed mapami). */
+export const ZAKLADKI_STALE = [{ id: "notatki", nazwa: "Notatki", widocznaDomyslnie: true }];
 
 /** Ograniczenia długości pól (ochrona przed przypadkowym wklejeniem ogromnego tekstu). */
 export const LIMITY = {
   tytul: 200,
   tresc: 20000,
-  podpis: 80,
-  nazwaStrony: 120
+  podpis: 80
 };
 
 export const KLUCZ_SESJI = "notatkirpg.sesja";
 export const KLUCZ_PODPISU = "notatkirpg.podpis";
 export const KLUCZ_INDEKSU = "notatkirpg.indeks";
-
-export function etykieta(lista, klucz) {
-  const para = lista.find(([k]) => k === klucz);
-  return para ? para[1] : klucz || "";
-}

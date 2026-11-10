@@ -1,12 +1,14 @@
 rules_version = '2';
 
 // ===========================================================================
-// NotatkiRPG — reguły Firestore, wersja 2 (2026-11-10).
+// NotatkiRPG — reguły Firestore, wersja 3 (2026-11-10): notatki i ustawienia
+// (zakładki Postęp i Powiązania usunięte z aplikacji).
 //
 // Bez logowania Firebase (świadoma decyzja właściciela) baza nie wie, KTO pyta,
 // więc nie odróżni gracza od gościa ani od admina. Te reguły pilnują za to, CO
 // wolno zrobić:
-//   * dostępne są tylko kolekcje używane przez aplikację — wszystko inne jest
+//   * dostępne są tylko kolekcje używane przez aplikację (notatki, ustawienia,
+//     konta) — wszystko inne jest
 //     zablokowane (nikt nie dopisze do bazy własnych kolekcji);
 //   * zapisywane wpisy muszą mieć właściwe pola i rozsądną długość tekstów;
 //   * kolekcje kont „admins” i „secrets” są TYLKO DO ODCZYTU (odczyt jest
@@ -50,6 +52,8 @@ service cloud.firestore {
         && tekst(d.nazwa, 200)
         && czasOpcjonalny(d, 'utworzono');
     }
+    // „kategoria” — tylko w starszych notatkach (pole usunięte z aplikacji); zostaje
+    // dozwolone, żeby takie notatki dało się edytować i przywracać z kopii.
     function poprawnaNotatka(d) {
       return d.keys().hasOnly(['elementId', 'tytul', 'tresc', 'kategoria', 'podpis',
                                'kontoId', 'kontoIdZmiany', 'utworzono', 'zmieniono'])
@@ -59,28 +63,15 @@ service cloud.firestore {
         && tekstOpcjonalny(d, 'elementId', 100)
         && slady(d);
     }
-    function poprawnyPostep(d) {
-      return d.keys().hasOnly(['tytul', 'opis', 'stan', 'podpis',
-                               'kontoId', 'kontoIdZmiany', 'utworzono', 'zmieniono'])
-        && tekst(d.tytul, 200)
-        && tekstOpcjonalny(d, 'opis', 20000)
-        && tekstOpcjonalny(d, 'stan', 20)
-        && slady(d);
-    }
-    function poprawnePowiazanie(d) {
-      return d.keys().hasOnly(['od', 'do', 'rodzaj', 'opis', 'podpis',
-                               'kontoId', 'kontoIdZmiany', 'utworzono', 'zmieniono'])
-        && tekst(d['od'], 120)
-        && tekst(d['do'], 120)
-        && tekstOpcjonalny(d, 'rodzaj', 30)
-        && tekstOpcjonalny(d, 'opis', 20000)
-        && slady(d);
-    }
-    // Ustawienia admina: widoczność zakładek i kolory (mapy), dostępność miejsc
+    // Ustawienia admina: widoczność zakładek map i ich kolory (mapy), widoczność
+    // pozostałych zakładek (zakladki: id → true/false), dostępność miejsc
     // (elementy: id → true/false), kolor ekranu poza mapami.
     function poprawneUstawienia(d) {
-      return d.keys().hasOnly(['mapy', 'elementy', 'kolor', 'zmieniono', 'kontoIdZmiany'])
+      return d.keys().hasOnly(['mapy', 'zakladki', 'elementy', 'kolor', 'zmieniono', 'kontoIdZmiany'])
         && (!('mapy' in d) || (d.mapy is map && d.mapy.size() <= 50))
+        && (!('zakladki' in d) || (d.zakladki is map
+              && d.zakladki.size() <= 50
+              && d.zakladki.values().hasOnly([true, false])))
         && (!('elementy' in d) || (d.elementy is map
               && d.elementy.size() <= 1000
               && d.elementy.values().hasOnly([true, false])))
@@ -99,16 +90,6 @@ service cloud.firestore {
       match /notatki/{id} {
         allow read: if true;
         allow create, update: if identyfikator(id) && poprawnaNotatka(request.resource.data);
-        allow delete: if true;
-      }
-      match /postep/{id} {
-        allow read: if true;
-        allow create, update: if identyfikator(id) && poprawnyPostep(request.resource.data);
-        allow delete: if true;
-      }
-      match /powiazania/{id} {
-        allow read: if true;
-        allow create, update: if identyfikator(id) && poprawnePowiazanie(request.resource.data);
         allow delete: if true;
       }
       match /ustawienia/{id} {

@@ -141,6 +141,8 @@ export class PrzegladarkaMapy {
             const p = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
             const m = t.transform && t.transform.baseVal.consolidate();
             srodek = m ? new DOMPoint(p.x, p.y).matrixTransform(m.matrix) : p;
+            // Czerwona kropka „są notatki” — prawy górny róg złotej ramki głównego podpisu.
+            warstwaNaroznikow.append(kropka(b.x + b.width + 4, b.y - 3, transform));
           }
         }
       }
@@ -156,7 +158,10 @@ export class PrzegladarkaMapy {
         const h = Math.max(MIN_STREFA, calosc.height + 8);
         warstwaStref.append(prostokat(calosc.x + calosc.width / 2 - w / 2, calosc.y + calosc.height / 2 - h / 2, w, h, "el-strefa"));
       }
-      if (!srodek && calosc) srodek = { x: calosc.x + calosc.width / 2, y: calosc.y + calosc.height / 2 };
+      if (!srodek && calosc) {
+        srodek = { x: calosc.x + calosc.width / 2, y: calosc.y + calosc.height / 2 };
+        warstwaNaroznikow.append(kropka(calosc.x + calosc.width, calosc.y, null));
+      }
       if (srodek) this.srodki.set(id, srodek);
 
       g.insertBefore(warstwaStref, g.firstChild);
@@ -168,7 +173,7 @@ export class PrzegladarkaMapy {
   // ------------------------------------------------------------- stan elementów
 
   /**
-   * @param {Map<string, {klikalny: boolean, ukryty: boolean, nazwa: string}>} stany
+   * @param {Map<string, {klikalny: boolean, ukryty: boolean, kropka: boolean, nazwa: string}>} stany
    * Elementy bez wpisu (np. spoza manifestu) są zwykłym tłem.
    */
   ustawStany(stany) {
@@ -178,6 +183,7 @@ export class PrzegladarkaMapy {
       const klikalny = Boolean(s && s.klikalny);
       g.classList.toggle("el-dostepny", klikalny);
       g.classList.toggle("el-ukryty", Boolean(s && s.klikalny && s.ukryty));
+      g.classList.toggle("el-ma-notatki", Boolean(s && s.klikalny && s.kropka));
       if (klikalny) {
         g.setAttribute("tabindex", "0");
         g.setAttribute("role", "button");
@@ -633,6 +639,16 @@ function prostokat(x, y, w, h, klasa) {
   r.setAttribute("height", h.toFixed(1));
   r.setAttribute("class", klasa);
   return r;
+}
+
+function kropka(x, y, transform) {
+  const c = document.createElementNS(NS, "circle");
+  c.setAttribute("cx", x.toFixed(1));
+  c.setAttribute("cy", y.toFixed(1));
+  c.setAttribute("r", "4.5");
+  c.setAttribute("class", "el-kropka");
+  if (transform) c.setAttribute("transform", transform);
+  return c;
 }
 
 function sciezkaNaroznikow(x, y, w, h) {

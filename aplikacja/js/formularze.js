@@ -1,6 +1,6 @@
-// Okna formularzy: notatka, cel/wątek (postęp), powiązanie.
+// Okno formularza notatki (nowa notatka i edycja).
 // Treść pól trafia do bazy jako zwykły tekst; wyświetlamy ją przez textContent.
-import { KATEGORIE_NOTATEK, KLUCZ_PODPISU, LIMITY, RODZAJE_POWIAZAN, STANY_POSTEPU } from "./konfiguracja.js";
+import { KLUCZ_PODPISU, LIMITY } from "./konfiguracja.js";
 import { el, komunikat, opisBledu, pamiecOdczyt, pamiecZapis } from "./narzedzia.js";
 
 let licznik = 0;
@@ -37,8 +37,9 @@ function listaPodpowiedzi(wartosci) {
  * @param {string} naglowek np. "NOWA NOTATKA"
  * @param {HTMLElement[]} pola
  * @param {function} zapisz async () => void; rzuca błąd przy niepowodzeniu
+ * @param {HTMLElement} [fokus] pole, w którym ma stanąć kursor po otwarciu
  */
-function okno(naglowek, pola, zapisz) {
+function okno(naglowek, pola, zapisz, fokus = null) {
   const dialog = el("dialog.okno", { atrybuty: { "aria-label": naglowek } });
   const zamknijX = el("button.przycisk-ikona", { tekst: "×", atrybuty: { type: "button", "aria-label": "Zamknij" } });
   const blad = el("p.formularz-blad", { atrybuty: { role: "alert", hidden: true } });
@@ -71,8 +72,7 @@ function okno(naglowek, pola, zapisz) {
   });
   document.body.append(dialog);
   dialog.showModal();
-  const pierwsze = formularz.querySelector("input, textarea, select");
-  if (pierwsze) pierwsze.focus();
+  (fokus || formularz.querySelector("input, textarea, select"))?.focus();
   return dialog;
 }
 
@@ -80,19 +80,6 @@ function bladUzytkownika(tekst) {
   const e = new Error(tekst);
   e.uzytkownika = true;
   return e;
-}
-
-function polePodpisu(stan, wartosc) {
-  const znane = [...stan.notatki, ...stan.postep, ...stan.powiazania].map((w) => w.podpis);
-  const [idListy, datalist] = listaPodpowiedzi(znane);
-  const input = el("input.pole", {
-    atrybuty: { type: "text", maxlength: LIMITY.podpis, list: idListy, autocomplete: "off", value: wartosc ?? pamiecOdczyt(KLUCZ_PODPISU, "") }
-  });
-  return { input, wezel: el("div", [pole("PODPIS / POSTAĆ (opcjonalnie)", input, "Kto z drużyny to zapisał."), datalist]) };
-}
-
-function zapamietajPodpis(podpis) {
-  if (podpis) pamiecZapis(KLUCZ_PODPISU, podpis);
 }
 
 function przytnij(tekst, limit) {
@@ -104,10 +91,9 @@ function przytnij(tekst, limit) {
  * @param {object} opcje { stan, dane, sesja, notatka, elementId }
  */
 export function oknoNotatki({ stan, dane, sesja, notatka = null, elementId = undefined }) {
-  const tytul = el("input.pole", { atrybuty: { type: "text", maxlength: LIMITY.tytul, required: true, value: notatka?.tytul ?? "" } });
+  const tytul = el("input.pole", { atrybuty: { type: "text", maxlength: LIMITY.tytul, value: notatka?.tytul ?? "" } });
   const tresc = el("textarea.pole", { atrybuty: { rows: "8", maxlength: LIMITY.tresc } });
   tresc.value = notatka?.tresc ?? "";
-  const kategoria = lista(KATEGORIE_NOTATEK, notatka?.kategoria ?? (elementId ? "miejsce" : "inne"));
 
   // Miejsce: notatka ogólna albo element dostępny dla użytkownika.
   const biezace = notatka ? notatka.elementId ?? null : elementId ?? null;
@@ -118,95 +104,35 @@ export function oknoNotatki({ stan, dane, sesja, notatka = null, elementId = und
     opcjeMiejsca.push([biezace, "(miejsce niedostępne na mapie)"]);
   }
   const miejsce = lista(opcjeMiejsca, biezace ?? "");
-  const { input: podpis, wezel: wezelPodpisu } = polePodpisu(stan, notatka?.podpis);
+
+  const [idListy, podpowiedzi] = listaPodpowiedzi(stan.notatki.map((n) => n.podpis));
+  const podpis = el("input.pole", {
+    atrybuty: { type: "text", maxlength: LIMITY.podpis, list: idListy, autocomplete: "off", value: notatka?.podpis ?? pamiecOdczyt(KLUCZ_PODPISU, "") }
+  });
 
   okno(
     notatka ? "EDYCJA NOTATKI" : "NOWA NOTATKA",
     [
-      pole("TYTUŁ", tytul),
+      pole("TYTUŁ (opcjonalnie)", tytul, "Bez tytułu zostanie nim początek treści."),
       pole("MIEJSCE NA MAPIE", miejsce),
-      pole("KATEGORIA", kategoria),
       pole("TREŚĆ", tresc),
-      wezelPodpisu
+      pole("PODPIS / POSTAĆ (opcjonalnie)", podpis, "Kto z drużyny to zapisał."),
+      podpowiedzi
     ],
     async () => {
       const wpis = {
         tytul: przytnij(tytul.value, LIMITY.tytul),
         tresc: String(tresc.value || "").slice(0, LIMITY.tresc),
-        kategoria: kategoria.value,
         elementId: miejsce.value || null,
         podpis: przytnij(podpis.value, LIMITY.podpis)
       };
-      if (!wpis.tytul && !wpis.tresc.trim()) throw bladUzytkownika("Wpisz tytuł albo treść notatki.");
+      if (!wpis.tytul && !wpis.tresc.trim()) throw bladUzytkownika("Wpisz treść albo tytuł notatki.");
       if (!wpis.tytul) wpis.tytul = wpis.tresc.trim().split("\n")[0].slice(0, 60);
       if (notatka) await dane.zmien("notatki", notatka.id, wpis, sesja);
       else await dane.dodaj("notatki", wpis, sesja);
-      zapamietajPodpis(wpis.podpis);
+      if (wpis.podpis) pamiecZapis(KLUCZ_PODPISU, wpis.podpis);
       komunikat(notatka ? "Zapisano zmiany w notatce." : "Dodano notatkę.", "ok");
-    }
-  );
-}
-
-export function oknoPostepu({ stan, dane, sesja, wpis = null }) {
-  const tytul = el("input.pole", { atrybuty: { type: "text", maxlength: LIMITY.tytul, required: true, value: wpis?.tytul ?? "" } });
-  const opis = el("textarea.pole", { atrybuty: { rows: "6", maxlength: LIMITY.tresc } });
-  opis.value = wpis?.opis ?? "";
-  const stanPola = lista(STANY_POSTEPU, wpis?.stan ?? "otwarte");
-  const { input: podpis, wezel: wezelPodpisu } = polePodpisu(stan, wpis?.podpis);
-  okno(
-    wpis ? "EDYCJA CELU" : "NOWY CEL / WĄTEK",
-    [pole("TYTUŁ", tytul), pole("STAN", stanPola), pole("OPIS", opis), wezelPodpisu],
-    async () => {
-      const dane_ = {
-        tytul: przytnij(tytul.value, LIMITY.tytul),
-        opis: String(opis.value || "").slice(0, LIMITY.tresc),
-        stan: stanPola.value,
-        podpis: przytnij(podpis.value, LIMITY.podpis)
-      };
-      if (!dane_.tytul) throw bladUzytkownika("Wpisz tytuł celu albo wątku.");
-      if (wpis) await dane.zmien("postep", wpis.id, dane_, sesja);
-      else await dane.dodaj("postep", dane_, sesja);
-      zapamietajPodpis(dane_.podpis);
-      komunikat(wpis ? "Zapisano zmiany." : "Dodano cel / wątek.", "ok");
-    }
-  );
-}
-
-export function oknoPowiazania({ stan, dane, sesja, wpis = null }) {
-  const nazwy = [
-    ...stan.elementyDlaUzytkownika().map((e) => e.nazwa),
-    ...stan.powiazania.flatMap((p) => [p.od, p.do])
-  ];
-  const [idListy, datalist] = listaPodpowiedzi(nazwy);
-  const od = el("input.pole", { atrybuty: { type: "text", maxlength: LIMITY.nazwaStrony, list: idListy, required: true, autocomplete: "off", value: wpis?.od ?? "" } });
-  const do_ = el("input.pole", { atrybuty: { type: "text", maxlength: LIMITY.nazwaStrony, list: idListy, required: true, autocomplete: "off", value: wpis?.do ?? "" } });
-  const rodzaj = lista(RODZAJE_POWIAZAN, wpis?.rodzaj ?? "niepewne");
-  const opis = el("textarea.pole", { atrybuty: { rows: "5", maxlength: LIMITY.tresc } });
-  opis.value = wpis?.opis ?? "";
-  const { input: podpis, wezel: wezelPodpisu } = polePodpisu(stan, wpis?.podpis);
-  okno(
-    wpis ? "EDYCJA POWIĄZANIA" : "NOWE POWIĄZANIE",
-    [
-      pole("KTO / CO", od, "Ród, postać, organizacja albo miejsce."),
-      pole("RODZAJ RELACJI", rodzaj),
-      pole("Z KIM / Z CZYM", do_),
-      pole("OPIS", opis),
-      wezelPodpisu,
-      datalist
-    ],
-    async () => {
-      const dane_ = {
-        od: przytnij(od.value, LIMITY.nazwaStrony),
-        do: przytnij(do_.value, LIMITY.nazwaStrony),
-        rodzaj: rodzaj.value,
-        opis: String(opis.value || "").slice(0, LIMITY.tresc),
-        podpis: przytnij(podpis.value, LIMITY.podpis)
-      };
-      if (!dane_.od || !dane_.do) throw bladUzytkownika("Wpisz obie strony powiązania.");
-      if (wpis) await dane.zmien("powiazania", wpis.id, dane_, sesja);
-      else await dane.dodaj("powiazania", dane_, sesja);
-      zapamietajPodpis(dane_.podpis);
-      komunikat(wpis ? "Zapisano zmiany." : "Dodano powiązanie.", "ok");
-    }
+    },
+    tresc
   );
 }

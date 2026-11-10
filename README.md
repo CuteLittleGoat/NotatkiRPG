@@ -27,17 +27,19 @@ w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glor
 ## Co potrafi
 
 * **Strona startowa** — wybór kampanii i logowanie.
-* **Mapy jako zakładki** — każda mapa to osobna zakładka. Admin decyduje, które
-  zakładki widzą gracze, i ustawia kolor ekranu (zielony albo bursztynowy) osobno
-  dla każdej mapy.
+* **Zakładki** — pierwsza jest **Notatki**, potem mapy (każda mapa to osobna
+  zakładka). **Każdą zakładkę admin może ukryć albo odsłonić graczom** polem wyboru
+  przy jej nazwie (widzi je tylko admin). Kolor ekranu (zielony albo bursztynowy)
+  admin ustawia osobno dla każdej mapy.
 * **Miejsca na mapie** — admin zaznacza przy miejscu pole „dostępne dla graczy”.
   Zaznaczone miejsce dostaje złote narożniki: można je kliknąć i robić przy nim
   notatki. Odznaczone wygląda jak zwykłe tło mapy (żeby nie zdradzać, że jest ważne).
+* **Czerwona kropka** w prawym górnym rogu złotej ramki — przy tym miejscu są
+  notatki. Widać ją tylko przy miejscach odsłoniętych przez admina.
 * **Indeks z boku mapy** z wyszukiwarką — gracz i gość widzą tylko to, co mają
   dostępne; admin widzi wszystko i ma przy każdym miejscu pole wyboru.
-* **Notatki** przy miejscach i ogólne, **postęp drużyny** (cele i wątki ze stanem),
-  **powiązania** (kto — z kim — jaka relacja; lista i prosty graf). Zmiany widać
-  u wszystkich od razu, bez odświeżania strony.
+* **Notatki** przy miejscach i ogólne. Etykieta notatki pokazuje miejsce, podpis,
+  datę i godzinę. Zmiany widać u wszystkich od razu, bez odświeżania strony.
 * **Kopia zapasowa bazy** do pliku CSV i **przywracanie** (tryb „Scal” albo „Zastąp”) — tylko admin.
 * **Telefon, tablet, komputer** — przesuwanie palcem, szczypanie, kółko myszy,
   obsługa klawiaturą; bez przewijania strony na boki.
@@ -68,9 +70,9 @@ korzystają tylko ze stron aplikacji (Twoja decyzja).
 
 | Kto | Może |
 |---|---|
-| bez logowania (gość) | tylko przeglądać: mapy, notatki, postęp, powiązania |
-| **gracz** (konto bez roli admina, dziś `Player2`) | przeglądać oraz dodawać, edytować i usuwać wpisy |
-| **admin** (`rola: "admin"` w `admins/{id}`, dziś `Player1`) | przeglądać wpisy (bez edycji), ustawiać widoczność map i miejsc oraz kolory, robić kopię zapasową i przywracać bazę |
+| bez logowania (gość) | tylko przeglądać: mapy i notatki |
+| **gracz** (konto bez roli admina, dziś `Player2`) | przeglądać oraz dodawać, edytować i usuwać notatki |
+| **admin** (`rola: "admin"` w `admins/{id}`, dziś `Player1`) | przeglądać notatki (bez edycji), ukrywać i odsłaniać zakładki i miejsca, ustawiać kolory, robić kopię zapasową i przywracać bazę |
 
 Gracze dzielą jedno konto, dlatego przy każdym wpisie jest pole **„podpis / postać”**.
 Logowanie trwa do zamknięcia karty przeglądarki (sesja w `sessionStorage`, bez hasła).
@@ -90,17 +92,20 @@ opisem i notatkami. Gracz ma tam przycisk „+ DODAJ NOTATKĘ”.
 Wyszukiwarka przeszukuje nazwy miejsc, dawne nazwy (aliasy), opisy i notatki —
 bez rozróżniania wielkości liter i polskich znaków.
 
-**Admin:** pola wyboru przy miejscach są w indeksie, w karcie miejsca i w
-zakładce ADMIN. Tam też: widoczność zakładek, kolory, „ZAZNACZ/ODZNACZ WSZYSTKIE”,
-„PRZYWRÓĆ DOMYŚLNE” (ustawienia z manifestu), kopia i przywracanie. Pole
-**PODGLĄD GRACZA** w nagłówku pokazuje mapy i indeks tak, jak widzą je gracze.
+**Admin:** przy każdej zakładce (w pasku na górze) jest pole wyboru —
+zaznaczone = zakładka widoczna dla graczy, odznaczone = ukryta (ukryte zakładki
+mają przerywaną ramkę i znak ⊘). To samo jest w zakładce ADMIN → „ZAKŁADKI”.
+Pola wyboru przy miejscach są w indeksie, w karcie miejsca i w zakładce ADMIN.
+Tam też: kolory, „ZAZNACZ/ODZNACZ WSZYSTKIE”, „PRZYWRÓĆ DOMYŚLNE” (ustawienia z
+manifestu), kopia i przywracanie. Pole **PODGLĄD GRACZA** w nagłówku pokazuje
+zakładki, mapy i indeks tak, jak widzą je gracze.
 
 ## Struktura repozytorium
 
 ```
 NotatkiRPG/
 ├── index.html                 strona startowa: wybór kampanii, logowanie
-├── kampania.html              strona kampanii (?k=iliac): mapy, notatki, postęp, powiązania, admin
+├── kampania.html              strona kampanii (?k=iliac): notatki, mapy, admin
 ├── kampanie.json              rejestr kampanii (id, nazwa, folder)
 ├── aplikacja/                 wspólny kod aplikacji
 │   ├── css/slate.css          wygląd Data-Slate (motywy zielony / bursztynowy)
@@ -110,7 +115,7 @@ NotatkiRPG/
 ├── kampanie/                  kampanie — każda w osobnym folderze
 │   ├── README.md              konwencja rysunków MG, nowa wersja mapy, nowa kampania
 │   └── Iliac/                 kampania „Kopiec Iliac” (manifest, mapy, rysunki MG)
-├── narzedzia/                 skrypty: przygotowanie map, złożenie strony, szablon kampanii
+├── narzedzia/                 skrypt przygotowania map, szablon kampanii
 ├── testy/                     testy automatyczne (jednostkowe, skryptów, reguł bazy, całej aplikacji)
 ├── dokumentacja/              materiały pomocnicze (Kod_Wzoru.txt — wzór klikalnej mapy)
 ├── .github/workflows/         testy uruchamiane po każdej zmianie na main
@@ -123,12 +128,12 @@ Moduły w `aplikacja/js/`:
 | Plik | Za co odpowiada |
 |---|---|
 | `firebase.js` | jedyne miejsce ładowania Firebase 13.2.0 (wszystkie moduły w tej samej wersji) i uruchomienia App Check |
-| `konfiguracja.js` | nazwy kolekcji, motywy, kategorie, stany, rodzaje relacji |
+| `konfiguracja.js` | nazwy kolekcji, motywy, zakładki stałe (`ZAKLADKI_STALE` — nowa zakładka = nowy wpis tutaj) |
 | `sesja.js`, `logowanie.js` | sesja i logowanie (kolekcje `secrets`, `admins`) |
 | `dane.js`, `stan.js` | odczyt/zapis w Firestore na żywo; wspólny stan strony i ustawienia domyślne |
 | `mapa.js` | wczytanie mapy SVG, przesuwanie i przybliżanie (mysz, dotyk, klawiatura) |
 | `indeks.js`, `panel.js` | indeks z wyszukiwarką; karta miejsca |
-| `notatki.js`, `postep.js`, `powiazania.js`, `karty.js`, `formularze.js` | zakładki z wpisami, karty wpisów, okna formularzy |
+| `notatki.js`, `karty.js`, `formularze.js` | zakładka „Notatki”, karta notatki, okno formularza notatki |
 | `admin.js`, `kopia.js`, `kopia-format.js` | panel admina; kopia i przywracanie; format pliku CSV |
 | `kampania.js`, `uruchom-kampanie.js`, `start.js` | złożenie strony kampanii; strona startowa |
 | `narzedzia.js` | drobne narzędzia (tworzenie elementów przez `textContent`, daty, komunikaty) |
@@ -154,14 +159,14 @@ Dane każdej kampanii są osobno, pod jej identyfikatorem (dla Iliac: `iliac`):
 | Ścieżka | Pola |
 |---|---|
 | `kampanie/{kampaniaId}` | `nazwa`, `utworzono` — tworzy go aplikacja przy pierwszym zapisie |
-| `…/notatki/{id}` | `elementId` (id miejsca albo `null` = notatka ogólna), `tytul`, `tresc`, `kategoria`, `podpis`, `kontoId`, `utworzono`, `zmieniono`, `kontoIdZmiany` |
-| `…/postep/{id}` | `tytul`, `opis`, `stan` (`otwarte` / `w-toku` / `zamkniete`), `podpis`, `kontoId`, znaczniki czasu |
-| `…/powiazania/{id}` | `od`, `do`, `rodzaj` (`sojusz`, `wrogosc`, `dlug`, `malzenstwo`, `zaleznosc`, `niepewne`, `inne`), `opis`, `podpis`, `kontoId`, znaczniki czasu |
-| `…/ustawienia/mapy` | ustawienia admina: `mapy.{mapaId}.widoczna`, `mapy.{mapaId}.kolor`, `elementy.{elementId}` (true/false), `kolor` (ekran poza mapami) |
+| `…/notatki/{id}` | `elementId` (id miejsca albo `null` = notatka ogólna), `tytul`, `tresc`, `podpis`, `kontoId`, `utworzono`, `zmieniono`, `kontoIdZmiany` (starsze notatki mogą mieć jeszcze pole `kategoria` — aplikacja go już nie używa) |
+| `…/ustawienia/mapy` | ustawienia admina: `zakladki.{id}` (widoczność zakładek innych niż mapy, np. `notatki`), `mapy.{mapaId}.widoczna`, `mapy.{mapaId}.kolor`, `elementy.{elementId}` (true/false), `kolor` (ekran poza mapami) |
 
-Brak wpisu w `ustawienia/mapy` = ustawienie domyślne z manifestu kampanii
-(`widocznaDomyslnie`, `dostepnyDomyslnie`, `kolor`). Kolekcji `admins` i
-`secrets` aplikacja nie zmienia (wyjątek: przywracanie kopii, która je zawiera).
+Brak wpisu w `ustawienia/mapy` = ustawienie domyślne (z manifestu kampanii:
+`widocznaDomyslnie`, `dostepnyDomyslnie`, `kolor`; zakładka Notatki — widoczna).
+Kolekcje `admins` i `secrets` aplikacja tylko czyta. Zakładki Postęp i Powiązania
+zostały usunięte — jeśli zostały po nich wpisy w bazie (`kampanie/iliac/postep`,
+`…/powiazania`), aplikacja ich nie używa; można je usunąć w konsoli Firebase.
 
 ## Kopia zapasowa i przywracanie
 
@@ -173,7 +178,7 @@ zakres). Znaczniki czasu i inne typy spoza JSON są zapisane jawnie, np.
 
 **Zakres:** przeglądarka nie umie wylistować kolekcji, więc kopia obejmuje
 kolekcje znane aplikacji: `kampanie/{id}` wszystkich kampanii z `kampanie.json`
-(z podkolekcjami `notatki`, `postep`, `powiazania`, `ustawienia`) i `admins`.
+(z podkolekcjami `notatki` i `ustawienia`) i `admins`.
 **Kolekcja `secrets` domyślnie NIE trafia do kopii.** Admin może ją dołączyć
 zaznaczeniem pola — wtedy plik zawiera hasła zwykłym tekstem (nie wysyłaj go
 nikomu i nie wrzucaj do repozytorium; `.gitignore` blokuje takie pliki).
@@ -197,7 +202,7 @@ nikomu i nie wrzucaj do repozytorium; `.gitignore` blokuje takie pliki).
 
 **Co chroni bazę teraz:**
 
-1. **Reguły bazy** (`firebase/firestore.rules`, wersja 2): dostępne są tylko kolekcje
+1. **Reguły bazy** (`firebase/firestore.rules`, wersja 3): dostępne są tylko kolekcje
    aplikacji, zapisy muszą mieć właściwe pola i długość tekstów, a **konta (`admins`,
    `secrets`) są tylko do odczytu** — nikt nie zmieni haseł ani ról przez aplikację
    ani poza nią. Reguły sprawdzono testami w emulatorze bazy (`testy/reguly/`).
@@ -240,8 +245,10 @@ Przyjęte na tym etapie — każdą można zmienić:
 
 1. **Publikacja:** GitHub Pages wprost z gałęzi `main` (Deploy from a branch).
    Repozytorium publiczne, rysunki MG w repozytorium — aplikacja z nich nie korzysta.
-2. **Reguły bazy (wersja 2):** zapis tylko tam i tylko w takim kształcie, jakiego
+2. **Reguły bazy (wersja 3):** zapis tylko tam i tylko w takim kształcie, jakiego
    używa aplikacja; konta tylko do odczytu, więc **przywracanie kopii pomija konta**.
+   Wersja 3 dodaje widoczność zakładek (`zakladki`) i blokuje usunięte zakładki
+   Postęp i Powiązania.
 3. **Mapy:** dwie zakładki — **Okolice** (panel A rysunku; domyślnie widoczna) i
    **Kopiec** (panel B; domyślnie ukryta). Przekrój (panel C) pominięty — to materiał MG.
    Każda mapa to osobny plik SVG (zamiast jednego pliku z widokami), bo admin może
@@ -268,6 +275,14 @@ Przyjęte na tym etapie — każdą można zmienić:
     `firebase/firebase-config.js`); na komputerze lokalnym — token debugowania.
     Informacja o reCAPTCHA (wymagana przez Google, bo znaczek reCAPTCHA jest
     niewidoczny) jest w stopce stron.
+13. **Zakładki:** tylko **Notatki** (pierwsza i domyślna) oraz mapy. Zakładki Postęp
+    i Powiązania (z grafem) oraz pole „Kategoria” w notatkach usunięte (Twoja prośba).
+    Każdą zakładkę admin ukrywa albo odsłania polem wyboru przy jej nazwie.
+14. **Czerwona kropka** przy miejscu z notatkami — tylko gdy miejsce jest odsłonięte
+    dla graczy; w podglądzie admina zasada jest ta sama (kropka nie zdradza
+    ukrytych miejsc).
+15. **Formularz notatki:** kursor od razu w polu „Treść”; tytuł jest opcjonalny —
+    jeśli pusty, aplikacja bierze pierwszą linię treści.
 
 ## Testy — co sprawdzono, a czego nie
 
@@ -280,14 +295,17 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   przy śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), raport
   nowych i brakujących miejsc; mapy graczy wszystkich kampanii bez śladów materiału MG.
 * **Reguły bazy w emulatorze Firestore** (24): każdy zapis i odczyt aplikacji
-  (logowanie, notatki, postęp, powiązania, ustawienia admina, kopia i przywracanie)
-  przechodzi; obce pola, za długie teksty, nieznane kolekcje i każda zmiana kont są
-  odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
-* **Cała aplikacja w przeglądarce** (Chromium, 54 kroki) na **udawanym Firebase**:
-  role (gość/gracz/admin), logowanie i ogólny komunikat błędu, notatki (dodanie,
-  edycja, usunięcie z potwierdzeniem, notatka ogólna), postęp, powiązania z grafem,
-  zmiany na żywo w drugiej karcie, checkboxy admina działające na żywo u gracza,
-  ukrywanie zakładki i kolor bursztynowy, „podgląd gracza”, status App Check w
+  (logowanie, notatki — także starsze z polem `kategoria`, ustawienia admina z
+  widocznością zakładek, kopia i przywracanie) przechodzi; obce pola, za długie
+  teksty, nieznane kolekcje (w tym usunięte `postep` i `powiazania`) i każda zmiana
+  kont są odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
+* **Cała aplikacja w przeglądarce** (Chromium, 55 kroków) na **udawanym Firebase**:
+  role (gość/gracz/admin), logowanie i ogólny komunikat błędu, Notatki jako pierwsza
+  zakładka, notatki (dodanie z kursorem w „Treści”, etykieta z nazwą miejsca,
+  edycja, usunięcie z potwierdzeniem, notatka ogólna), czerwona kropka (pojawia się
+  i znika razem z dostępnością miejsca), zmiany na żywo w drugiej karcie, checkboxy
+  admina działające na żywo u gracza, ukrywanie i odsłanianie każdej zakładki (także
+  Notatek) i kolor bursztynowy, „podgląd gracza”, status App Check w
   panelu admina, kopia CSV (z `secrets` i bez), przywracanie „Scal” i „Zastąp” (z
   kopią bezpieczeństwa, z pominięciem kont), odporność na wstrzyknięcie HTML w
   notatce, klawiatura, komunikat przy odmowie dostępu; **telefony (iPhone 13,
@@ -301,9 +319,9 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
 
 **Czego nie dało się sprawdzić** (i jak to zrobić ręcznie):
 
-* **Działania App Check na stronie w internecie** — klucz reCAPTCHA działa tylko pod
-  adresem `cutelittlegoat.github.io`, a strona nie jest jeszcze opublikowana. Po
-  publikacji: zakładka ADMIN → ZABEZPIECZENIA ma pokazać „Działa”; potem wykres w
+* **Działania App Check w testach automatycznych** — klucz reCAPTCHA działa tylko
+  pod adresem `cutelittlegoat.github.io`, więc sprawdza się go na opublikowanej
+  stronie: zakładka ADMIN → ZABEZPIECZENIA ma pokazać „Działa”; potem wykres w
   konsoli Firebase (App Check → Cloud Firestore) — żądania „zweryfikowane”.
 * **Zapisu i odczytu w prawdziwej bazie** (nie zapisuję nic w Twojej bazie). Po
   opublikowaniu reguł i strony:
