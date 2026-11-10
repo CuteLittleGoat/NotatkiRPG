@@ -2,6 +2,7 @@
 // ZASADA: treść wpisów (notatki, opisy, podpisy) trafia na stronę WYŁĄCZNIE
 // przez textContent — nigdy przez innerHTML. Przy otwartych regułach bazy każdy
 // może zapisać do niej dowolny tekst, także fragment kodu HTML.
+import { KLUCZ_LOGU } from "./konfiguracja.js";
 
 /**
  * Tworzy element DOM.
@@ -139,16 +140,66 @@ export function opisBledu(blad) {
   return `Błąd bazy danych${kod ? ` (${kod})` : ""}. Spróbuj ponownie.`;
 }
 
+// ---------------------------------------------------------------- komunikaty i log
+// Krótkie komunikaty na dole ekranu. Najwyżej dwa naraz — nowe wypierają starsze,
+// żeby przy szybkim „przeklikiwaniu” nie zasłoniły ekranu.
+// Admin ma LOG (zakładka Admin): wszystkie komunikaty zapisują się w sessionStorage
+// (znikają po wylogowaniu albo zamknięciu przeglądarki), a na ekranie pokazują się
+// tylko błędy.
 let pojemnikKomunikatow = null;
+const NAJWIECEJ_NA_EKRANIE = 2;
+const LIMIT_LOGU = 300;
+const ZDARZENIE_LOGU = "notatkirpg-log";
+let trybKomunikatow = { log: false, tylkoBledyNaEkranie: false };
+let pamiecLogu = []; // gdy sessionStorage jest niedostępny — log do odświeżenia strony
 
-/** Krótki komunikat na dole ekranu. rodzaj: "info" | "blad" | "ok". */
+/**
+ * @param {{log?: boolean, tylkoBledyNaEkranie?: boolean}} tryb log — zapisuj komunikaty
+ *   w logu; tylkoBledyNaEkranie — potwierdzenia tylko w logu, na ekranie same błędy
+ */
+export function ustawTrybKomunikatow({ log = false, tylkoBledyNaEkranie = false } = {}) {
+  trybKomunikatow = { log, tylkoBledyNaEkranie };
+}
+
+/** Wpisy logu od najstarszego: [{ c: czas w ms, r: rodzaj, t: tekst }]. */
+export function wpisyLogu() {
+  try {
+    const lista = JSON.parse(sessionStorage.getItem(KLUCZ_LOGU) || "[]");
+    return Array.isArray(lista) ? lista.filter((w) => w && typeof w.t === "string") : [];
+  } catch {
+    return pamiecLogu;
+  }
+}
+
+function zapiszLog(lista) {
+  pamiecLogu = lista;
+  try {
+    sessionStorage.setItem(KLUCZ_LOGU, JSON.stringify(lista));
+  } catch {
+    /* zostaje w pamięci strony */
+  }
+  window.dispatchEvent(new CustomEvent(ZDARZENIE_LOGU));
+}
+
+export function wyczyscLog() {
+  zapiszLog([]);
+}
+
+export function naZmianeLogu(funkcja) {
+  window.addEventListener(ZDARZENIE_LOGU, funkcja);
+}
+
+/** Komunikat. rodzaj: "info" | "blad" | "ok". */
 export function komunikat(tekst, rodzaj = "info", czas = 5000) {
+  if (trybKomunikatow.log) zapiszLog([...wpisyLogu(), { c: Date.now(), r: rodzaj, t: String(tekst).slice(0, 600) }].slice(-LIMIT_LOGU));
+  if (trybKomunikatow.tylkoBledyNaEkranie && rodzaj !== "blad") return;
   if (!pojemnikKomunikatow) {
     pojemnikKomunikatow = el("div.komunikaty", { atrybuty: { "aria-live": "polite", role: "status" } });
     document.body.append(pojemnikKomunikatow);
   }
   const wpis = el("div.komunikat", { klasa: `komunikat-${rodzaj}`, tekst });
   pojemnikKomunikatow.append(wpis);
+  while (pojemnikKomunikatow.children.length > NAJWIECEJ_NA_EKRANIE) pojemnikKomunikatow.firstElementChild.remove();
   setTimeout(() => wpis.remove(), czas);
 }
 

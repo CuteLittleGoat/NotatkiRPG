@@ -1,13 +1,15 @@
-// Zakładka „Admin”: widoczność zakładek, dostępność miejsc dla graczy,
-// kolory ekranu, kopia zapasowa i przywracanie bazy.
+// Zakładka „Admin”: widoczność kampanii i zakładek, dostępność miejsc dla graczy,
+// kolory ekranu, kopia zapasowa i przywracanie bazy, LOG komunikatów.
 // Admin NIE edytuje wpisów graczy — tylko je przegląda (rozdz. 3 polecenia).
 import { MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
-import { el, komunikat, opisBledu, potwierdz, wyczysc } from "./narzedzia.js";
+import { el, komunikat, naZmianeLogu, opisBledu, potwierdz, wpisyLogu, wyczysc, wyczyscLog } from "./narzedzia.js";
+import { zapiszWidocznoscKampanii } from "./dane.js";
 import { pobierzKopie, przeanalizujPlik, przywroc } from "./kopia.js";
 import { sprawdzAppCheck } from "./firebase.js";
 import { BladKopii } from "./kopia-format.js";
 
 const NAZWY_KOLOROW = { zielony: "zielony", bursztynowy: "bursztynowy" };
+const FORMAT_CZASU = new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 export class WidokAdmina {
   /**
@@ -41,12 +43,33 @@ export class WidokAdmina {
 
   zbuduj() {
     const { stan } = this.opcje;
-    const tresc = el("div.tresc-widoku");
+    const tresc = el("div.tresc-widoku.admin-tresc");
     tresc.append(el("div.widok-naglowek", [el("h2", { tekst: "⚙ PANEL ADMINA" })]));
     tresc.append(
       el("p.przygaszony", {
-        tekst: "Admin przegląda wpisy graczy, ale ich nie edytuje. Tutaj decydujesz, co gracze widzą na mapach, i robisz kopie zapasowe bazy."
+        tekst: "Admin przegląda wpisy graczy, ale ich nie edytuje. Tutaj decydujesz, co gracze widzą, i robisz kopie zapasowe bazy."
       })
+    );
+    // Sekcje ustawień, obok (na wąskim ekranie: u dołu) — LOG komunikatów.
+    const sekcje = el("div.admin-sekcje");
+
+    // ---- kampania ----
+    const nazwaKampanii = stan.kampania.nazwa || stan.kampania.id;
+    this.poleKampanii = el("input.przelacznik", {
+      atrybuty: { type: "checkbox", id: "admin-kampania", "aria-label": `Kampania ${nazwaKampanii} widoczna dla graczy` }
+    });
+    this.poleKampanii.addEventListener("change", () => this.przelaczKampanie(this.poleKampanii.checked));
+    sekcje.append(
+      el("section.panel-ramka", [
+        el("h3.sekcja-tytul", { tekst: "KAMPANIA — WIDOCZNA DLA GRACZY" }),
+        el("label.przelacznik-etykieta", { atrybuty: { for: "admin-kampania" } }, [
+          this.poleKampanii,
+          el("span", { tekst: `„${nazwaKampanii}” na liście kampanii Skryby i Gracza` })
+        ]),
+        el("p.przygaszony", {
+          tekst: "Odznaczona kampania znika graczom z listy na stronie startowej, a kto ją właśnie ogląda, zobaczy informację, że jest niedostępna. To samo pole jest przy kampanii na liście „WYBIERZ KAMPANIĘ”."
+        })
+      ])
     );
 
     // ---- zakładki ----
@@ -61,7 +84,7 @@ export class WidokAdmina {
     };
     for (const z of ZAKLADKI_STALE) dodajZakladke(z.id, z.nazwa, (w) => ({ zakladki: { [z.id]: w } }));
     for (const mapa of stan.manifest.mapy || []) dodajZakladke(`mapa-${mapa.id}`, mapa.nazwa, (w) => ({ mapy: { [mapa.id]: { widoczna: w } } }));
-    tresc.append(
+    sekcje.append(
       el("section.panel-ramka", [
         el("h3.sekcja-tytul", { tekst: "ZAKŁADKI — WIDOCZNE DLA GRACZY" }),
         el("p.przygaszony", {
@@ -77,30 +100,39 @@ export class WidokAdmina {
       el("p.przygaszony", { tekst: "Dostępność miejsc zmienisz też w indeksie obok mapy (pola wyboru) albo w karcie miejsca." })
     ]);
     this.kolorKampanii = this.listaKolorow(stan.kolorKampanii());
-    this.kolorKampanii.addEventListener("change", () => this.zapisz({ kolor: this.kolorKampanii.value }, "Zmieniono kolor ekranu."));
+    this.kolorKampanii.addEventListener("change", () =>
+      this.zapisz({ kolor: this.kolorKampanii.value }, `Kolor ekranu poza mapami: ${NAZWY_KOLOROW[this.kolorKampanii.value] || this.kolorKampanii.value}.`)
+    );
     sekcjaMap.append(el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor ekranu poza mapami:" }), this.kolorKampanii]));
 
     for (const mapa of stan.manifest.mapy || []) {
       const kolor = this.listaKolorow(stan.kolorMapy(mapa));
       kolor.setAttribute("aria-label", `Kolor mapy ${mapa.nazwa}`);
-      kolor.addEventListener("change", () => this.zapisz({ mapy: { [mapa.id]: { kolor: kolor.value } } }, `Zmieniono kolor mapy „${mapa.nazwa}”.`));
+      kolor.addEventListener("change", () =>
+        this.zapisz({ mapy: { [mapa.id]: { kolor: kolor.value } } }, `Kolor mapy „${mapa.nazwa}”: ${NAZWY_KOLOROW[kolor.value] || kolor.value}.`)
+      );
       this.pola.kolory.set(mapa.id, kolor);
 
       const elementy = (stan.manifest.elementy || []).filter((e) => e.mapa === mapa.id);
       const ustawWszystkie = (wartosc) =>
-        this.zapisz({ elementy: Object.fromEntries(elementy.map((e) => [e.id, wartosc])) }, wartosc ? "Zaznaczono wszystkie miejsca." : "Odznaczono wszystkie miejsca.");
+        this.zapisz(
+          { elementy: Object.fromEntries(elementy.map((e) => [e.id, wartosc])) },
+          wartosc ? `Zaznaczono wszystkie miejsca na mapie „${mapa.nazwa}”.` : `Odznaczono wszystkie miejsca na mapie „${mapa.nazwa}”.`
+        );
       const domyslne = async () => {
         const ok = await potwierdz(`Przywrócić ustawienia mapy „${mapa.nazwa}” z manifestu (widoczność zakładki, kolor i dostępność miejsc)?`);
         if (!ok) return;
         this.zapisz(
           { mapy: { [mapa.id]: null }, elementy: Object.fromEntries(elementy.map((e) => [e.id, null])) },
-          "Przywrócono ustawienia domyślne."
+          `Przywrócono ustawienia domyślne mapy „${mapa.nazwa}”.`
         );
       };
       const lista = el("ul.lista-elementow");
       for (const e of elementy) {
         const pole = el("input.przelacznik", { atrybuty: { type: "checkbox", id: `admin-el-${e.id}` } });
-        pole.addEventListener("change", () => this.zapisz({ elementy: { [e.id]: pole.checked } }));
+        pole.addEventListener("change", () =>
+          this.zapisz({ elementy: { [e.id]: pole.checked } }, pole.checked ? `Miejsce „${e.nazwa}” dostępne dla graczy.` : `Miejsce „${e.nazwa}” ukryte przed graczami.`)
+        );
         this.pola.elementy.set(e.id, pole);
         lista.append(el("li", [el("label.przelacznik-etykieta", { atrybuty: { for: `admin-el-${e.id}` } }, [pole, el("span", { tekst: e.nazwa })])]));
       }
@@ -118,14 +150,14 @@ export class WidokAdmina {
         ])
       );
     }
-    tresc.append(sekcjaMap);
+    sekcje.append(sekcjaMap);
 
     // ---- kopia zapasowa ----
     this.zSecrets = el("input.przelacznik", { atrybuty: { type: "checkbox", id: "kopia-secrets" } });
     this.statusKopii = el("p.przygaszony", { atrybuty: { "aria-live": "polite" } });
     const przyciskKopii = el("button.przycisk.przycisk-glowny", { tekst: "POBIERZ KOPIĘ (CSV)", atrybuty: { type: "button", id: "przycisk-kopii" } });
     przyciskKopii.addEventListener("click", () => this.wykonajKopie(przyciskKopii));
-    tresc.append(
+    sekcje.append(
       el("section.panel-ramka", [
         el("h3.sekcja-tytul", { tekst: "KOPIA ZAPASOWA" }),
         el("p", { tekst: "Kopia obejmuje dane wszystkich kampanii z rejestru (notatki i ustawienia map) oraz kolekcję admins." }),
@@ -151,7 +183,7 @@ export class WidokAdmina {
     this.przyciskPrzywroc = el("button.przycisk.przycisk-niebezpieczny", { tekst: "PRZYWRÓĆ", atrybuty: { type: "button", disabled: true, id: "przycisk-przywroc" } });
     this.przyciskPrzywroc.addEventListener("click", () => this.wykonajPrzywracanie());
     this.dziennik = el("pre.dziennik", { atrybuty: { "aria-live": "polite", hidden: true } });
-    tresc.append(
+    sekcje.append(
       el("section.panel-ramka", [
         el("h3.sekcja-tytul", { tekst: "PRZYWRACANIE Z KOPII" }),
         el("p", { tekst: "1. Wybierz plik kopii. 2. Sprawdź podgląd. 3. Wybierz tryb. Przed przywróceniem aplikacja sama pobierze świeżą kopię obecnego stanu bazy." }),
@@ -178,7 +210,7 @@ export class WidokAdmina {
       atrybuty: { type: "button" },
       zdarzenia: { click: () => this.sprawdzZabezpieczenie() }
     });
-    tresc.append(
+    sekcje.append(
       el("section.panel-ramka", [
         el("h3.sekcja-tytul", { tekst: "ZABEZPIECZENIA" }),
         el("p", { tekst: "App Check — czy ta strona dostała od Google przepustkę do bazy:" }),
@@ -190,12 +222,61 @@ export class WidokAdmina {
         }),
         el("p.przygaszony", {
           tekst:
-            "Reguły bazy pozwalają tylko na zapisy, których używa aplikacja, a konta (admins, secrets) są tylko do odczytu. Nadal jednak baza nie wie, kto pyta: role gracz/admin działają w wyglądzie aplikacji, a hasła z kolekcji secrets da się podejrzeć. Szczegóły: README.md."
+            "Reguły bazy pozwalają tylko na zapisy, których używa aplikacja, a konta (admins, secrets) są tylko do odczytu. Nadal jednak baza nie wie, kto pyta: profile Admin, Skryba i Gracz działają w wyglądzie aplikacji, a hasła z kolekcji secrets da się podejrzeć. Szczegóły: README.md."
         })
       ])
     );
     this.sprawdzZabezpieczenie();
+    tresc.append(el("div.admin-uklad", [sekcje, this.zbudujLog()]));
     this.kontener.append(tresc);
+  }
+
+  // ---- log komunikatów ----
+  zbudujLog() {
+    this.logLista = el("ol.log-lista", { atrybuty: { "aria-label": "Log komunikatów, od najnowszego", tabindex: "0" } });
+    const przyciskCzyszczenia = el("button.przycisk.przycisk-maly", {
+      tekst: "WYCZYŚĆ",
+      atrybuty: { type: "button", id: "przycisk-czysc-log" },
+      zdarzenia: { click: () => wyczyscLog() }
+    });
+    naZmianeLogu(() => this.renderLogu());
+    this.renderLogu();
+    return el("aside.panel-ramka.admin-log", { atrybuty: { id: "admin-log", "aria-label": "Log" } }, [
+      el("div.log-naglowek", [el("h3.sekcja-tytul", { tekst: "LOG" }), przyciskCzyszczenia]),
+      this.logLista
+    ]);
+  }
+
+  renderLogu() {
+    const wpisy = wpisyLogu();
+    wyczysc(this.logLista);
+    if (!wpisy.length) {
+      this.logLista.append(
+        el("li.log-pusto", { tekst: "Brak komunikatów. Tu zapisują się potwierdzenia Twoich zmian; log znika po wylogowaniu albo zamknięciu przeglądarki." })
+      );
+      return;
+    }
+    for (const w of [...wpisy].reverse()) {
+      const czas = Number.isFinite(w.c) ? new Date(w.c) : null;
+      this.logLista.append(
+        el("li.log-wpis", { klasa: `log-${w.r === "blad" ? "blad" : w.r === "ok" ? "ok" : "info"}` }, [
+          czas ? el("time.log-czas", { tekst: FORMAT_CZASU.format(czas), atrybuty: { datetime: czas.toISOString() } }) : null,
+          el("span.log-tekst", { tekst: w.t })
+        ])
+      );
+    }
+  }
+
+  async przelaczKampanie(widoczna) {
+    const { stan } = this.opcje;
+    const nazwa = stan.kampania.nazwa || stan.kampania.id;
+    try {
+      await zapiszWidocznoscKampanii(stan.kampania, widoczna, stan.sesja);
+      komunikat(widoczna ? `Kampania „${nazwa}” widoczna dla graczy.` : `Kampania „${nazwa}” ukryta przed graczami.`, "ok");
+    } catch (e) {
+      komunikat(opisBledu(e), "blad", 8000);
+      this.render();
+    }
   }
 
   async sprawdzZabezpieczenie() {
@@ -218,6 +299,7 @@ export class WidokAdmina {
   /** Odświeża stan pól (bez przebudowy — nie gubimy fokusu). */
   render() {
     const { stan } = this.opcje;
+    this.poleKampanii.checked = stan.kampaniaWidocznaDlaGraczy();
     this.kolorKampanii.value = stan.kolorKampanii();
     for (const z of ZAKLADKI_STALE) this.pola.zakladki.get(z.id).checked = stan.zakladkaWidocznaDlaGraczy(z.id);
     for (const mapa of stan.manifest.mapy || []) {
@@ -242,6 +324,7 @@ export class WidokAdmina {
     try {
       const wynik = await pobierzKopie({ kampanie: this.kampanieZRejestru(), zSecrets: this.zSecrets.checked }, (t) => (this.statusKopii.textContent = t));
       this.statusKopii.textContent = `Pobrano plik ${wynik.nazwa} (${wynik.liczba} dokumentów).`;
+      komunikat(`Pobrano kopię zapasową: ${wynik.nazwa} (${wynik.liczba} dokumentów).`, "ok");
     } catch (e) {
       this.statusKopii.textContent = e instanceof BladKopii ? e.message : opisBledu(e);
     } finally {

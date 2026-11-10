@@ -18,9 +18,11 @@ const WYNIKI = path.join(__dirname, "wyniki");
 fs.mkdirSync(WYNIKI, { recursive: true });
 
 // Konta TESTOWE — wymyślone na potrzeby testów, nie mają nic wspólnego z prawdziwymi.
+// Profile: Admin (rola w admins), Skryba (DisplayName „Skryba” — pisze notatki), Gracz (tylko czyta).
 const KONTA = {
-  "secrets/Player1": { PlayerName: "test-admin", PlayerPassword: "haslo-admina" },
-  "secrets/Player2": { PlayerName: "test-gracz", PlayerPassword: "haslo-gracza" },
+  "secrets/Player1": { PlayerName: "test-admin", PlayerPassword: "haslo-admina", DisplayName: "Admin" },
+  "secrets/Player2": { PlayerName: "test-skryba", PlayerPassword: "haslo-skryby", DisplayName: "Skryba" },
+  "secrets/Player3": { PlayerName: "test-gracz", PlayerPassword: "haslo-gracza", DisplayName: "Gracz" },
   "admins/Player1": { rola: "admin" }
 };
 const NOTATKI_STARTOWE = {
@@ -29,6 +31,11 @@ const NOTATKI_STARTOWE = {
   // notatka o miejscu, które jest domyślnie niedostępne dla graczy
   "kampanie/iliac/notatki/ukryta": { elementId: "brassyl", tytul: "Notatka z ukrytego miejsca", tresc: "tekst", kategoria: "miejsce", podpis: "Ola", kontoId: "Player2" }
 };
+// Rejestr kampanii w teście: prawdziwy + druga, domyślnie ukryta kampania próbna.
+const REJESTR = JSON.parse(fs.readFileSync(path.join(KORZEN, "kampanie.json"), "utf8"));
+REJESTR.kampanie.push({ id: "proba", nazwa: "Kampania próbna", folder: "kampanie/Iliac" });
+const POLE_ILIAC = '#kampanie input[aria-label="Kampania Kopiec Iliac widoczna dla graczy"]';
+const POLE_PROBNEJ = '#kampanie input[aria-label="Kampania Kampania próbna widoczna dla graczy"]';
 
 const wyniki = [];
 async function krok(nazwa, funkcja) {
@@ -56,6 +63,7 @@ async function nowyKontekst(przegladarka, opcje = {}) {
   await ctx.route("https://www.gstatic.com/firebasejs/13.2.0/firebase-app-check.js", (r) =>
     r.fulfill({ contentType: "text/javascript", body: fs.readFileSync(path.join(FALSZYWY, "firebase-app-check.js"), "utf8") })
   );
+  await ctx.route(/\/kampanie\.json(\?.*)?$/, (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(REJESTR) }));
   // Nic nie może wyjść do prawdziwych usług Google (reCAPTCHA, App Check, Firestore).
   await ctx.route(/(google\.com\/recaptcha|firebaseappcheck\.googleapis\.com|firestore\.googleapis\.com)/, (r) => r.abort());
   if (!process.env.CZCIONKI) {
@@ -77,12 +85,18 @@ async function nowaStrona(ctx, bledy) {
   return strona;
 }
 
+// Logowanie na stronie startowej (bez logowania aplikacja niczego nie pokazuje).
 async function zaloguj(strona, login, haslo) {
-  await strona.click("#konto button:has-text('ZALOGUJ')");
-  await strona.fill("dialog input[name=login]", login);
-  await strona.fill("dialog input[name=haslo]", haslo);
-  await strona.click("dialog button[type=submit]");
-  await strona.waitForSelector("dialog", { state: "detached" });
+  await strona.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
+  await strona.fill("input[name=login]", login);
+  await strona.fill("input[name=haslo]", haslo);
+  await strona.click("button[type=submit]");
+  await strona.waitForSelector("#sekcja-kampanii:not([hidden])");
+}
+
+async function wyloguj(strona) {
+  await strona.click("#konto button:has-text('WYLOGUJ')");
+  await strona.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
 }
 
 async function bezPrzewijaniaWBok(strona) {
@@ -101,12 +115,22 @@ async function bezPrzewijaniaWBok(strona) {
   const ctx = await nowyKontekst(przegladarka);
   const s = await nowaStrona(ctx, bledy);
 
-  await krok("strona startowa: lista kampanii", async () => {
+  await krok("bez logowania: strona startowa pokazuje tylko logowanie — bez nazw kampanii", async () => {
     await s.goto(`${ADRES}/index.html`);
-    await s.waitForSelector("a.kampania");
-    const tekst = await s.textContent("#kampanie");
-    zalozenie(tekst.includes("KOPIEC ILIAC"), "brak kampanii Iliac");
+    await s.waitForSelector("#sekcja-logowania input[name=login]");
+    zalozenie(await s.$eval("#sekcja-kampanii", (x) => x.hidden), "lista kampanii widoczna bez logowania");
+    const tekst = await s.textContent("body");
+    zalozenie(!/iliac|próbna/i.test(tekst), "nazwa kampanii widoczna bez logowania");
+    zalozenie(!/reCAPTCHA/i.test(tekst), "w stopce nadal jest napis o reCAPTCHA");
     await s.screenshot({ path: path.join(WYNIKI, "01_start.png") });
+  });
+
+  await krok("bez logowania: strona kampanii przekierowuje do logowania (bez nazwy i map)", async () => {
+    await s.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
+    await s.waitForURL(/index\.html\?k=iliac#okolice$/);
+    await s.waitForSelector("#sekcja-logowania input[name=login]");
+    zalozenie((await s.$$(".plansza")).length === 0, "mapa wczytana bez logowania");
+    zalozenie(!/iliac/i.test(await s.textContent("body")), "nazwa kampanii widoczna bez logowania");
   });
 
   await krok("logowanie: złe hasło → ogólny komunikat", async () => {
@@ -127,21 +151,57 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(t.includes("Nieprawidłowy login lub hasło"), `zły komunikat: ${t}`);
   });
 
-  await krok("gość: Notatki jako pierwsza i domyślna zakładka, potem Okolice; bez Kopca, Admina, Postępu i Powiązań", async () => {
+  // ---- gracz (tylko czyta)
+  await krok("gracz: po zalogowaniu wraca do kampanii z odnośnika; u góry login, u dołu DisplayName", async () => {
+    await s.fill("input[name=login]", "test-gracz");
+    await s.fill("input[name=haslo]", "haslo-gracza");
+    await s.click("button[type=submit]");
+    await s.waitForURL(/kampania\.html\?k=iliac#okolice$/);
+    await s.waitForSelector(".plansza svg .el");
+    const konto = await s.textContent("#konto");
+    zalozenie(konto.includes("KONTO: test-gracz"), `konto u góry: ${konto}`);
+    await s.waitForSelector("#status .status-konto");
+    const dol = await s.textContent("#status .status-konto");
+    zalozenie(dol === "KONTO: Gracz", `konto u dołu: ${dol}`);
+    zalozenie(!/reCAPTCHA/i.test(await s.textContent("#status")), "w stopce nadal jest napis o reCAPTCHA");
+    const sesja = await s.evaluate(() => sessionStorage.getItem("notatkirpg.sesja"));
+    zalozenie(!/haslo/i.test(sesja), "hasło zapisane w sesji!");
+  });
+
+  await krok("gracz: lista kampanii — tylko udostępnione (bez ukrytej kampanii próbnej), bez opisu", async () => {
+    await s.goto(`${ADRES}/index.html`);
+    await s.waitForSelector("#kampanie a.kampania");
+    const nazwy = await s.$$eval("#kampanie li:not([hidden]) a.kampania", (a) => a.map((x) => x.textContent.trim()));
+    zalozenie(JSON.stringify(nazwy) === JSON.stringify(["▸ KOPIEC ILIAC"]), `lista kampanii gracza: ${JSON.stringify(nazwy)}`);
+    zalozenie(!/próbna/i.test(await s.textContent("#srodek")), "gracz widzi nazwę ukrytej kampanii");
+    zalozenie((await s.$$("#kampanie input")).length === 0, "gracz widzi pola widoczności kampanii");
+    zalozenie((await s.textContent("#status-konto")) === "KONTO: Gracz", "brak nazwy konta u dołu strony startowej");
+    await s.screenshot({ path: path.join(WYNIKI, "02_gracz_lista_kampanii.png") });
+  });
+
+  await krok("gracz: ukryta kampania z odnośnika → „KAMPANIA NIEDOSTĘPNA” (bez nazwy)", async () => {
+    await s.goto(`${ADRES}/kampania.html?k=proba`);
+    await s.waitForSelector("#srodek h2:has-text('KAMPANIA NIEDOSTĘPNA')");
+    zalozenie(!/próbna|iliac/i.test(await s.textContent("body")), "na ekranie jest nazwa ukrytej kampanii");
+    zalozenie((await s.$$(".plansza")).length === 0, "mapa ukrytej kampanii została wczytana");
+  });
+
+  await krok("gracz: Notatki jako pierwsza i domyślna zakładka, potem Okolice; bez Kopca i Admina", async () => {
     await s.goto(`${ADRES}/kampania.html?k=iliac`);
     await s.waitForSelector("#widok-notatki:not([hidden]) .lista-wpisow");
     const zakladki = await s.$$eval("#zakladki .zakladka", (z) => z.map((x) => x.textContent.trim()));
     zalozenie(zakladki[0].includes("NOTATKI"), `pierwsza zakładka: ${zakladki[0]}`);
     zalozenie(zakladki.some((z) => z.includes("OKOLICE")), `brak Okolic: ${zakladki}`);
-    zalozenie(!zakladki.some((z) => /KOPIEC|ADMIN|POSTĘP|POWIĄZANIA/.test(z)), `nieoczekiwane zakładki: ${zakladki}`);
+    zalozenie(!zakladki.some((z) => /KOPIEC|ADMIN/.test(z)), `nieoczekiwane zakładki: ${zakladki}`);
     zalozenie((await s.textContent('#zakladki [aria-selected="true"]')).includes("NOTATKI"), "domyślnie nie otwiera się zakładka Notatki");
-    zalozenie((await s.$$("#zakladki .zakladka-pole")).length === 0, "gość widzi przełączniki widoczności zakładek");
-    zalozenie((await s.$$("#widok-notatki select")).length === 2, "filtr kategorii nadal jest w zakładce Notatki");
+    zalozenie((await s.$$("#zakladki .zakladka-pole")).length === 0, "gracz widzi przełączniki widoczności zakładek");
+    zalozenie(await s.$eval("#widok-notatki button:has-text('NOWA NOTATKA')", (b) => b.hidden), "gracz może dodać notatkę");
+    zalozenie((await s.$$("#widok-notatki button:has-text('EDYTUJ'), #widok-notatki button:has-text('USUŃ')")).length === 0, "gracz może zmieniać notatki");
     await s.click("#zakladki .zakladka:has-text('OKOLICE')");
     await s.waitForSelector(".plansza svg .el");
   });
 
-  await krok("gość: część miejsc klikalna, część jak tło", async () => {
+  await krok("gracz: część miejsc klikalna, część jak tło", async () => {
     await s.waitForTimeout(400);
     const stany = await s.$$eval(".plansza svg [data-element]", (g) =>
       Object.fromEntries(g.map((x) => [x.dataset.element, { klik: x.classList.contains("el-dostepny"), tab: x.getAttribute("tabindex"), aria: x.getAttribute("aria-label") }]))
@@ -157,17 +217,17 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(naroznikiUkrytego === 0, "niedostępny element ma widoczne narożniki");
     const pe = await s.$eval('[data-element="brassyl"]', (g) => getComputedStyle(g).pointerEvents);
     zalozenie(pe === "none", `niedostępny element reaguje na wskaźnik (${pe})`);
-    await s.screenshot({ path: path.join(WYNIKI, "02_gosc_okolice.png") });
+    await s.screenshot({ path: path.join(WYNIKI, "02_gracz_okolice.png") });
   });
 
-  await krok("gość: indeks pokazuje tylko dostępne miejsca", async () => {
+  await krok("gracz: indeks pokazuje tylko dostępne miejsca", async () => {
     const nazwy = await s.$$eval("#indeks .indeks-pozycje .indeks-nazwa", (n) => n.map((x) => x.textContent));
     zalozenie(nazwy.length === 4, `oczekiwano 4 miejsc, jest ${nazwy.length}: ${nazwy}`);
     zalozenie(!nazwy.some((n) => /Brassyl|Kanion|Szkielet/.test(n)), `w indeksie są ukryte miejsca: ${nazwy}`);
     await s.fill("#indeks .indeks-szukaj", "brassyl");
     await s.waitForTimeout(300);
     const poSzukaniu = await s.$$eval("#indeks .indeks-pozycje .indeks-nazwa", (n) => n.length);
-    zalozenie(poSzukaniu === 0, "wyszukiwarka gościa znalazła ukryte miejsce");
+    zalozenie(poSzukaniu === 0, "wyszukiwarka gracza znalazła ukryte miejsce");
     await s.fill("#indeks .indeks-szukaj", "trakt");
     await s.waitForTimeout(300);
     const trakt = await s.$$eval("#indeks .indeks-pozycje .indeks-nazwa", (n) => n.map((x) => x.textContent));
@@ -175,7 +235,7 @@ async function bezPrzewijaniaWBok(strona) {
     await s.fill("#indeks .indeks-szukaj", "");
   });
 
-  await krok("gość: adres #kopiec (ukryta mapa) → pierwsza dostępna zakładka", async () => {
+  await krok("gracz: adres #kopiec (ukryta mapa) → pierwsza dostępna zakładka", async () => {
     await s.goto(`${ADRES}/kampania.html?k=iliac#kopiec`);
     await s.waitForSelector("#widok-notatki:not([hidden])");
     const aktywna = await s.textContent('#zakladki [aria-selected="true"]');
@@ -185,16 +245,17 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector('.plansza:not([hidden]) svg[data-mapa="okolice"]');
   });
 
-  await krok("gość: kliknięcie miejsca otwiera kartę bez „Dodaj notatkę”", async () => {
+  await krok("gracz: kliknięcie miejsca otwiera kartę bez „Dodaj notatkę”", async () => {
     await s.waitForTimeout(400);
     await s.click('[data-element="kopiec-iliac"] text >> nth=0');
     await s.waitForSelector("#panel:not([hidden]) .panel-nazwa");
     zalozenie((await s.textContent(".panel-nazwa")) === "Kopiec Iliac", "zła nazwa w karcie");
-    zalozenie((await s.$$("#panel button:has-text('DODAJ NOTATKĘ')")).length === 0, "gość widzi „Dodaj notatkę”");
+    zalozenie((await s.$$("#panel button:has-text('DODAJ NOTATKĘ')")).length === 0, "gracz widzi „Dodaj notatkę”");
+    zalozenie((await s.textContent("#panel")).includes("Notatki dodaje Skryba"), "brak informacji, kto dodaje notatki");
     zalozenie(s.url().includes("#okolice/kopiec-iliac"), `adres nie wskazuje miejsca: ${s.url()}`);
   });
 
-  await krok("gość: notatka o ukrytym miejscu w „bez miejsca na mapie”, bez nazwy miejsca", async () => {
+  await krok("gracz: notatka o ukrytym miejscu w „bez miejsca na mapie”, bez nazwy miejsca", async () => {
     await s.click("#zakladki .zakladka:has-text('NOTATKI')");
     await s.waitForSelector("#widok-notatki .sekcja-tytul");
     const tekst = await s.textContent("#widok-notatki");
@@ -203,20 +264,32 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(!/Brassyl/i.test(tekst), "nazwa ukrytego miejsca wyciekła do widoku notatek");
   });
 
-  // ---- gracz
-  await krok("gracz: logowanie z okna na stronie kampanii", async () => {
-    await zaloguj(s, "test-gracz", "haslo-gracza");
-    const konto = await s.textContent("#konto");
-    zalozenie(konto.includes("KONTO: test-gracz"), `konto: ${konto}`);
+  await krok("gracz: wylogowanie → ekran logowania, sesja wyczyszczona", async () => {
+    await s.click("#konto button:has-text('WYLOGUJ')");
+    await s.waitForURL(/index\.html$/);
+    await s.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
     const sesja = await s.evaluate(() => sessionStorage.getItem("notatkirpg.sesja"));
-    zalozenie(!/haslo/i.test(sesja), "hasło zapisane w sesji!");
+    zalozenie(sesja === null, "sesja nie została wyczyszczona");
+    zalozenie(await s.$eval("#sekcja-kampanii", (x) => x.hidden), "po wylogowaniu widać listę kampanii");
   });
 
-  const s2 = await nowaStrona(ctx, bledy); // druga karta (gość) — do sprawdzenia zmian na żywo
+  // ---- skryba (pisze notatki)
+  await krok("skryba: logowanie, wybór kampanii z listy; u góry login, u dołu „Skryba”", async () => {
+    await zaloguj(s, "test-skryba", "haslo-skryby");
+    await s.click("#kampanie a.kampania:has-text('KOPIEC ILIAC')");
+    await s.waitForSelector("#widok-notatki:not([hidden]) .lista-wpisow");
+    zalozenie((await s.textContent("#konto")).includes("KONTO: test-skryba"), "zły login u góry");
+    zalozenie((await s.textContent("#status .status-konto")) === "KONTO: Skryba", "zła nazwa konta u dołu");
+    zalozenie(!(await s.$eval("#widok-notatki button:has-text('NOWA NOTATKA')", (b) => b.hidden)), "Skryba nie może dodać notatki");
+  });
+
+  const s2 = await nowaStrona(ctx, bledy); // druga karta (Gracz) — do sprawdzenia zmian na żywo
+  await s2.goto(`${ADRES}/index.html`);
+  await zaloguj(s2, "test-gracz", "haslo-gracza");
   await s2.goto(`${ADRES}/kampania.html?k=iliac#notatki`);
   await s2.waitForSelector("#widok-notatki .lista-wpisow");
 
-  await krok("gracz: dodanie notatki przy miejscu (z podpisem, wiele wierszy, próba HTML)", async () => {
+  await krok("skryba: dodanie notatki przy miejscu (z podpisem, wiele wierszy, próba HTML)", async () => {
     await s.click("#zakladki .zakladka:has-text('OKOLICE')");
     await s.waitForTimeout(300);
     await s.click('[data-element="trakt"] text >> nth=0');
@@ -245,21 +318,21 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector('[data-element="trakt"].el-ma-notatki');
     const kropka = await s.$eval('[data-element="trakt"] .el-kropka', (k) => k.getBoundingClientRect().width);
     zalozenie(kropka > 0, "brak czerwonej kropki przy miejscu z notatką");
-    await s.screenshot({ path: path.join(WYNIKI, "03_gracz_karta_miejsca.png") });
+    await s.screenshot({ path: path.join(WYNIKI, "03_skryba_karta_miejsca.png") });
   });
 
-  await krok("na żywo: druga karta widzi nową notatkę bez odświeżania", async () => {
+  await krok("na żywo: Gracz w drugiej karcie widzi nową notatkę bez odświeżania", async () => {
     await s2.waitForSelector("#widok-notatki .karta-tytul:has-text('Przemytnicy na Trakcie')", { timeout: 4000 });
   });
 
-  await krok("gracz: edycja notatki", async () => {
+  await krok("skryba: edycja notatki", async () => {
     await s.click("#panel .karta button:has-text('EDYTUJ')");
     await s.fill("dialog input >> nth=0", "Przemytnicy na Trakcie (potwierdzone)");
     await s.click("dialog button[type=submit]");
     await s.waitForSelector("#panel .karta-tytul:has-text('(potwierdzone)')");
   });
 
-  await krok("gracz: notatka ogólna (etykieta „notatka ogólna”)", async () => {
+  await krok("skryba: notatka ogólna (etykieta „notatka ogólna”)", async () => {
     await s.click("#zakladki .zakladka:has-text('NOTATKI')");
     await s.click("#widok-notatki button:has-text('NOWA NOTATKA')");
     await s.fill("dialog input >> nth=0", "Plan na następną sesję");
@@ -269,7 +342,7 @@ async function bezPrzewijaniaWBok(strona) {
     const meta = await s.textContent("#widok-notatki .karta:has-text('Plan na następną sesję') .karta-meta");
     zalozenie(meta.startsWith("notatka ogólna"), `etykieta notatki ogólnej: ${meta}`);
   });
-  await krok("gracz: wyszukiwarka notatek (bez polskich znaków, po nazwie miejsca)", async () => {
+  await krok("skryba: wyszukiwarka notatek (bez polskich znaków, po nazwie miejsca)", async () => {
     await s.click("#zakladki .zakladka:has-text('NOTATKI')");
     await s.fill("#widok-notatki input[type=search]", "nastepna sesje");
     await s.waitForTimeout(300);
@@ -283,7 +356,7 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForTimeout(200);
   });
 
-  await krok("gracz: usunięcie notatki (z potwierdzeniem)", async () => {
+  await krok("skryba: usunięcie notatki (z potwierdzeniem)", async () => {
     const przed = (await s.$$("#widok-notatki .karta")).length;
     await s.click("#widok-notatki .karta:has-text('Plan na następną sesję') button:has-text('USUŃ')");
     await s.click("dialog button:has-text('ANULUJ')");
@@ -304,19 +377,48 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector("#panel", { state: "hidden" });
   });
 
-  await krok("gracz: wylogowanie czyści sesję", async () => {
-    await s.click("#konto button:has-text('WYLOGUJ')");
-    const sesja = await s.evaluate(() => sessionStorage.getItem("notatkirpg.sesja"));
-    zalozenie(sesja === null, "sesja nie została wyczyszczona");
-    zalozenie((await s.textContent("#konto")).includes("GOŚĆ"), "po wylogowaniu nie jest gościem");
-  });
-
   // ---- admin
   const sa = await nowaStrona(ctx, bledy);
-  await krok("admin: logowanie, zakładki Kopiec (ukryta) i Admin, przełącznik przy każdej zakładce", async () => {
+  await krok("admin: lista kampanii — wszystkie (także ukryta próbna) z polem „widoczna dla graczy”", async () => {
+    await sa.goto(`${ADRES}/index.html`);
+    await zaloguj(sa, "test-admin", "haslo-admina");
+    await sa.waitForSelector(`${POLE_PROBNEJ}:not([disabled])`);
+    const pola = await sa.$$eval("#kampanie input.przelacznik", (p) => p.map((x) => [x.getAttribute("aria-label"), x.checked]));
+    zalozenie(
+      JSON.stringify(pola) === JSON.stringify([["Kampania Kopiec Iliac widoczna dla graczy", true], ["Kampania Kampania próbna widoczna dla graczy", false]]),
+      `pola widoczności kampanii: ${JSON.stringify(pola)}`
+    );
+    zalozenie((await sa.$$("#kampanie .kampania-ukryta")).length === 1, "ukryta kampania nie jest wyróżniona");
+    zalozenie(!(await sa.textContent("#kampanie")).includes("Warhammer"), "opis kampanii nadal ma dopisek");
+    await sa.screenshot({ path: path.join(WYNIKI, "04_admin_lista_kampanii.png") });
+  });
+
+  await krok("admin → gracz na żywo: odsłonięcie i ukrycie kampanii próbnej na liście", async () => {
+    await s2.goto(`${ADRES}/index.html`);
+    await s2.waitForSelector("#kampanie li:not([hidden]) a.kampania");
+    zalozenie(!(await s2.textContent("#kampanie")).includes("PRÓBNA"), "gracz widzi ukrytą kampanię");
+    await sa.check(POLE_PROBNEJ);
+    await s2.waitForSelector("#kampanie li:not([hidden]) a.kampania:has-text('KAMPANIA PRÓBNA')", { timeout: 4000 });
+    await sa.uncheck(POLE_PROBNEJ);
+    await s2.waitForSelector("#kampanie li:has-text('KAMPANIA PRÓBNA')", { state: "hidden", timeout: 4000 });
+  });
+
+  await krok("admin → gracz na żywo: ukrycie oglądanej kampanii → „KAMPANIA NIEDOSTĘPNA”; odsłonięcie → wraca", async () => {
+    await s2.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
+    await s2.waitForSelector(".plansza svg .el");
+    await sa.uncheck(POLE_ILIAC);
+    await s2.waitForSelector("#srodek h2:has-text('KAMPANIA NIEDOSTĘPNA')", { timeout: 6000 });
+    zalozenie(!/iliac/i.test(await s2.textContent("body")), "na ekranie jest nazwa ukrytej kampanii");
+    await s2.screenshot({ path: path.join(WYNIKI, "04b_gracz_kampania_niedostepna.png") });
+    await sa.check(POLE_ILIAC);
+    await s2.waitForSelector(".plansza svg .el", { timeout: 6000 });
+  });
+
+  await krok("admin: kampania z listy — zakładki Kopiec (ukryta) i Admin, przełącznik przy każdej zakładce", async () => {
     await sa.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
     await sa.waitForSelector(".plansza svg");
-    await zaloguj(sa, "test-admin", "haslo-admina");
+    zalozenie((await sa.textContent("#konto")).includes("KONTO: test-admin"), "zły login u góry");
+    zalozenie((await sa.textContent("#status .status-konto")) === "KONTO: Admin", "zła nazwa konta u dołu");
     const zakladki = await sa.$$eval("#zakladki .zakladka", (z) => z.map((x) => x.textContent.trim()));
     zalozenie(zakladki.some((z) => z.includes("KOPIEC") && z.includes("⊘")), `brak ukrytej zakładki Kopiec: ${zakladki}`);
     zalozenie(zakladki.some((z) => z.includes("ADMIN")), "brak zakładki Admin");
@@ -431,6 +533,51 @@ async function bezPrzewijaniaWBok(strona) {
     await sa.waitForSelector("#widok-admin .status-na-zywo:has-text('Działa')");
   });
 
+  await krok("admin: potwierdzenia w LOGU zakładki Admin zamiast wyskakujących komunikatów", async () => {
+    // Admin przeklikał już wiele ustawień — na ekranie nie może być stosu komunikatów.
+    zalozenie((await sa.$$(".komunikaty .komunikat")).length === 0, "u admina wyskakują komunikaty");
+    await sa.click("#zakladki .zakladka:has-text('ADMIN')");
+    await sa.waitForSelector("#admin-log .log-wpis");
+    const wpisy = await sa.$$eval("#admin-log .log-wpis .log-tekst", (w) => w.map((x) => x.textContent));
+    for (const oczekiwany of [
+      /^Zakładka „Kopiec” widoczna dla graczy\.$/,
+      /^Zakładka „Notatki” ukryta przed graczami\.$/,
+      /^Miejsce „Brassyl[^”]*” dostępne dla graczy\.$/,
+      /^Kolor mapy „Okolice”: bursztynowy\.$/,
+      /^Kampania „Kampania próbna” widoczna dla graczy\.$/
+    ]) {
+      zalozenie(wpisy.some((w) => oczekiwany.test(w)), `brak w logu: ${oczekiwany} (są: ${wpisy.slice(0, 6).join(" | ")}…)`);
+    }
+    zalozenie(wpisy[0] === "Zakładka „Kopiec” widoczna dla graczy.", `najnowszy wpis nie jest na górze: ${wpisy[0]}`);
+    // Pole stałej wielkości z własnym przewijaniem; godzina przy każdym wpisie.
+    const lista = await sa.$eval("#admin-log .log-lista", (x) => ({ wys: x.clientHeight, przewijanie: getComputedStyle(x).overflowY }));
+    zalozenie(lista.przewijanie === "auto" && lista.wys >= 100, `log nie jest polem z przewijaniem: ${JSON.stringify(lista)}`);
+    const czas = await sa.textContent("#admin-log .log-czas");
+    zalozenie(/^\d{2}:\d{2}:\d{2}$/.test(czas), `brak godziny przy wpisie: ${czas}`);
+    await sa.screenshot({ path: path.join(WYNIKI, "08c_admin_log.png") });
+    // Log przetrwa odświeżenie strony, a przycisk WYCZYŚĆ go czyści.
+    await sa.reload();
+    await sa.click("#zakladki .zakladka:has-text('ADMIN')");
+    await sa.waitForSelector("#admin-log .log-wpis");
+    zalozenie((await sa.$$("#admin-log .log-wpis")).length === wpisy.length, "log nie przetrwał odświeżenia strony");
+    await sa.click("#przycisk-czysc-log");
+    await sa.waitForSelector("#admin-log .log-pusto");
+  });
+
+  await krok("admin: błędy zapisu — najwyżej dwa komunikaty na ekranie, wpisy w logu", async () => {
+    const pole = '#widok-admin input[aria-label="Zakładka Okolice widoczna dla graczy"]';
+    await sa.evaluate(() => localStorage.setItem("falszywa-baza-odmowa", "1"));
+    for (let i = 0; i < 3; i++) {
+      await sa.click(pole);
+      await sa.waitForFunction((n) => document.querySelectorAll("#admin-log .log-blad").length >= n, i + 1);
+    }
+    await sa.evaluate(() => localStorage.removeItem("falszywa-baza-odmowa"));
+    const naEkranie = await sa.$$eval(".komunikaty .komunikat", (k) => k.length);
+    zalozenie(naEkranie >= 1 && naEkranie <= 2, `komunikatów o błędach na ekranie: ${naEkranie}`);
+    zalozenie(await sa.$eval(pole, (x) => x.checked), "po błędzie pole nie wróciło do stanu z bazy");
+    await sa.click("#przycisk-czysc-log");
+  });
+
   // ---- kopia zapasowa i przywracanie
   let plikKopii = null;
   await krok("admin: kopia CSV (BOM, nagłówek, #meta, bez secrets)", async () => {
@@ -482,7 +629,7 @@ async function bezPrzewijaniaWBok(strona) {
     const baza = await sa.evaluate(() => JSON.parse(localStorage.getItem("falszywa-baza")));
     zalozenie(baza["kampanie/iliac/notatki/sierota"], "usunięta notatka nie wróciła");
     zalozenie(baza["kampanie/iliac/notatki/nowa-po-kopii"], "SCAL usunął dokument spoza pliku");
-    zalozenie(baza["secrets/Player1"] && baza["secrets/Player2"], "przywracanie naruszyło konta");
+    zalozenie(baza["secrets/Player1"] && baza["secrets/Player2"] && baza["secrets/Player3"], "przywracanie naruszyło konta");
     const dziennik = await sa.textContent("#widok-admin .dziennik");
     zalozenie(dziennik.includes("Pominięte dokumenty kont (admins/secrets): 1"), "dziennik nie mówi o pominiętych kontach");
     zalozenie((await sa.textContent("#widok-admin .podglad-kopii")).includes("zostaną pominięte"), "podgląd nie ostrzega o pominięciu kont");
@@ -505,7 +652,7 @@ async function bezPrzewijaniaWBok(strona) {
     const baza = await sa.evaluate(() => JSON.parse(localStorage.getItem("falszywa-baza")));
     zalozenie(!baza["kampanie/iliac/notatki/nowa-po-kopii"], "ZASTĄP nie usunął dokumentu spoza pliku");
     zalozenie(baza["kampanie/iliac/notatki/sierota"], "ZASTĄP zgubił dokument z pliku");
-    zalozenie(baza["secrets/Player1"] && baza["secrets/Player2"] && baza["admins/Player1"], "ZASTĄP naruszył konta");
+    zalozenie(baza["secrets/Player1"] && baza["secrets/Player2"] && baza["secrets/Player3"] && baza["admins/Player1"], "ZASTĄP naruszył konta");
     await sa.screenshot({ path: path.join(WYNIKI, "09_admin_przywracanie.png"), fullPage: true });
   });
 
@@ -519,18 +666,41 @@ async function bezPrzewijaniaWBok(strona) {
 
   await krok("brak uprawnień w bazie → zrozumiały komunikat (reguły / App Check)", async () => {
     const s3 = await nowaStrona(ctx, []);
-    await s3.addInitScript(() => localStorage.setItem("falszywa-baza-odmowa", "1"));
+    await s3.addInitScript(() => {
+      localStorage.setItem("falszywa-baza-odmowa", "1");
+      sessionStorage.setItem("notatkirpg.sesja", JSON.stringify({ wersja: 2, kontoId: "Player3", login: "test-gracz", nazwa: "Gracz", rola: "gracz" }));
+    });
     await s3.goto(`${ADRES}/kampania.html?k=iliac`);
-    await s3.waitForSelector("#baner:not([hidden])");
-    const baner = await s3.textContent("#baner");
-    zalozenie(baner.includes("reguły bazy") && baner.includes("App Check"), `brak wyjaśnienia o regułach i App Check: ${baner}`);
+    await s3.waitForSelector("#srodek h2:has-text('BŁĄD ODCZYTU DANYCH')");
+    const tekst = await s3.textContent("#srodek");
+    zalozenie(tekst.includes("reguły bazy") && tekst.includes("App Check"), `brak wyjaśnienia o regułach i App Check: ${tekst}`);
     await s3.evaluate(() => localStorage.removeItem("falszywa-baza-odmowa"));
     await s3.close();
+  });
+
+  await krok("stara sesja (sprzed profili) nie wpuszcza — trzeba zalogować się ponownie", async () => {
+    const s4 = await nowaStrona(ctx, bledy);
+    await s4.addInitScript(() => sessionStorage.setItem("notatkirpg.sesja", JSON.stringify({ kontoId: "Player2", login: "test-skryba", rola: "gracz" })));
+    await s4.goto(`${ADRES}/kampania.html?k=iliac`);
+    await s4.waitForURL(/index\.html\?k=iliac$/);
+    await s4.close();
   });
 
   await krok("komputer: brak przewijania w bok", async () => {
     await bezPrzewijaniaWBok(s);
     await bezPrzewijaniaWBok(sa);
+  });
+
+  await krok("admin: wylogowanie czyści sesję i log", async () => {
+    await sa.click("#zakladki .zakladka:has-text('ADMIN')");
+    await sa.click('#widok-admin input[aria-label="Zakładka Okolice widoczna dla graczy"]');
+    await sa.waitForSelector("#admin-log .log-wpis");
+    zalozenie((await sa.evaluate(() => sessionStorage.getItem("notatkirpg.log"))) !== null, "log nie jest zapisany w sesji");
+    await sa.click('#widok-admin input[aria-label="Zakładka Okolice widoczna dla graczy"]');
+    await sa.click("#konto button:has-text('WYLOGUJ')");
+    await sa.waitForURL(/index\.html$/);
+    const { sesja, log } = await sa.evaluate(() => ({ sesja: sessionStorage.getItem("notatkirpg.sesja"), log: sessionStorage.getItem("notatkirpg.log") }));
+    zalozenie(sesja === null && log === null, `po wylogowaniu zostały dane: sesja=${sesja}, log=${log}`);
   });
   await ctx.close();
 
@@ -546,11 +716,15 @@ async function bezPrzewijaniaWBok(strona) {
     const { defaultBrowserType, ...opcje } = urzadzenie;
     const c = await nowyKontekst(przegladarka, opcje);
     const t = await nowaStrona(c, bledy);
-    await krok(`${nazwa}: start bez przewijania w bok`, async () => {
+    await krok(`${nazwa}: logowanie i lista kampanii bez przewijania w bok`, async () => {
       await t.goto(`${ADRES}/index.html`);
-      await t.waitForSelector("a.kampania");
+      await t.waitForSelector("input[name=login]");
       await bezPrzewijaniaWBok(t);
       await t.screenshot({ path: path.join(WYNIKI, `10_${plik}_start.png`) });
+      await zaloguj(t, "test-gracz", "haslo-gracza");
+      await t.waitForSelector("#kampanie li:not([hidden]) a.kampania");
+      await bezPrzewijaniaWBok(t);
+      await t.screenshot({ path: path.join(WYNIKI, `10_${plik}_kampanie.png`) });
     });
     await krok(`${nazwa}: mapa — przeciąganie palcem przesuwa mapę`, async () => {
       await t.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
@@ -618,12 +792,26 @@ async function bezPrzewijaniaWBok(strona) {
       }
       await t.screenshot({ path: path.join(WYNIKI, `13_${plik}_notatki.png`) });
     });
-    await krok(`${nazwa}: panel admina bez przewijania w bok`, async () => {
+    await krok(`${nazwa}: admin — lista kampanii i panel z logiem bez przewijania w bok`, async () => {
+      await t.click("#konto button:has-text('WYLOGUJ')");
+      await t.waitForURL(/index\.html$/);
       await zaloguj(t, "test-admin", "haslo-admina");
-      await t.click("#zakladki .zakladka:has-text('ADMIN')");
+      await t.waitForSelector(`${POLE_ILIAC}:not([disabled])`);
+      await bezPrzewijaniaWBok(t);
+      await t.screenshot({ path: path.join(WYNIKI, `14_${plik}_admin_kampanie.png`) });
+      await t.goto(`${ADRES}/kampania.html?k=iliac#admin`);
       await t.waitForSelector("#widok-admin .admin-mapa");
+      await t.click('#widok-admin input[aria-label="Zakładka Okolice widoczna dla graczy"]');
+      await t.waitForSelector("#admin-log .log-wpis");
+      // Log widoczny na ekranie od razu (z boku albo przyklejony u dołu zakładki).
+      const r = await t.$eval("#admin-log", (x) => {
+        const b = x.getBoundingClientRect();
+        return { gora: Math.round(b.top), dol: Math.round(b.bottom), wys: Math.round(b.height), okno: innerHeight };
+      });
+      zalozenie(r.gora >= 0 && r.dol <= r.okno + 1 && r.wys < r.okno * 0.6, `log nie mieści się na ekranie: ${JSON.stringify(r)}`);
       await bezPrzewijaniaWBok(t);
       await t.screenshot({ path: path.join(WYNIKI, `14_${plik}_admin.png`) });
+      await t.click('#widok-admin input[aria-label="Zakładka Okolice widoczna dla graczy"]');
     });
     await c.close();
   }

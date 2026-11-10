@@ -1,6 +1,7 @@
 // Testy jednostkowe (Node 18+, bez dodatkowych pakietów):
 //   node testy/jednostkowe.mjs
-// Sprawdzają format kopii zapasowej (CSV, kodowanie typów) i wyszukiwanie tekstu.
+// Sprawdzają format kopii zapasowej (CSV, kodowanie typów), wyszukiwanie tekstu
+// oraz profile kont i widoczność kampanii.
 import assert from "node:assert/strict";
 import {
   BladKopii,
@@ -17,6 +18,14 @@ import {
   zbudujPlik
 } from "../aplikacja/js/kopia-format.js";
 import { normalizuj, pasuje } from "../aplikacja/js/narzedzia.js";
+import {
+  ROLE,
+  kampaniaDlaUzytkownika,
+  kampaniaWidocznaDlaGraczy,
+  mozeEdytowac,
+  nazwaKonta,
+  rolaKonta
+} from "../aplikacja/js/sesja.js";
 
 // Udawane klasy SDK (te same nazwy pól co w Firestore).
 class Timestamp {
@@ -185,6 +194,44 @@ test("dopasowanie: wszystkie słowa, w dowolnej kolejności", () => {
   assert.ok(!pasuje("wayrest", "Iglica Sentinel"));
   assert.ok(pasuje("", "cokolwiek"));
   assert.ok(pasuje("ksiezyca", ["inne", ["Iglica Sentinel (ród Księżyca)"]]));
+});
+
+console.log("[profile kont i kampanie]");
+test("profil: admin z kolekcji admins, Skryba z DisplayName, reszta — Gracz", () => {
+  assert.equal(rolaKonta({ rolaAdmina: "admin", nazwa: "Admin" }), ROLE.ADMIN);
+  assert.equal(rolaKonta({ rolaAdmina: "admin", nazwa: "Skryba" }), ROLE.ADMIN);
+  assert.equal(rolaKonta({ nazwa: "Skryba" }), ROLE.SKRYBA);
+  assert.equal(rolaKonta({ nazwa: "  skryba " }), ROLE.SKRYBA);
+  assert.equal(rolaKonta({ nazwa: "Gracz" }), ROLE.GRACZ);
+  assert.equal(rolaKonta({ nazwa: "Admin" }), ROLE.GRACZ, "sama nazwa „Admin” nie daje uprawnień admina");
+  assert.equal(rolaKonta({ rolaAdmina: "gracz" }), ROLE.GRACZ);
+  assert.equal(rolaKonta({}), ROLE.GRACZ);
+});
+test("edycja notatek tylko dla Skryby; nazwa konta z DisplayName", () => {
+  assert.ok(mozeEdytowac({ rola: ROLE.SKRYBA }));
+  assert.ok(!mozeEdytowac({ rola: ROLE.GRACZ }));
+  assert.ok(!mozeEdytowac({ rola: ROLE.ADMIN }));
+  assert.ok(!mozeEdytowac(null));
+  assert.equal(nazwaKonta({ rola: ROLE.GRACZ, nazwa: "Drużyna" }), "Drużyna");
+  assert.equal(nazwaKonta({ rola: ROLE.SKRYBA, nazwa: "" }), "Skryba");
+});
+test("kampania: widoczność z bazy, a bez wpisu — domyślna z rejestru", () => {
+  const iliac = { id: "iliac", widocznaDomyslnie: true };
+  const nowa = { id: "nowa" };
+  assert.ok(kampaniaWidocznaDlaGraczy(iliac, null));
+  assert.ok(!kampaniaWidocznaDlaGraczy(iliac, { widoczna: false }));
+  assert.ok(!kampaniaWidocznaDlaGraczy(nowa, null), "nowa kampania domyślnie ukryta");
+  assert.ok(kampaniaWidocznaDlaGraczy(nowa, { widoczna: true }));
+  assert.ok(!kampaniaWidocznaDlaGraczy(nowa, { widoczna: "tak" }));
+});
+test("kampania: admin widzi wszystkie, gracze — udostępnione, bez logowania — żadnej", () => {
+  const ukryta = { id: "nowa" };
+  const widoczna = { id: "iliac", widocznaDomyslnie: true };
+  assert.ok(kampaniaDlaUzytkownika({ rola: ROLE.ADMIN }, ukryta, null));
+  assert.ok(!kampaniaDlaUzytkownika({ rola: ROLE.SKRYBA }, ukryta, null));
+  assert.ok(!kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, ukryta, null));
+  assert.ok(kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, widoczna, null));
+  assert.ok(!kampaniaDlaUzytkownika(null, widoczna, null));
 });
 
 console.log(`\nWynik: ${ok}/${ok + zle} testów OK.`);

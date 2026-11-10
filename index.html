@@ -17,17 +17,17 @@
 <div class="slate">
   <header class="slate-gora">
     <h1 class="slate-tytul">+++ DATA-SLATE // NOTATKI RPG +++</h1>
-    <span class="ozdoba">ARCHIWUM DRUŻYNY · DOSTĘP OTWARTY</span>
+    <span class="ozdoba tylko-szeroki">ARCHIWUM DRUŻYNY · DOSTĘP ZASTRZEŻONY</span>
+    <div class="konto" id="konto" hidden></div>
   </header>
   <main class="slate-srodek slate-przewijany" id="srodek">
     <div class="tresc-widoku">
-      <section class="panel-ramka" aria-labelledby="naglowek-kampanii">
+      <section class="panel-ramka" id="sekcja-kampanii" aria-labelledby="naglowek-kampanii" hidden>
         <h2 class="sekcja-tytul" id="naglowek-kampanii">WYBIERZ KAMPANIĘ</h2>
-        <ul class="lista-kampanii" id="kampanie">
-          <li class="przygaszony">Wczytywanie…</li>
-        </ul>
+        <p class="przygaszony" id="opis-listy" hidden></p>
+        <ul class="lista-kampanii" id="kampanie"></ul>
       </section>
-      <section class="panel-ramka" aria-labelledby="naglowek-logowania">
+      <section class="panel-ramka" id="sekcja-logowania" aria-labelledby="naglowek-logowania">
         <h2 class="sekcja-tytul" id="naglowek-logowania">LOGOWANIE</h2>
         <div id="logowanie-tresc"><p class="przygaszony">Łączenie…</p></div>
       </section>
@@ -35,7 +35,7 @@
   </main>
   <footer class="slate-dol">
     <span>Notatki drużyny zapisują się na żywo — wszyscy widzą je od razu.</span>
-    <span class="recaptcha">Strona chroniona przez reCAPTCHA — obowiązują <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Polityka prywatności</a> i <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Warunki korzystania</a> Google.</span>
+    <span id="status-konto" hidden></span>
     <span class="ozdoba ozdoba-dluga">+++ 01001110 01001111 01010100 01000001 01010100 01001011 01001001 +++</span>
   </footer>
   <div class="skan" aria-hidden="true"></div>

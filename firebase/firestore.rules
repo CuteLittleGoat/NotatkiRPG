@@ -1,11 +1,11 @@
 rules_version = '2';
 
 // ===========================================================================
-// NotatkiRPG — reguły Firestore, wersja 3 (2026-11-10): notatki i ustawienia
-// (zakładki Postęp i Powiązania usunięte z aplikacji).
+// NotatkiRPG — reguły Firestore, wersja 4 (2026-11-10): notatki, ustawienia
+// i widoczność kampanii dla graczy (pole „widoczna” w dokumencie kampanii).
 //
 // Bez logowania Firebase (świadoma decyzja właściciela) baza nie wie, KTO pyta,
-// więc nie odróżni gracza od gościa ani od admina. Te reguły pilnują za to, CO
+// więc nie odróżni Gracza od Skryby ani od admina. Te reguły pilnują za to, CO
 // wolno zrobić:
 //   * dostępne są tylko kolekcje używane przez aplikację (notatki, ustawienia,
 //     konta) — wszystko inne jest
@@ -47,10 +47,15 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------- kształt wpisów
+    // Dokument kampanii: nazwa, data utworzenia, widoczność dla graczy (tak/nie)
+    // i ślad ostatniej zmiany widoczności.
     function poprawnaKampania(d) {
-      return d.keys().hasOnly(['nazwa', 'utworzono'])
+      return d.keys().hasOnly(['nazwa', 'utworzono', 'widoczna', 'zmieniono', 'kontoIdZmiany'])
         && tekst(d.nazwa, 200)
-        && czasOpcjonalny(d, 'utworzono');
+        && (!('widoczna' in d) || d.widoczna is bool)
+        && czasOpcjonalny(d, 'utworzono')
+        && czasOpcjonalny(d, 'zmieniono')
+        && tekstOpcjonalny(d, 'kontoIdZmiany', 100);
     }
     // „kategoria” — tylko w starszych notatkach (pole usunięte z aplikacji); zostaje
     // dozwolone, żeby takie notatki dało się edytować i przywracać z kopii.

@@ -159,11 +159,8 @@ a {
 .status-na-zywo {
   color: var(--fosfor);
 }
-.recaptcha {
-  color: var(--przygaszony);
-}
-.recaptcha a {
-  color: inherit;
+.status-konto {
+  color: var(--tekst);
 }
 .status-pamiec {
   color: var(--klik);
@@ -1089,6 +1086,93 @@ dialog.okno-male > .okno-przyciski {
 .tabela tbody tr:nth-child(even) {
   background: var(--zebra);
 }
+/* ---------------------------------------------------------------- log admina */
+/* Pole stałej wielkości z przewijaniem. Szeroki ekran: kolumna obok ustawień,
+   przyklejona do góry. Węższy: pasek przyklejony do dołu zakładki Admin. */
+.admin-uklad {
+  display: flex;
+  flex-direction: column;
+}
+.admin-log {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  order: 2;
+  margin: 10px 0 0;
+  padding: 0 12px 10px;
+  background: var(--tlo-panel);
+  border-color: var(--linia-mocna);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.7);
+}
+.log-naglowek {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.log-naglowek .sekcja-tytul {
+  flex: 1 1 auto;
+  margin: 8px 0 6px;
+}
+.log-naglowek .przycisk {
+  min-height: 30px;
+  padding: 2px 10px;
+  font-size: 13px;
+}
+.log-lista {
+  height: 7.6em;
+  margin: 0;
+  padding: 4px 8px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.45;
+  background: #000;
+  border: 1px solid var(--linia);
+  border-radius: 6px;
+}
+.log-lista:focus-visible {
+  outline: 1px solid var(--fosfor);
+}
+.log-wpis {
+  padding: 2px 0;
+  border-bottom: 1px solid var(--zebra);
+  overflow-wrap: anywhere;
+}
+.log-czas {
+  margin-right: 8px;
+  color: var(--przygaszony);
+}
+.log-blad .log-tekst {
+  color: var(--blad);
+}
+.log-pusto {
+  color: var(--przygaszony);
+}
+@media (min-width: 1100px) {
+  .tresc-widoku.admin-tresc {
+    max-width: 1380px;
+  }
+  .admin-uklad {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 0 18px;
+    align-items: start;
+  }
+  .admin-log {
+    top: 14px;
+    bottom: auto;
+    order: 0;
+    margin: 14px 0;
+    box-shadow: none;
+  }
+  .log-lista {
+    height: max(220px, calc(100dvh - 300px));
+  }
+}
+
 .dziennik {
   max-height: 340px;
   overflow: auto;
@@ -1137,6 +1221,30 @@ dialog.okno-male > .okno-przyciski {
 .kampania-opis {
   font-size: 15px;
   color: var(--przygaszony);
+}
+/* Admin: pole „widoczna dla graczy” przy każdej kampanii. */
+.kampania-pozycja {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 14px;
+  margin: 8px 0;
+}
+.kampania-pozycja .kampania {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+}
+.kampania-przelacznik {
+  flex: 0 0 15.5em;
+  font-size: 15px;
+}
+.kampania-ukryta .kampania {
+  border-style: dashed;
+  border-color: var(--klik);
+}
+.kampania-ukryta .kampania-przelacznik {
+  color: var(--klik);
 }
 .formularz-logowania {
   max-width: 440px;

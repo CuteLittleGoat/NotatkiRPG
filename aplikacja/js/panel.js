@@ -93,7 +93,7 @@ export class PanelElementu {
             ? "Brak notatek o tym miejscu."
             : jestAdminem(sesja)
               ? "Brak notatek o tym miejscu. (Admin przegląda wpisy, nie edytuje ich.)"
-              : "Brak notatek o tym miejscu. Zaloguj się jako gracz, aby dodawać notatki."
+              : "Brak notatek o tym miejscu. Notatki dodaje Skryba."
         })
       );
     }
@@ -111,7 +111,7 @@ export class PanelElementu {
       pole.disabled = true;
       try {
         await dane.zapiszUstawienia({ elementy: { [element.id]: pole.checked } }, stan.sesja);
-        komunikat(pole.checked ? "Miejsce dostępne dla graczy." : "Miejsce ukryte przed graczami.", "ok");
+        komunikat(pole.checked ? `Miejsce „${element.nazwa}” dostępne dla graczy.` : `Miejsce „${element.nazwa}” ukryte przed graczami.`, "ok");
       } catch (e) {
         komunikat(opisBledu(e), "blad", 8000);
       } finally {

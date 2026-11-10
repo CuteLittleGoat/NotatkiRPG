@@ -1,5 +1,7 @@
 // Strona kampanii (kampania.html?k=iliac): zakładki (Notatki, mapy, Admin), indeks,
 // karta miejsca i panel admina. Łączy wszystkie moduły w całość.
+// Bez logowania strona niczego nie pokazuje (przekierowuje do logowania), a kampanii
+// ukrytej przez admina gracze nie otworzą (także z odnośnika).
 import { DaneKampanii } from "./dane.js";
 import { Stan } from "./stan.js";
 import { PrzegladarkaMapy } from "./mapa.js";
@@ -7,10 +9,19 @@ import { Indeks } from "./indeks.js";
 import { PanelElementu } from "./panel.js";
 import { WidokNotatek } from "./notatki.js";
 import { WidokAdmina } from "./admin.js";
-import { oknoLogowania } from "./logowanie.js";
-import { jestAdminem, mozeEdytowac, naZmianeSesji, opisRoli, pobierzSesje, wyczyscSesje } from "./sesja.js";
+import { jestAdminem, kampaniaDlaUzytkownika, naZmianeSesji, nazwaKonta, pobierzSesje, wyczyscSesje } from "./sesja.js";
 import { KLUCZ_INDEKSU, MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
-import { el, komunikat, opisBledu, pamiecOdczyt, pamiecZapis, parametrAdresu, wczytajJson, wyczysc } from "./narzedzia.js";
+import {
+  el,
+  komunikat,
+  opisBledu,
+  pamiecOdczyt,
+  pamiecZapis,
+  parametrAdresu,
+  ustawTrybKomunikatow,
+  wczytajJson,
+  wyczysc
+} from "./narzedzia.js";
 
 // Indeks jako stała kolumna obok mapy dopiero od 1280 px — węziej wysuwa się nad mapę.
 const SZEROKI = window.matchMedia("(min-width: 1280px)");
@@ -21,28 +32,107 @@ function ustawMotyw(nazwa) {
   for (const m of Object.keys(MOTYWY)) document.body.classList.toggle(`motyw-${m}`, m === nazwa);
 }
 
-function bladStartu(tekst) {
+function ekranKomunikatu(naglowek, tekst) {
   const srodek = $("srodek");
   wyczysc(srodek);
+  // Puste paski zakładek i stanu tylko by przeszkadzały.
+  $("zakladki").hidden = true;
+  $("status").hidden = true;
   srodek.append(
     el("div.tresc-widoku", [
-      el("h2", { tekst: "+++ BŁĄD ODCZYTU DANYCH +++" }),
+      el("h2", { tekst: naglowek }),
       el("p", { tekst }),
       el("p", [el("a.odnosnik", { tekst: "◂ Wróć do wyboru kampanii", atrybuty: { href: "index.html" } })])
     ])
   );
 }
 
+function bladStartu(tekst) {
+  ekranKomunikatu("+++ BŁĄD ODCZYTU DANYCH +++", tekst);
+}
+
+/** Gracz otworzył kampanię, której admin nie udostępnił (bez zdradzania jej nazwy). */
+function kampaniaNiedostepna() {
+  document.title = "Data-Slate — kampania niedostępna";
+  ekranKomunikatu("+++ KAMPANIA NIEDOSTĘPNA +++", "Mistrz Gry nie udostępnił tej kampanii.");
+}
+
+/** Przy wylogowaniu — wszystko znika, wracamy do logowania. */
+function doLogowania(id = null) {
+  location.replace(id ? `index.html?k=${encodeURIComponent(id)}${location.hash}` : "index.html");
+}
+
 async function start() {
+  const sesja = pobierzSesje();
+  const idZAdresu = parametrAdresu("k");
+  // Bez logowania nie pokazujemy niczego (ani nazwy kampanii) — logowanie na stronie
+  // startowej, potem aplikacja wraca do tej kampanii.
+  if (!sesja) {
+    doLogowania(idZAdresu);
+    return;
+  }
+  if (!idZAdresu) {
+    doLogowania();
+    return;
+  }
+  // Admin: potwierdzenia jego zmian trafiają do logu w zakładce Admin, na ekranie — tylko błędy.
+  if (jestAdminem(sesja)) ustawTrybKomunikatow({ log: true, tylkoBledyNaEkranie: true });
+
   let rejestr;
   let kampania;
-  let manifest;
   try {
     rejestr = await wczytajJson("kampanie.json");
-    // Bez parametru ?k= otwieramy pierwszą kampanię z rejestru.
-    const id = parametrAdresu("k") || (rejestr.kampanie || [])[0]?.id;
-    kampania = (rejestr.kampanie || []).find((k) => k.id === id);
-    if (!kampania) throw new Error(`W rejestrze kampanii nie ma kampanii „${id ?? ""}”.`);
+    kampania = (rejestr.kampanie || []).find((k) => k.id === idZAdresu);
+    if (!kampania) throw new Error(`W rejestrze kampanii nie ma kampanii „${idZAdresu}”.`);
+  } catch (e) {
+    bladStartu(e.message);
+    return;
+  }
+
+  // Czy wolno ją pokazać: dokument kampanii w bazie (pole „widoczna”) albo domyślnie z rejestru.
+  const dane = new DaneKampanii(kampania.id, kampania.nazwa);
+  let poZmianieKampanii = null; // ustawiane, gdy strona jest gotowa
+  let poBledzieKampanii = null;
+  let dokumentKampanii;
+  try {
+    dokumentKampanii = await new Promise((rozwiaz, odrzuc) => {
+      let pierwszy = true;
+      let dostep = null;
+      dane.subskrybujDokumentKampanii(
+        (dokument) => {
+          const teraz = kampaniaDlaUzytkownika(sesja, kampania, dokument);
+          if (pierwszy) {
+            pierwszy = false;
+            dostep = teraz;
+            rozwiaz(dokument);
+            return;
+          }
+          // Admin ukrył albo odsłonił kampanię, gdy gracz ją oglądał — budujemy stronę od nowa.
+          if (teraz !== dostep) {
+            location.reload();
+            return;
+          }
+          poZmianieKampanii?.(dokument);
+        },
+        (e) => {
+          if (pierwszy) {
+            pierwszy = false;
+            odrzuc(e);
+          } else poBledzieKampanii?.(e);
+        }
+      );
+    });
+  } catch (e) {
+    bladStartu(opisBledu(e));
+    return;
+  }
+  if (!kampaniaDlaUzytkownika(sesja, kampania, dokumentKampanii)) {
+    kampaniaNiedostepna();
+    return;
+  }
+
+  let manifest;
+  try {
     manifest = await wczytajJson(`${kampania.folder}/kampania.json`);
   } catch (e) {
     bladStartu(e.message);
@@ -50,8 +140,9 @@ async function start() {
   }
 
   const stan = new Stan({ kampania, manifest, folder: kampania.folder });
-  stan.sesja = pobierzSesje();
-  const dane = new DaneKampanii(kampania.id, manifest.nazwa || kampania.nazwa);
+  stan.sesja = sesja;
+  stan.dokumentKampanii = dokumentKampanii;
+  dane.nazwa = manifest.nazwa || kampania.nazwa;
   document.title = `${manifest.nazwa || kampania.nazwa} — Data-Slate`;
   $("tytul").replaceChildren(
     el("span.tylko-szeroki", { tekst: "+++ DATA-SLATE // " }),
@@ -260,7 +351,7 @@ async function start() {
     let wybor = cel && lista.find((z) => z.rodzaj === cel.rodzaj && z.id === cel.id);
     if (!wybor) wybor = lista[0];
     if (!wybor) {
-      // Nic nie jest udostępnione (gracz/gość, wszystkie zakładki ukryte).
+      // Nic nie jest udostępnione (gracze, wszystkie zakładki ukryte).
       biezaca = null;
       for (const s of document.querySelectorAll(".widok")) s.hidden = true;
       zamknijPanel({ bezHasha: true });
@@ -354,14 +445,7 @@ async function start() {
     const konto = $("konto");
     wyczysc(konto);
     const s = stan.sesja;
-    if (!s) {
-      konto.append(
-        el("span.konto-rola", ["GOŚĆ", el("span.tylko-szeroki", { tekst: " — tylko podgląd" })]),
-        el("button.przycisk.przycisk-maly", { tekst: "ZALOGUJ", atrybuty: { type: "button" }, zdarzenia: { click: () => oknoLogowania() } })
-      );
-      return;
-    }
-    // Są tylko dwa konta (graczy i admina), więc w nagłówku wystarczy nazwa konta.
+    // U góry login konta (PlayerName), u dołu ekranu — jego nazwa (DisplayName).
     konto.append(el("span.konto-rola", ["KONTO: ", el("span.konto-login", { tekst: s.login, atrybuty: { title: s.login } })]));
     if (jestAdminem(s)) {
       const podglad = el("input.przelacznik", { atrybuty: { type: "checkbox", checked: stan.podgladGracza, id: "podglad-gracza" } });
@@ -375,21 +459,14 @@ async function start() {
       el("button.przycisk.przycisk-maly", {
         tekst: "WYLOGUJ",
         atrybuty: { type: "button" },
-        zdarzenia: {
-          click: () => {
-            wyczyscSesje();
-            komunikat("Wylogowano.", "info");
-          }
-        }
+        zdarzenia: { click: () => wyczyscSesje() }
       })
     );
   }
 
-  naZmianeSesji((sesja) => {
-    stan.sesja = sesja;
-    stan.podgladGracza = false;
-    stan.powiadom("sesja");
-    if (sesja) komunikat(`Zalogowano na konto: ${sesja.login}.`, "ok");
+  // Wylogowanie: wszystko znika, wracamy do logowania.
+  naZmianeSesji((nowa) => {
+    if (!nowa) doLogowania();
   });
 
   // ------------------------------------------------------------- status
@@ -404,16 +481,9 @@ async function start() {
     wyczysc(status);
     status.append(
       el("span", { klasa: `status-bazy status-${stan.polaczenie}`, tekst: opis }),
-      el("span", { tekst: `KONTO: ${opisRoli(stan.sesja)}${mozeEdytowac(stan.sesja) ? " (edycja)" : ""}` }),
+      el("span.status-konto", { tekst: `KONTO: ${nazwaKonta(stan.sesja)}` }),
       el("span.ozdoba", { tekst: `MAPA v${manifest.wersjaMapy || "?"}` }),
-      el("span.ozdoba.ozdoba-dluga", { tekst: "+++ TRANSMISJA ZAKOŃCZONA POPRAWNIE +++" }),
-      // Wymagana informacja o reCAPTCHA (App Check) — znaczek reCAPTCHA jest ukryty.
-      el("span.recaptcha", [
-        "chronione przez reCAPTCHA: ",
-        el("a", { tekst: "prywatność", atrybuty: { href: "https://policies.google.com/privacy", target: "_blank", rel: "noopener" } }),
-        " · ",
-        el("a", { tekst: "warunki", atrybuty: { href: "https://policies.google.com/terms", target: "_blank", rel: "noopener" } })
-      ])
+      el("span.ozdoba.ozdoba-dluga", { tekst: "+++ TRANSMISJA ZAKOŃCZONA POPRAWNIE +++" })
     );
   }
 
@@ -427,6 +497,7 @@ async function start() {
 
   // ------------------------------------------------------------- reakcje na zmiany
   stan.sluchaj((co) => {
+    if (co === "dokumentKampanii") admin?.render();
     if (co === "ustawienia" || co === "sesja" || co === "podglad") {
       renderKonta();
       odswiezMapy();
@@ -459,6 +530,8 @@ async function start() {
   // ------------------------------------------------------------- start
   renderKonta();
   renderStatusu();
+  poZmianieKampanii = (dokument) => stan.ustaw("dokumentKampanii", dokument);
+  poBledzieKampanii = pokazBlad;
   dane.subskrybujUstawienia((u, meta) => {
     stan.polaczenie = meta.fromCache ? "pamiec" : "na-zywo";
     $("baner").hidden = true;

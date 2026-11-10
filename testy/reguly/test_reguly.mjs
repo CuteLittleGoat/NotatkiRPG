@@ -33,8 +33,9 @@ const srodowisko = await initializeTestEnvironment({ projectId: "demo-notatkirpg
 // Konta TESTOWE (wymyślone) — wpisane z pominięciem reguł, jak ręcznie w konsoli.
 await srodowisko.withSecurityRulesDisabled(async (kontekst) => {
   const baza = kontekst.firestore();
-  await setDoc(doc(baza, "secrets/Player1"), { PlayerName: "test-admin", PlayerPassword: "haslo-admina" });
-  await setDoc(doc(baza, "secrets/Player2"), { PlayerName: "test-gracz", PlayerPassword: "haslo-gracza" });
+  await setDoc(doc(baza, "secrets/Player1"), { PlayerName: "test-admin", PlayerPassword: "haslo-admina", DisplayName: "Admin" });
+  await setDoc(doc(baza, "secrets/Player2"), { PlayerName: "test-skryba", PlayerPassword: "haslo-skryby", DisplayName: "Skryba" });
+  await setDoc(doc(baza, "secrets/Player3"), { PlayerName: "test-gracz", PlayerPassword: "haslo-gracza", DisplayName: "Gracz" });
   await setDoc(doc(baza, "admins/Player1"), { rola: "admin" });
 });
 
@@ -70,6 +71,10 @@ console.log("[odczyt]");
 await test("logowanie: zapytanie o login w secrets i odczyt admins", async () => {
   await assertSucceeds(getDocs(query(collection(db, "secrets"), where("PlayerName", "==", "test-gracz"))));
   await assertSucceeds(getDoc(doc(db, "admins", "Player1")));
+  await assertSucceeds(getDoc(doc(db, "admins", "Player3"))); // brak dokumentu = nie admin
+});
+await test("lista kampanii po zalogowaniu: odczyt wszystkich dokumentów kampanii", async () => {
+  await assertSucceeds(getDocs(collection(db, "kampanie")));
 });
 await test("odczyt danych kampanii (lista i pojedynczy dokument)", async () => {
   await assertSucceeds(getDocs(NOTATKI));
@@ -90,14 +95,25 @@ let idNotatki = null;
 await test("dokument kampanii przy pierwszym zapisie (setDoc ze scalaniem)", async () => {
   await assertSucceeds(setDoc(doc(db, "kampanie", "iliac"), { nazwa: "Kopiec Iliac", utworzono: serverTimestamp() }, { merge: true }));
 });
-await test("gracz: nowa notatka przy miejscu", async () => {
+await test("admin: widoczność kampanii dla graczy (nowy dokument i zmiana, setDoc ze scalaniem)", async () => {
+  await assertSucceeds(
+    setDoc(doc(db, "kampanie", "nowa-kampania"), { nazwa: "Nowa", widoczna: false, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true })
+  );
+  await assertSucceeds(
+    setDoc(doc(db, "kampanie", "iliac"), { nazwa: "Kopiec Iliac", widoczna: true, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true })
+  );
+  await assertSucceeds(
+    setDoc(doc(db, "kampanie", "iliac"), { nazwa: "Kopiec Iliac", widoczna: false, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true })
+  );
+});
+await test("skryba: nowa notatka przy miejscu", async () => {
   const ref = await assertSucceeds(addDoc(NOTATKI, notatka()));
   idNotatki = ref.id;
 });
-await test("gracz: notatka ogólna (elementId = null), pusty podpis", async () => {
+await test("skryba: notatka ogólna (elementId = null), pusty podpis", async () => {
   await assertSucceeds(addDoc(NOTATKI, notatka({ elementId: null, podpis: "" })));
 });
-await test("gracz: edycja notatki (updateDoc jak w aplikacji)", async () => {
+await test("skryba: edycja notatki (updateDoc jak w aplikacji)", async () => {
   await assertSucceeds(
     updateDoc(doc(NOTATKI, idNotatki), {
       tytul: "Konwój (potwierdzone)",
@@ -109,16 +125,16 @@ await test("gracz: edycja notatki (updateDoc jak w aplikacji)", async () => {
     })
   );
 });
-await test("gracz: edycja starszej notatki, która ma jeszcze pole kategoria", async () => {
+await test("skryba: edycja starszej notatki, która ma jeszcze pole kategoria", async () => {
   await srodowisko.withSecurityRulesDisabled(async (k) => {
     await setDoc(doc(k.firestore(), "kampanie/iliac/notatki/stara"), { tytul: "Stara", tresc: "", kategoria: "miejsce", elementId: "trakt", podpis: "", kontoId: "Player2" });
   });
   await assertSucceeds(updateDoc(doc(NOTATKI, "stara"), { tytul: "Stara (zmieniona)", tresc: "x", elementId: "trakt", podpis: "Ola", kontoIdZmiany: "Player2", zmieniono: serverTimestamp() }));
 });
-await test("gracz: najdłuższe dozwolone teksty", async () => {
+await test("skryba: najdłuższe dozwolone teksty", async () => {
   await assertSucceeds(addDoc(NOTATKI, notatka({ tytul: "T".repeat(200), tresc: "x".repeat(20000), podpis: "P".repeat(80) })));
 });
-await test("gracz: usunięcie notatki", async () => {
+await test("skryba: usunięcie notatki", async () => {
   await assertSucceeds(deleteDoc(doc(NOTATKI, idNotatki)));
 });
 const USTAWIENIA = doc(db, "kampanie", "iliac", "ustawienia", "mapy");
@@ -144,7 +160,7 @@ await test("admin: przywrócenie ustawień domyślnych (deleteField)", async () 
 await test("przywracanie kopii: partia z usunięciami i dokumentami ze starymi znacznikami czasu", async () => {
   const stary = new Timestamp(1762790400, 0);
   const partia = writeBatch(db);
-  partia.set(doc(db, "kampanie", "iliac"), { nazwa: "Kopiec Iliac", utworzono: stary });
+  partia.set(doc(db, "kampanie", "iliac"), { nazwa: "Kopiec Iliac", utworzono: stary, widoczna: true, zmieniono: stary, kontoIdZmiany: "Player1" });
   partia.set(doc(NOTATKI, "abcDEF123_-"), { tytul: "Z kopii", tresc: "", kategoria: "inne", elementId: null, podpis: "", kontoId: "Player2", utworzono: stary, zmieniono: stary });
   partia.set(USTAWIENIA, { mapy: { okolice: { widoczna: true, kolor: "zielony" } }, elementy: { trakt: true }, kolor: "zielony", zmieniono: stary, kontoIdZmiany: "Player1" });
   partia.delete(doc(NOTATKI, "nie-ma-takiej"));
@@ -183,11 +199,17 @@ await test("nieznane kolekcje i podkolekcje", async () => {
 await test("dziwny identyfikator kampanii", async () => {
   await assertFails(setDoc(doc(db, "kampanie", "Iliac!"), { nazwa: "x" }));
 });
+await test("dokument kampanii: widoczność inna niż tak/nie, obce pole, brak nazwy", async () => {
+  await assertFails(setDoc(doc(db, "kampanie", "iliac"), { widoczna: "tak" }, { merge: true }));
+  await assertFails(setDoc(doc(db, "kampanie", "iliac"), { ukryta: true }, { merge: true }));
+  await assertFails(setDoc(doc(db, "kampanie", "bez-nazwy"), { widoczna: true }));
+});
 await test("konta (admins, secrets): bez dodawania, zmian i usuwania", async () => {
   await assertFails(setDoc(doc(db, "admins", "Player2"), { rola: "admin" }));
   await assertFails(updateDoc(doc(db, "admins", "Player1"), { rola: "gracz" }));
   await assertFails(deleteDoc(doc(db, "admins", "Player1")));
-  await assertFails(setDoc(doc(db, "secrets", "Player3"), { PlayerName: "x", PlayerPassword: "y" }));
+  await assertFails(setDoc(doc(db, "secrets", "Player4"), { PlayerName: "x", PlayerPassword: "y" }));
+  await assertFails(updateDoc(doc(db, "secrets", "Player3"), { DisplayName: "Skryba" }));
   await assertFails(updateDoc(doc(db, "secrets", "Player2"), { PlayerPassword: "nowe" }));
   await assertFails(deleteDoc(doc(db, "secrets", "Player2")));
 });

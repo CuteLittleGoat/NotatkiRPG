@@ -5,19 +5,19 @@ W tym folderze:
 | Plik | Co to jest |
 |---|---|
 | `firebase-config.js` | Adres projektu Firebase (`notatkirpg-b601c`) i klucz witryny reCAPTCHA dla App Check. **Oba klucze są publiczne** — z założenia trafiają do przeglądarki każdego gościa strony. |
-| `firestore.rules` | Reguły bazy danych (wersja 3 — z widocznością zakładek; bez usuniętych zakładek Postęp i Powiązania). **Trzeba je ręcznie wkleić w konsoli Firebase** — instrukcja niżej. Aplikacja sama ich nie publikuje. |
+| `firestore.rules` | Reguły bazy danych (wersja 4 — z widocznością kampanii i zakładek; bez usuniętych zakładek Postęp i Powiązania). **Trzeba je ręcznie wkleić w konsoli Firebase** — instrukcja niżej. Aplikacja sama ich nie publikuje. |
 
 ## Reguły bazy — co robią (wyjaśnienie bez żargonu)
 
 Reguły to coś w rodzaju regulaminu wejścia do bazy. Ponieważ logowanie odbywa
 się przez kolekcję `secrets` (a nie przez logowanie Firebase), baza **nie wie,
-kto pyta** — nie odróżni gracza od gościa ani od admina. Reguły pilnują więc
+kto pyta** — nie odróżni Gracza od Skryby ani od admina. Reguły pilnują więc
 tego, **co** wolno zrobić:
 
-* **Odczyt** — wszystko, czego potrzebuje aplikacja (notatki, ustawienia map i
-  zakładek, a także konta — bez tego nie działałoby logowanie).
-* **Zapis** — tylko w miejscach, których używa aplikacja (notatki, ustawienia map
-  i zakładek), i tylko we właściwym kształcie: znane pola,
+* **Odczyt** — wszystko, czego potrzebuje aplikacja (lista kampanii, notatki,
+  ustawienia map i zakładek, a także konta — bez tego nie działałoby logowanie).
+* **Zapis** — tylko w miejscach, których używa aplikacja (widoczność kampanii,
+  notatki, ustawienia map i zakładek), i tylko we właściwym kształcie: znane pola,
   rozsądna długość tekstów (np. tytuł do 200 znaków, treść do 20 000).
 * **Wszystko inne jest zablokowane** — nikt nie dopisze do bazy własnych kolekcji
   ani dziwnych pól.
@@ -28,6 +28,16 @@ tego, **co** wolno zrobić:
 
 Reguły sprawdzono testami w lokalnym emulatorze bazy (`testy/reguly/`):
 wszystkie zapisy aplikacji przechodzą, a niedozwolone są odrzucane.
+
+### Konta (zakładasz je ręcznie w konsoli)
+
+* `secrets/{id}` — pola `PlayerName` (login), `PlayerPassword` (hasło) i
+  `DisplayName` (nazwa konta widoczna na dole ekranu). Konto z `DisplayName` =
+  **„Skryba”** może dodawać, zmieniać i usuwać notatki; każde inne konto graczy
+  (np. „Gracz”) tylko czyta.
+* `admins/{id}` — pole `rola: "admin"` (ten sam `{id}` co w `secrets`) = konto admina.
+
+Nowe konto = nowy dokument w `secrets` (np. `Player4`) z tymi trzema polami.
 
 ### Jak opublikować reguły (krok po kroku)
 

@@ -30,6 +30,11 @@ export const LIMITY = {
   podpis: 80
 };
 
+/** Profil „Skryba” (może pisać notatki): konto, którego pole DisplayName w bazie
+ *  brzmi tak (bez względu na wielkość liter). Inne konta graczy tylko czytają. */
+export const NAZWA_SKRYBY = "skryba";
+
 export const KLUCZ_SESJI = "notatkirpg.sesja";
+export const KLUCZ_LOGU = "notatkirpg.log"; // log komunikatów admina (sessionStorage)
 export const KLUCZ_PODPISU = "notatkirpg.podpis";
 export const KLUCZ_INDEKSU = "notatkirpg.indeks";

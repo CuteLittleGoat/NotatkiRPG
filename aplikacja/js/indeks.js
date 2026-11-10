@@ -1,5 +1,5 @@
 // Indeks z boku mapy: lista miejsc z wyszukiwarką.
-// Gracz i gość widzą tylko miejsca dostępne (zaznaczone przez admina, na widocznej
+// Gracze (Skryba i Gracz) widzą tylko miejsca dostępne (zaznaczone przez admina, na widocznej
 // zakładce). Admin widzi wszystko i przy każdym miejscu ma pole „dostępne dla graczy”.
 import { el, komunikat, normalizuj, opisBledu, opoznij, pasuje, wyczysc } from "./narzedzia.js";
 
@@ -188,6 +188,7 @@ export class Indeks {
     this.oczekujace.set(element.id, wartosc);
     try {
       await dane.zapiszUstawienia({ elementy: { [element.id]: wartosc } }, stan.sesja);
+      komunikat(wartosc ? `Miejsce „${element.nazwa}” dostępne dla graczy.` : `Miejsce „${element.nazwa}” ukryte przed graczami.`, "ok");
     } catch (e) {
       komunikat(opisBledu(e), "blad", 8000);
     } finally {

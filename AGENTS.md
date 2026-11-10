@@ -37,7 +37,14 @@ Przeczytaj ten plik w całości, zanim cokolwiek zmienisz. Potem: `README.md`
 ## 3. Dane i bezpieczeństwo
 
 * **Nigdy** nie zapisuj haseł ani loginów w repozytorium, logach, komunikatach ani
-  commitach. Konta w testach (`test-admin`, `test-gracz`) są wymyślone.
+  commitach. Konta w testach (`test-admin`, `test-skryba`, `test-gracz`) są wymyślone.
+* **Profile kont** (`aplikacja/js/sesja.js`): **Admin** — `rola: "admin"` w
+  `admins/{id}`; **Skryba** — `DisplayName` = „Skryba” w `secrets/{id}` (dodaje,
+  zmienia, usuwa notatki); **Gracz** — każde inne konto (tylko czyta). **Bez
+  logowania aplikacja niczego nie pokazuje** (ani map, ani nazw kampanii) — nie
+  dodawaj widoków dla niezalogowanych. Gracze widzą tylko kampanie udostępnione
+  przez admina (`kampanie/{id}.widoczna`, domyślnie `widocznaDomyslnie` z rejestru
+  `kampanie.json`); nieudostępnionych kampanii nie wstawiaj do strony gracza nawet ukrytych.
 * **Nie zmieniaj** kolekcji `admins` i `secrets`, ich dokumentów ani pól. Reguły
   bazy pozwalają je tylko czytać (potrzebne do logowania); przywracanie kopii je pomija.
   Konta zmienia użytkownik ręcznie w konsoli Firebase.
@@ -65,7 +72,11 @@ Przeczytaj ten plik w całości, zanim cokolwiek zmienisz. Potem: `README.md`
 * Firebase z CDN `https://www.gstatic.com/firebasejs/13.2.0/…` — **wszystkie moduły
   w tej samej wersji**, ładowane tylko w `aplikacja/js/firebase.js`.
 * `sessionStorage` i `localStorage` zawsze w `try/catch`. Sesja: tylko id konta,
-  login i rola — nigdy hasło.
+  login (`PlayerName`), nazwa konta (`DisplayName`) i profil — nigdy hasło. Zmiana
+  kształtu sesji = podbij `WERSJA_SESJI` w `sesja.js` (stare sesje trzeba odrzucić).
+* Komunikaty tylko przez `komunikat()` z `narzedzia.js`: na ekranie najwyżej dwa
+  naraz; u admina potwierdzenia trafiają wyłącznie do LOGU w zakładce Admin
+  (`sessionStorage`, czyszczony przy wylogowaniu), a na ekranie zostają same błędy.
 * Styl Data-Slate: własny, ogólny — **bez logotypów, grafik i cytatów Games Workshop**.
 * Motywy kolorów są w trzech miejscach, które muszą się zgadzać:
   `aplikacja/css/slate.css` (`.motyw-…`), `MOTYWY` w `narzedzia/przygotuj_mape.py`,
@@ -100,11 +111,13 @@ wzoru (`dokumentacja/Kod_Wzoru.txt`). Każde naprawia błąd widziany na tableta
 | nowa kampania | `kampanie/README.md`, szablon `narzedzia/szablon_kampanii/` |
 | wygląd | `aplikacja/css/slate.css` |
 | zachowanie mapy | `aplikacja/js/mapa.js` |
+| logowanie, lista kampanii (widoczność kampanii) | `aplikacja/js/start.js`, `logowanie.js`; profile i dostęp do kampanii: `sesja.js` |
 | zakładki, przepływ strony kampanii | `aplikacja/js/kampania.js` |
 | nowa zakładka (inna niż mapa) | wpis w `ZAKLADKI_STALE` (`aplikacja/js/konfiguracja.js`), sekcja `widok-{id}` w `kampania.html`, obsługa w `przelacz()` w `kampania.js`; widoczność dla graczy zapisuje się sama w `ustawienia/mapy` → `zakladki.{id}` |
 | widoczność (domyślne z manifestu + ustawienia admina) | `aplikacja/js/stan.js` |
 | zapis/odczyt bazy | `aplikacja/js/dane.js` |
 | kopia i przywracanie | `aplikacja/js/kopia.js`, format: `aplikacja/js/kopia-format.js` |
+| komunikaty i LOG admina | `komunikat()` w `aplikacja/js/narzedzia.js`; pole LOG w `aplikacja/js/admin.js` |
 | publikacja strony | GitHub Pages: Settings → Pages → Deploy from a branch (`main`, `/`); testy po zmianach: `.github/workflows/testy.yml` |
 | reguły bazy i ich test | `firebase/firestore.rules`, `testy/reguly/`, opis: `firebase/README.md` |
 | App Check | `aplikacja/js/firebase.js`, klucz witryny w `firebase/firebase-config.js` |

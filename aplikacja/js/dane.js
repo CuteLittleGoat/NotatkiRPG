@@ -1,4 +1,5 @@
-// Dane kampanii w Firestore: kampanie/{kampaniaId}/(notatki|ustawienia).
+// Dane kampanii w Firestore: kampanie/{kampaniaId} (nazwa, widoczność kampanii)
+// i jego podkolekcje (notatki|ustawienia).
 // Zmiany przychodzą na żywo (onSnapshot), więc gracze widzą nawzajem swoje wpisy.
 import {
   db,
@@ -14,6 +15,27 @@ import {
   deleteField
 } from "./firebase.js";
 import { DOKUMENT_USTAWIEN, KOLEKCJA_KAMPANII } from "./konfiguracja.js";
+
+/** Dokumenty wszystkich kampanii na żywo (do listy „WYBIERZ KAMPANIĘ”): Map id → dane. */
+export function subskrybujKampanie(przyDanych, przyBledzie) {
+  return onSnapshot(
+    collection(db, KOLEKCJA_KAMPANII),
+    (zdjecie) => przyDanych(new Map(zdjecie.docs.map((d) => [d.id, d.data({ serverTimestamps: "estimate" })])), zdjecie.metadata),
+    przyBledzie
+  );
+}
+
+/**
+ * Widoczność kampanii dla graczy (tylko admin). Zapis ze scalaniem — reszta pól zostaje.
+ * @param {{id: string, nazwa?: string}} wpis wpis z rejestru kampanie.json
+ */
+export function zapiszWidocznoscKampanii(wpis, widoczna, sesja) {
+  return setDoc(
+    doc(db, KOLEKCJA_KAMPANII, wpis.id),
+    { nazwa: String(wpis.nazwa || wpis.id).slice(0, 200), widoczna: Boolean(widoczna), zmieniono: serverTimestamp(), kontoIdZmiany: sesja?.kontoId ?? null },
+    { merge: true }
+  );
+}
 
 export class DaneKampanii {
   constructor(kampaniaId, nazwa) {
@@ -39,6 +61,15 @@ export class DaneKampanii {
         const wpisy = zdjecie.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
         przyDanych(wpisy, zdjecie.metadata);
       },
+      przyBledzie
+    );
+  }
+
+  /** Dokument kampanii (m.in. widoczność dla graczy). Brak dokumentu → null. */
+  subskrybujDokumentKampanii(przyDanych, przyBledzie) {
+    return onSnapshot(
+      doc(db, KOLEKCJA_KAMPANII, this.id),
+      (zdjecie) => przyDanych(zdjecie.exists() ? zdjecie.data({ serverTimestamps: "estimate" }) : null, zdjecie.metadata),
       przyBledzie
     );
   }

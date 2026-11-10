@@ -1,7 +1,7 @@
 // Wspólny stan strony kampanii: manifest, ustawienia admina, wpisy z bazy, sesja.
 // Moduły widoków subskrybują zmiany i odświeżają się same.
 import { MOTYW_DOMYSLNY, MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
-import { jestAdminem } from "./sesja.js";
+import { jestAdminem, kampaniaWidocznaDlaGraczy } from "./sesja.js";
 
 export class Stan {
   constructor({ kampania, manifest, folder }) {
@@ -9,6 +9,7 @@ export class Stan {
     this.manifest = manifest; // Iliac/kampania.json
     this.folder = folder;
     this.sesja = null;
+    this.dokumentKampanii = null; // kampanie/{id} z bazy (pole „widoczna”)
     this.podgladGracza = false; // admin: „pokaż tak, jak widzi gracz”
     this.ustawienia = {};
     this.notatki = [];
@@ -43,6 +44,11 @@ export class Stan {
   /** Czy bieżący użytkownik widzi wszystko jak admin (a nie jak gracz). */
   widokAdmina() {
     return jestAdminem(this.sesja) && !this.podgladGracza;
+  }
+
+  /** Czy gracze widzą tę kampanię na liście kampanii (i mogą ją otworzyć). */
+  kampaniaWidocznaDlaGraczy() {
+    return kampaniaWidocznaDlaGraczy(this.kampania, this.dokumentKampanii);
   }
 
   // ---- ustawienia z domyślnymi wartościami z manifestu ----
@@ -81,7 +87,7 @@ export class Stan {
     return this.widokAdmina() ? wszystkie : wszystkie.filter((m) => this.mapaWidocznaDlaGraczy(m));
   }
 
-  /** Czy bieżący użytkownik może kliknąć element (gracz/gość: tylko dostępne; admin: wszystkie). */
+  /** Czy bieżący użytkownik może kliknąć element (gracze: tylko dostępne; admin: wszystkie). */
   elementDlaUzytkownika(element) {
     return this.widokAdmina() || this.elementDostepnyDlaGraczy(element);
   }

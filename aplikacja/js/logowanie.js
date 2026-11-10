@@ -1,15 +1,21 @@
-// Logowanie na etapie szkicu: porównanie loginu i hasła z kolekcją „secrets”.
-// UWAGA: przeglądarka musi czytać kolekcję secrets, więc hasła są widoczne dla
-// każdego, kto zajrzy do bazy — opis i droga na później w README.md.
+// Logowanie: porównanie loginu i hasła z kolekcją „secrets” (świadoma decyzja —
+// bez logowania Firebase). UWAGA: przeglądarka musi czytać kolekcję secrets, więc
+// hasła są widoczne dla każdego, kto zajrzy do bazy — opis w README.md.
+//
+// Dokument konta w secrets: PlayerName (login), PlayerPassword (hasło), DisplayName
+// (nazwa na dole ekranu; „Skryba” = konto, które pisze notatki). Rola admina —
+// pole „rola” w admins/{id}. Kolekcji kont aplikacja nie zmienia.
 import { db, collection, doc, getDoc, getDocs, query, where } from "./firebase.js";
 import { KOLEKCJA_ADMINOW, KOLEKCJA_SEKRETOW } from "./konfiguracja.js";
 import { el, opisBledu } from "./narzedzia.js";
-import { ROLE, zapiszSesje } from "./sesja.js";
+import { rolaKonta, zapiszSesje } from "./sesja.js";
 
 export const KOMUNIKAT_BLEDNE_DANE = "Nieprawidłowy login lub hasło.";
 
+const tekst = (v) => (typeof v === "string" ? v.trim() : "");
+
 /**
- * Sprawdza login i hasło. Zwraca { kontoId, login, rola } albo null.
+ * Sprawdza login i hasło. Zwraca { kontoId, login, nazwa, rola } albo null.
  * Rzuca błąd tylko przy problemie z bazą (np. brak uprawnień).
  */
 export async function sprawdzLogowanie(login, haslo) {
@@ -17,14 +23,20 @@ export async function sprawdzLogowanie(login, haslo) {
   const czysteHaslo = String(haslo || "");
   if (!czystyLogin || !czysteHaslo) return null;
   const wynik = await getDocs(query(collection(db, KOLEKCJA_SEKRETOW), where("PlayerName", "==", czystyLogin)));
-  let kontoId = null;
+  let konto = null;
   wynik.forEach((d) => {
-    if (!kontoId && d.data().PlayerPassword === czysteHaslo) kontoId = d.id;
+    const dane = d.data();
+    if (!konto && dane.PlayerPassword === czysteHaslo) {
+      // Tylko to, co potrzebne — hasło nie wychodzi poza tę funkcję.
+      konto = { kontoId: d.id, login: tekst(dane.PlayerName) || czystyLogin, nazwa: tekst(dane.DisplayName) };
+    }
   });
-  if (!kontoId) return null;
-  const admin = await getDoc(doc(db, KOLEKCJA_ADMINOW, kontoId));
-  const rola = admin.exists() && admin.data().rola === "admin" ? ROLE.ADMIN : ROLE.GRACZ;
-  return { kontoId, login: czystyLogin, rola };
+  if (!konto) return null;
+  const admin = await getDoc(doc(db, KOLEKCJA_ADMINOW, konto.kontoId));
+  const daneAdmina = admin.exists() ? admin.data() : {};
+  // DisplayName może być też w dokumencie admins/{id} — wtedy bierzemy go stamtąd.
+  if (!konto.nazwa) konto.nazwa = tekst(daneAdmina.DisplayName);
+  return { ...konto, rola: rolaKonta({ rolaAdmina: daneAdmina.rola, nazwa: konto.nazwa }) };
 }
 
 /**
@@ -91,28 +103,4 @@ export function formularzLogowania(poZalogowaniu) {
     }
   });
   return { formularz, fokus: () => poleLogin.focus() };
-}
-
-/** Okno logowania (na stronie kampanii). */
-export function oknoLogowania(poZalogowaniu) {
-  const okno = el("dialog.okno.okno-male", { atrybuty: { "aria-label": "Logowanie" } });
-  const zamknij = el("button.przycisk-ikona", { tekst: "×", atrybuty: { type: "button", "aria-label": "Zamknij" } });
-  const { formularz, fokus } = formularzLogowania((sesja) => {
-    okno.close();
-    okno.remove();
-    poZalogowaniu?.(sesja);
-  });
-  okno.append(
-    el("div.okno-pasek", [el("span.ozdoba", { tekst: "+++ IDENTYFIKACJA UŻYTKOWNIKA +++" }), zamknij]),
-    el("p.okno-tresc.przygaszony", { tekst: "Bez logowania możesz tylko przeglądać. Gracze dzielą jedno konto — przy wpisie możesz podać swój podpis." }),
-    formularz
-  );
-  zamknij.addEventListener("click", () => {
-    okno.close();
-    okno.remove();
-  });
-  okno.addEventListener("close", () => okno.remove());
-  document.body.append(okno);
-  okno.showModal();
-  fokus();
 }

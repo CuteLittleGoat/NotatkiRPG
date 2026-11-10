@@ -77,10 +77,14 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 2. Skopiuj do niego szablon [`narzedzia/szablon_kampanii/kampania.json`](../narzedzia/szablon_kampanii/kampania.json)
    i uzupełnij (opis pól niżej). Wgraj rysunek od MG ze znacznikami.
 3. Dopisz kampanię do [`kampanie.json`](../kampanie.json):
-   `{ "id": "nazwa", "nazwa": "Nazwa", "folder": "kampanie/NazwaKampanii", "opis": "…" }`.
+   `{ "id": "nazwa", "nazwa": "Nazwa", "folder": "kampanie/NazwaKampanii" }`.
    `id` — małe litery bez polskich znaków, cyfry i myślniki, najwyżej 40 znaków
    (tego pilnują reguły bazy); pod nim zapiszą się dane w bazie (`kampanie/{id}`) i
-   **nie należy go potem zmieniać**.
+   **nie należy go potem zmieniać**. Pola opcjonalne: `opis` (krótki napis pod
+   nazwą na liście kampanii) i `widocznaDomyslnie` — bez niego nowa kampania jest
+   **ukryta przed graczami**, dopóki admin nie zaznaczy jej na liście „WYBIERZ
+   KAMPANIĘ” (`true` = od razu widoczna). Nazwę z rejestru da się przeczytać w
+   pliku — wpisuj tylko taką, która niczego nie zdradza.
 4. Uruchom skrypt map (jak wyżej). Kod aplikacji się nie zmienia.
 
 ## Manifest `kampania.json` — pola

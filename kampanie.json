@@ -4,7 +4,7 @@
       "id": "iliac",
       "nazwa": "Kopiec Iliac",
       "folder": "kampanie/Iliac",
-      "opis": "Warhammer 40,000 / Wrath & Glory"
+      "widocznaDomyslnie": true
     }
   ]
 }
