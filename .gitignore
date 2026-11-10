@@ -1,0 +1,13 @@
+# Strona złożona do publikacji (narzedzia/zbuduj_strone.py)
+_site/
+
+# Kopie zapasowe bazy — NIE wrzucaj ich do repozytorium (mogą zawierać hasła)
+NotatkiRPG_kopia_*.csv
+
+# Wyniki testów i pliki pomocnicze
+testy/e2e/wyniki/
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store
+Thumbs.db
