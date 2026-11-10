@@ -37,10 +37,13 @@ Przeczytaj ten plik w całości, zanim cokolwiek zmienisz. Potem: `README.md`
 ## 3. Dane i bezpieczeństwo
 
 * **Nigdy** nie zapisuj haseł ani loginów w repozytorium, logach, komunikatach ani
-  commitach. Konta w testach (`test-admin`, `test-skryba`, `test-gracz`) są wymyślone.
-* **Profile kont** (`aplikacja/js/sesja.js`): **Admin** — `rola: "admin"` w
-  `admins/{id}`; **Skryba** — `DisplayName` = „Skryba” w `secrets/{id}` (dodaje,
-  zmienia, usuwa notatki); **Gracz** — każde inne konto (tylko czyta). **Bez
+  commitach. Konta w testach (`test-admin`, `test-edytor`, `test-gracz`) są wymyślone.
+* **Profile kont** (`aplikacja/js/sesja.js`) — **wyłącznie** z pola `rola` w
+  `admins/{id}`: `"admin"` = **Admin**; `"edytor"` = **Edytor** (dodaje, zmienia,
+  usuwa notatki); brak dokumentu albo inna wartość = **Gracz** (tylko czyta; wiele
+  osób naraz). `DisplayName` i `PlayerName` służą tylko do wyświetlania — **nie
+  uzależniaj od nich uprawnień**. Liczba logowań nie jest ograniczona (analiza:
+  `Analizy/Blokada_kont.md`). **Bez
   logowania aplikacja niczego nie pokazuje** (ani map, ani nazw kampanii) — nie
   dodawaj widoków dla niezalogowanych. Gracze widzą tylko kampanie udostępnione
   przez admina (`kampanie/{id}.widoczna`, domyślnie `widocznaDomyslnie` z rejestru
@@ -118,6 +121,7 @@ wzoru (`dokumentacja/Kod_Wzoru.txt`). Każde naprawia błąd widziany na tableta
 | zapis/odczyt bazy | `aplikacja/js/dane.js` |
 | kopia i przywracanie | `aplikacja/js/kopia.js`, format: `aplikacja/js/kopia-format.js` |
 | komunikaty i LOG admina | `komunikat()` w `aplikacja/js/narzedzia.js`; pole LOG w `aplikacja/js/admin.js` |
+| analizy pomysłów do decyzji użytkownika | `Analizy/` (np. `Blokada_kont.md`) — po polsku, prostym językiem, z rekomendacją |
 | publikacja strony | GitHub Pages: Settings → Pages → Deploy from a branch (`main`, `/`); testy po zmianach: `.github/workflows/testy.yml` |
 | reguły bazy i ich test | `firebase/firestore.rules`, `testy/reguly/`, opis: `firebase/README.md` |
 | App Check | `aplikacja/js/firebase.js`, klucz witryny w `firebase/firebase-config.js` |

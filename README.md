@@ -27,10 +27,10 @@ w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glor
 ## Co potrafi
 
 * **Logowanie wymagane** — bez logowania strona pokazuje tylko formularz (bez map
-  i bez nazw kampanii). Trzy profile: **Admin**, **Skryba** (pisze notatki) i
+  i bez nazw kampanii). Trzy profile: **Admin**, **Edytor** (pisze notatki) i
   **Gracz** (tylko czyta) — opis w rozdziale [Role i uprawnienia](#role-i-uprawnienia).
 * **Wybór kampanii** po zalogowaniu — admin widzi wszystkie kampanie i przy każdej
-  zaznacza, czy jest **widoczna dla graczy**; Skryba i Gracz widzą tylko kampanie
+  zaznacza, czy jest **widoczna dla graczy**; Edytor i Gracz widzą tylko kampanie
   udostępnione (admin może więc spokojnie przygotowywać kilka kampanii naraz).
 * **Zakładki** — pierwsza jest **Notatki**, potem mapy (każda mapa to osobna
   zakładka). **Każdą zakładkę admin może ukryć albo odsłonić graczom** polem wyboru
@@ -81,22 +81,24 @@ korzystają tylko ze stron aplikacji (Twoja decyzja).
 | Kto | Może |
 |---|---|
 | bez logowania | nic — widzi tylko formularz logowania (bez map i nazw kampanii) |
-| **Gracz** (dziś `Player3`) | przeglądać udostępnione kampanie: mapy, miejsca i notatki (bez dodawania i zmian) |
-| **Skryba** (dziś `Player2`) | to samo co Gracz oraz dodawać, edytować i usuwać notatki |
+| **Gracz** (dziś `Player3`) | przeglądać udostępnione kampanie: mapy, miejsca i notatki (bez dodawania i zmian); na to konto może być zalogowanych wiele osób naraz |
+| **Edytor** (dziś `Player2`) | to samo co Gracz oraz dodawać, edytować i usuwać notatki |
 | **Admin** (dziś `Player1`) | widzieć wszystkie kampanie, zakładki i miejsca; przeglądać notatki (bez edycji); ukrywać i odsłaniać kampanie, zakładki i miejsca, ustawiać kolory, robić kopię zapasową i przywracać bazę |
 
-**Skąd aplikacja wie, kto jest kim** (konta zakładasz ręcznie w konsoli Firebase):
+**Skąd aplikacja wie, kto jest kim** — wyłącznie z pola **`rola`** w dokumencie
+`admins/{id}` (konta zakładasz ręcznie w konsoli Firebase):
 
-* **Admin** — konto z polem `rola: "admin"` w dokumencie `admins/{id}` (jak dotąd).
-* **Skryba** — konto, którego pole **`DisplayName`** brzmi **„Skryba”** (wielkość liter
-  nie ma znaczenia).
-* **Gracz** — każde inne konto (np. `DisplayName` = „Gracz”). Gdy zmienisz komuś
-  `DisplayName` na „Skryba”, zyska edycję notatek — i odwrotnie.
+* `rola: "admin"` — **Admin**;
+* `rola: "edytor"` — **Edytor**;
+* brak dokumentu w `admins` (albo inna wartość) — **Gracz**, tylko czyta.
 
-Na górze ekranu przy „KONTO:” widać login (`PlayerName`), a na dole — nazwę konta
-(`DisplayName`). Przy wpisie jest pole **„podpis / postać”**, bo z jednego konta
-może korzystać kilka osób. Logowanie trwa do zamknięcia karty przeglądarki (sesja
-w `sessionStorage`, bez hasła); po wylogowaniu aplikacja wraca do ekranu logowania.
+`DisplayName` i `PlayerName` **nie wpływają na uprawnienia** — możesz je zmieniać
+dowolnie. Na górze ekranu przy „KONTO:” widać login (`PlayerName`), a na dole —
+nazwę konta (`DisplayName`). Przy wpisie jest pole **„podpis / postać”**, bo z
+jednego konta może korzystać kilka osób. Logowanie trwa do zamknięcia karty
+przeglądarki (sesja w `sessionStorage`, bez hasła); po wylogowaniu aplikacja wraca
+do ekranu logowania. Liczba jednocześnie zalogowanych osób nie jest ograniczona —
+analiza takiej blokady dla kont admina i edytora: [`Analizy/Blokada_kont.md`](Analizy/Blokada_kont.md).
 
 ## Jak tego używać
 
@@ -107,7 +109,7 @@ po miejscach, Enter otwiera kartę, strzałki przesuwają, `+`/`-` przybliżają
 Home — widok początkowy, Esc zamyka kartę albo indeks.
 
 **Miejsca:** kliknij miejsce ze złotymi narożnikami. Otworzy się karta z jawnym
-opisem i notatkami. Skryba ma tam przycisk „+ DODAJ NOTATKĘ”.
+opisem i notatkami. Edytor ma tam przycisk „+ DODAJ NOTATKĘ”.
 
 **Indeks:** przycisk INDEKS (na szerokim ekranie indeks jest otwarty z boku).
 Wyszukiwarka przeszukuje nazwy miejsc, dawne nazwy (aliasy), opisy i notatki —
@@ -115,7 +117,7 @@ bez rozróżniania wielkości liter i polskich znaków.
 
 **Admin — kampanie:** na liście **WYBIERZ KAMPANIĘ** przy każdej kampanii jest pole
 „widoczna dla graczy”. Odznaczona kampania (przerywana ramka, znak ⊘) znika
-Skrybie i Graczowi z listy, a kto ją właśnie ogląda, zobaczy informację „KAMPANIA
+Edytorowi i Graczowi z listy, a kto ją właśnie ogląda, zobaczy informację „KAMPANIA
 NIEDOSTĘPNA”. To samo pole jest w zakładce ADMIN kampanii → „KAMPANIA”.
 
 **Admin — zakładki i miejsca:** przy każdej zakładce (w pasku na górze) jest pole wyboru —
@@ -148,6 +150,7 @@ NotatkiRPG/
 ├── narzedzia/                 skrypt przygotowania map, szablon kampanii
 ├── testy/                     testy automatyczne (jednostkowe, skryptów, reguł bazy, całej aplikacji)
 ├── dokumentacja/              materiały pomocnicze (Kod_Wzoru.txt — wzór klikalnej mapy)
+├── Analizy/                   analizy pomysłów do decyzji (np. Blokada_kont.md) — nie są częścią aplikacji
 ├── .github/workflows/         testy uruchamiane po każdej zmianie na main
 ├── AGENTS.md                  zasady pracy dla agentów AI
 └── README.md                  ten plik
@@ -159,7 +162,7 @@ Moduły w `aplikacja/js/`:
 |---|---|
 | `firebase.js` | jedyne miejsce ładowania Firebase 13.2.0 (wszystkie moduły w tej samej wersji) i uruchomienia App Check |
 | `konfiguracja.js` | nazwy kolekcji, motywy, zakładki stałe (`ZAKLADKI_STALE` — nowa zakładka = nowy wpis tutaj) |
-| `sesja.js`, `logowanie.js` | sesja, profile (Admin / Skryba / Gracz), kto widzi którą kampanię; logowanie (kolekcje `secrets`, `admins`) |
+| `sesja.js`, `logowanie.js` | sesja, profile (Admin / Edytor / Gracz), kto widzi którą kampanię; logowanie (kolekcje `secrets`, `admins`) |
 | `dane.js`, `stan.js` | odczyt/zapis w Firestore na żywo; wspólny stan strony i ustawienia domyślne |
 | `mapa.js` | wczytanie mapy SVG, przesuwanie i przybliżanie (mysz, dotyk, klawiatura) |
 | `indeks.js`, `panel.js` | indeks z wyszukiwarką; karta miejsca |
@@ -201,8 +204,8 @@ Konta (zakładane ręcznie w konsoli Firebase, aplikacja je tylko czyta):
 
 | Ścieżka | Pola |
 |---|---|
-| `secrets/{id}` | `PlayerName` (login), `PlayerPassword` (hasło), `DisplayName` (nazwa konta na dole ekranu; „Skryba” = konto, które pisze notatki) |
-| `admins/{id}` | `rola: "admin"` — konto admina (ten sam `{id}` co w `secrets`) |
+| `secrets/{id}` | `PlayerName` (login, u góry ekranu), `PlayerPassword` (hasło), `DisplayName` (nazwa konta na dole ekranu) — nie wpływają na uprawnienia |
+| `admins/{id}` | `rola`: `"admin"` (admin) albo `"edytor"` (pisze notatki); ten sam `{id}` co w `secrets`. Konto bez dokumentu tutaj tylko czyta |
 
 Zakładki Postęp i Powiązania
 zostały usunięte — jeśli zostały po nich wpisy w bazie (`kampanie/iliac/postep`,
@@ -255,7 +258,7 @@ nikomu i nie wrzucaj do repozytorium; `.gitignore` blokuje takie pliki).
 **Czego to nie zmienia** (bo logowanie zostaje oparte na kolekcji `secrets`, bez
 logowania Firebase — Twoja decyzja):
 
-1. **Baza nie wie, kto pyta.** Profile Admin, Skryba i Gracz oraz wymóg logowania
+1. **Baza nie wie, kto pyta.** Profile Admin, Edytor i Gracz oraz wymóg logowania
    działają tylko w wyglądzie aplikacji. Ktoś, kto otworzy prawdziwą stronę i użyje
    narzędzi deweloperskich przeglądarki, może czytać bazę bez logowania oraz dodawać,
    zmieniać i usuwać notatki i ustawienia (ale nie konta).
@@ -326,10 +329,11 @@ Przyjęte na tym etapie — każdą można zmienić:
     ukrytych miejsc).
 15. **Formularz notatki:** kursor od razu w polu „Treść”; tytuł jest opcjonalny —
     jeśli pusty, aplikacja bierze pierwszą linię treści.
-16. **Trzy profile** (Twoja prośba): Admin — jak dotąd z kolekcji `admins`; Skryba —
-    konto z `DisplayName` = „Skryba”; każde inne konto to Gracz (tylko czyta). Dzięki
-    temu nie trzeba zakładać nowych pól w bazie. Stare sesje (sprzed tej zmiany)
-    wymagają ponownego zalogowania.
+16. **Trzy profile** (Twoja prośba) — wyłącznie z pola `rola` w kolekcji `admins`:
+    `admin` = Admin, `edytor` = Edytor (pisze notatki), brak wpisu = Gracz (tylko
+    czyta). `DisplayName` i `PlayerName` służą tylko do wyświetlania. Stare sesje
+    (sprzed tej zmiany) wymagają ponownego zalogowania. Liczba zalogowanych osób nie
+    jest ograniczona (analiza blokady: `Analizy/Blokada_kont.md`).
 17. **Bez logowania nic nie widać** — ani map, ani nazw kampanii; strona kampanii
     otwarta bez logowania przenosi do logowania, a po zalogowaniu wraca do tej
     kampanii.
@@ -350,7 +354,7 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
 
 * **Testy jednostkowe** (Node, 22): format CSV (cudzysłowy, przecinki, nowe linie,
   BOM), kodowanie typów Firestore, odczyt błędnych plików, partie po 500,
-  wyszukiwanie bez polskich znaków, profile kont (Admin / Skryba / Gracz) i
+  wyszukiwanie bez polskich znaków, profile kont (Admin / Edytor / Gracz — tylko z pola `rola`) i
   widoczność kampanii (z bazy albo domyślna z rejestru).
 * **Skrypty** (Python, 9): przygotowanie map — usuwanie materiału MG, przerwanie
   przy śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), raport
@@ -363,9 +367,10 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
 * **Cała aplikacja w przeglądarce** (Chromium, 66 kroków) na **udawanym Firebase**:
   bez logowania nic nie widać (strona startowa bez nazw kampanii, strona kampanii
-  przenosi do logowania i po nim wraca), trzy profile (Gracz tylko czyta, Skryba
-  pisze, Admin ustawia), login u góry i `DisplayName` u dołu, stara sesja wymaga
-  ponownego logowania, lista kampanii (gracz widzi tylko udostępnione, admin — wszystkie
+  przenosi do logowania i po nim wraca), trzy profile (Gracz tylko czyta — nawet z
+  `DisplayName` „Skryba”, Edytor pisze — z dowolnym `DisplayName`, Admin ustawia),
+  login u góry i `DisplayName` u dołu, stare sesje wymagają ponownego logowania,
+  lista kampanii (gracz widzi tylko udostępnione, admin — wszystkie
   z polem widoczności; zmiany na żywo; ukrycie oglądanej kampanii → „KAMPANIA
   NIEDOSTĘPNA”, a po odsłonięciu powrót), ogólny komunikat błędu logowania, Notatki
   jako pierwsza zakładka, notatki (dodanie z kursorem w „Treści”, etykieta z nazwą
@@ -396,7 +401,7 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
 * **Zapisu i odczytu w prawdziwej bazie** (nie zapisuję nic w Twojej bazie). Po
   opublikowaniu reguł i strony:
   1. Otwórz stronę w dwóch kartach (albo na dwóch urządzeniach).
-  2. Zaloguj się w pierwszej jako Skryba, dodaj notatkę przy dowolnym miejscu —
+  2. Zaloguj się w pierwszej jako edytor (`Player2`), dodaj notatkę przy dowolnym miejscu —
      powinna od razu pojawić się w drugiej karcie (zalogowanej jako Gracz).
   3. Zaloguj się jako Gracz — nie powinno być przycisków „NOWA NOTATKA”,
      „DODAJ NOTATKĘ”, „EDYTUJ” ani „USUŃ”.

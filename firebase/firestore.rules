@@ -5,7 +5,7 @@ rules_version = '2';
 // i widoczność kampanii dla graczy (pole „widoczna” w dokumencie kampanii).
 //
 // Bez logowania Firebase (świadoma decyzja właściciela) baza nie wie, KTO pyta,
-// więc nie odróżni Gracza od Skryby ani od admina. Te reguły pilnują za to, CO
+// więc nie odróżni Gracza od Edytora ani od admina. Te reguły pilnują za to, CO
 // wolno zrobić:
 //   * dostępne są tylko kolekcje używane przez aplikację (notatki, ustawienia,
 //     konta) — wszystko inne jest

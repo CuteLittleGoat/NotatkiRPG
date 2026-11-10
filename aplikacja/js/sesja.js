@@ -2,28 +2,30 @@
 // Przechowujemy WYŁĄCZNIE: identyfikator konta, login (PlayerName), nazwę
 // wyświetlaną (DisplayName) i profil. Nigdy hasło.
 //
-// Profile (role):
-//   admin  — konto z rolą „admin” w kolekcji admins: ustawienia, kopie; notatki tylko czyta;
-//   skryba — konto graczy z DisplayName „Skryba”: dodaje, zmienia i usuwa notatki;
-//   gracz  — każde inne konto: tylko czyta.
+// Profile (role) — WYŁĄCZNIE z pola „rola” w dokumencie admins/{id} (DisplayName
+// i PlayerName nie mają wpływu na uprawnienia):
+//   admin  — „rola: admin”: ustawienia, kopie; notatki tylko czyta;
+//   edytor — „rola: edytor”: dodaje, zmienia i usuwa notatki;
+//   gracz  — konto bez dokumentu w admins (albo z inną rolą): tylko czyta. Na to
+//            konto może być zalogowanych wiele osób naraz.
 // Bez logowania aplikacja niczego nie pokazuje (ani map, ani nazw kampanii).
-import { KLUCZ_LOGU, KLUCZ_SESJI, NAZWA_SKRYBY } from "./konfiguracja.js";
+import { KLUCZ_LOGU, KLUCZ_SESJI } from "./konfiguracja.js";
 import { normalizuj } from "./narzedzia.js";
 
-export const ROLE = { GRACZ: "gracz", SKRYBA: "skryba", ADMIN: "admin" };
+export const ROLE = { GRACZ: "gracz", EDYTOR: "edytor", ADMIN: "admin" };
 const ZNANE_ROLE = Object.values(ROLE);
-const WERSJA_SESJI = 2; // starsze sesje (sprzed profili) trzeba zalogować ponownie
+const WERSJA_SESJI = 3; // starsze sesje (sprzed profilu edytora) trzeba zalogować ponownie
 
 const ZDARZENIE = "notatkirpg-sesja";
 
 /**
- * Profil konta z danych w bazie.
- * @param {{rolaAdmina?: string, nazwa?: string}} konto rolaAdmina — pole „rola” z admins/{id};
- *   nazwa — pole DisplayName
+ * Profil konta z pola „rola” w admins/{id} (wielkość liter i spacje nie mają znaczenia).
+ * Brak dokumentu albo inna wartość = Gracz (tylko czyta).
  */
-export function rolaKonta({ rolaAdmina, nazwa } = {}) {
-  if (rolaAdmina === "admin") return ROLE.ADMIN;
-  if (normalizuj(nazwa) === NAZWA_SKRYBY) return ROLE.SKRYBA;
+export function rolaKonta(rolaZBazy) {
+  const r = normalizuj(typeof rolaZBazy === "string" ? rolaZBazy : "");
+  if (r === ROLE.ADMIN) return ROLE.ADMIN;
+  if (r === ROLE.EDYTOR) return ROLE.EDYTOR;
   return ROLE.GRACZ;
 }
 
@@ -72,9 +74,9 @@ export function rola(sesja) {
   return sesja ? sesja.rola : null;
 }
 
-/** Notatki dodaje, zmienia i usuwa tylko Skryba. Admin i Gracz — tylko czytają. */
+/** Notatki dodaje, zmienia i usuwa tylko Edytor. Admin i Gracz — tylko czytają. */
 export function mozeEdytowac(sesja) {
-  return rola(sesja) === ROLE.SKRYBA;
+  return rola(sesja) === ROLE.EDYTOR;
 }
 
 export function jestAdminem(sesja) {
@@ -82,7 +84,7 @@ export function jestAdminem(sesja) {
 }
 
 export function opisRoli(sesja) {
-  return { [ROLE.ADMIN]: "Admin", [ROLE.SKRYBA]: "Skryba", [ROLE.GRACZ]: "Gracz" }[rola(sesja)] || "";
+  return { [ROLE.ADMIN]: "Admin", [ROLE.EDYTOR]: "Edytor", [ROLE.GRACZ]: "Gracz" }[rola(sesja)] || "";
 }
 
 /** Nazwa konta na dole ekranu: pole DisplayName (a gdy go brak — nazwa profilu). */
@@ -93,7 +95,7 @@ export function nazwaKonta(sesja) {
 // ---- kampanie: kto którą widzi ----
 
 /**
- * Czy kampania jest widoczna dla graczy (Skryby i Gracza).
+ * Czy kampania jest widoczna dla graczy (Edytora i Gracza).
  * @param {object} wpis wpis z rejestru kampanie.json (pole widocznaDomyslnie)
  * @param {object|null} dokument dane z bazy kampanie/{id} (pole widoczna)
  */

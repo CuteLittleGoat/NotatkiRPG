@@ -93,7 +93,7 @@ export class PanelElementu {
             ? "Brak notatek o tym miejscu."
             : jestAdminem(sesja)
               ? "Brak notatek o tym miejscu. (Admin przegląda wpisy, nie edytuje ich.)"
-              : "Brak notatek o tym miejscu. Notatki dodaje Skryba."
+              : "Brak notatek o tym miejscu. Notatki dodaje konto edytora."
         })
       );
     }

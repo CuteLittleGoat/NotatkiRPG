@@ -1,5 +1,5 @@
 // Indeks z boku mapy: lista miejsc z wyszukiwarką.
-// Gracze (Skryba i Gracz) widzą tylko miejsca dostępne (zaznaczone przez admina, na widocznej
+// Gracze (Edytor i Gracz) widzą tylko miejsca dostępne (zaznaczone przez admina, na widocznej
 // zakładce). Admin widzi wszystko i przy każdym miejscu ma pole „dostępne dla graczy”.
 import { el, komunikat, normalizuj, opisBledu, opoznij, pasuje, wyczysc } from "./narzedzia.js";
 

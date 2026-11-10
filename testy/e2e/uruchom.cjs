@@ -18,12 +18,16 @@ const WYNIKI = path.join(__dirname, "wyniki");
 fs.mkdirSync(WYNIKI, { recursive: true });
 
 // Konta TESTOWE — wymyślone na potrzeby testów, nie mają nic wspólnego z prawdziwymi.
-// Profile: Admin (rola w admins), Skryba (DisplayName „Skryba” — pisze notatki), Gracz (tylko czyta).
+// Profile wynikają WYŁĄCZNIE z pola „rola” w admins: Admin („admin”), Edytor („edytor” —
+// pisze notatki), Gracz (bez wpisu — tylko czyta). Nazwy DisplayName są celowo mylące
+// (konto do przeglądania nazywa się „Skryba”, edytor — „Kronikarz”), żeby sprawdzić,
+// że nazwa konta nie wpływa na uprawnienia.
 const KONTA = {
   "secrets/Player1": { PlayerName: "test-admin", PlayerPassword: "haslo-admina", DisplayName: "Admin" },
-  "secrets/Player2": { PlayerName: "test-skryba", PlayerPassword: "haslo-skryby", DisplayName: "Skryba" },
-  "secrets/Player3": { PlayerName: "test-gracz", PlayerPassword: "haslo-gracza", DisplayName: "Gracz" },
-  "admins/Player1": { rola: "admin" }
+  "secrets/Player2": { PlayerName: "test-edytor", PlayerPassword: "haslo-edytora", DisplayName: "Kronikarz" },
+  "secrets/Player3": { PlayerName: "test-gracz", PlayerPassword: "haslo-gracza", DisplayName: "Skryba" },
+  "admins/Player1": { rola: "admin" },
+  "admins/Player2": { rola: "edytor" }
 };
 const NOTATKI_STARTOWE = {
   // notatka o miejscu, którego nie ma w manifeście
@@ -162,7 +166,8 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(konto.includes("KONTO: test-gracz"), `konto u góry: ${konto}`);
     await s.waitForSelector("#status .status-konto");
     const dol = await s.textContent("#status .status-konto");
-    zalozenie(dol === "KONTO: Gracz", `konto u dołu: ${dol}`);
+    // Konto do przeglądania ma w teście DisplayName „Skryba” — nazwa nie daje edycji.
+    zalozenie(dol === "KONTO: Skryba", `konto u dołu: ${dol}`);
     zalozenie(!/reCAPTCHA/i.test(await s.textContent("#status")), "w stopce nadal jest napis o reCAPTCHA");
     const sesja = await s.evaluate(() => sessionStorage.getItem("notatkirpg.sesja"));
     zalozenie(!/haslo/i.test(sesja), "hasło zapisane w sesji!");
@@ -175,7 +180,7 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(JSON.stringify(nazwy) === JSON.stringify(["▸ KOPIEC ILIAC"]), `lista kampanii gracza: ${JSON.stringify(nazwy)}`);
     zalozenie(!/próbna/i.test(await s.textContent("#srodek")), "gracz widzi nazwę ukrytej kampanii");
     zalozenie((await s.$$("#kampanie input")).length === 0, "gracz widzi pola widoczności kampanii");
-    zalozenie((await s.textContent("#status-konto")) === "KONTO: Gracz", "brak nazwy konta u dołu strony startowej");
+    zalozenie((await s.textContent("#status-konto")) === "KONTO: Skryba", "brak nazwy konta u dołu strony startowej");
     await s.screenshot({ path: path.join(WYNIKI, "02_gracz_lista_kampanii.png") });
   });
 
@@ -251,7 +256,7 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector("#panel:not([hidden]) .panel-nazwa");
     zalozenie((await s.textContent(".panel-nazwa")) === "Kopiec Iliac", "zła nazwa w karcie");
     zalozenie((await s.$$("#panel button:has-text('DODAJ NOTATKĘ')")).length === 0, "gracz widzi „Dodaj notatkę”");
-    zalozenie((await s.textContent("#panel")).includes("Notatki dodaje Skryba"), "brak informacji, kto dodaje notatki");
+    zalozenie((await s.textContent("#panel")).includes("Notatki dodaje konto edytora"), "brak informacji, kto dodaje notatki");
     zalozenie(s.url().includes("#okolice/kopiec-iliac"), `adres nie wskazuje miejsca: ${s.url()}`);
   });
 
@@ -273,14 +278,14 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(await s.$eval("#sekcja-kampanii", (x) => x.hidden), "po wylogowaniu widać listę kampanii");
   });
 
-  // ---- skryba (pisze notatki)
-  await krok("skryba: logowanie, wybór kampanii z listy; u góry login, u dołu „Skryba”", async () => {
-    await zaloguj(s, "test-skryba", "haslo-skryby");
+  // ---- edytor (rola „edytor” w admins — pisze notatki)
+  await krok("edytor: logowanie, wybór kampanii z listy; u góry login, u dołu DisplayName (dowolny)", async () => {
+    await zaloguj(s, "test-edytor", "haslo-edytora");
     await s.click("#kampanie a.kampania:has-text('KOPIEC ILIAC')");
     await s.waitForSelector("#widok-notatki:not([hidden]) .lista-wpisow");
-    zalozenie((await s.textContent("#konto")).includes("KONTO: test-skryba"), "zły login u góry");
-    zalozenie((await s.textContent("#status .status-konto")) === "KONTO: Skryba", "zła nazwa konta u dołu");
-    zalozenie(!(await s.$eval("#widok-notatki button:has-text('NOWA NOTATKA')", (b) => b.hidden)), "Skryba nie może dodać notatki");
+    zalozenie((await s.textContent("#konto")).includes("KONTO: test-edytor"), "zły login u góry");
+    zalozenie((await s.textContent("#status .status-konto")) === "KONTO: Kronikarz", "zła nazwa konta u dołu");
+    zalozenie(!(await s.$eval("#widok-notatki button:has-text('NOWA NOTATKA')", (b) => b.hidden)), "edytor nie może dodać notatki");
   });
 
   const s2 = await nowaStrona(ctx, bledy); // druga karta (Gracz) — do sprawdzenia zmian na żywo
@@ -289,7 +294,7 @@ async function bezPrzewijaniaWBok(strona) {
   await s2.goto(`${ADRES}/kampania.html?k=iliac#notatki`);
   await s2.waitForSelector("#widok-notatki .lista-wpisow");
 
-  await krok("skryba: dodanie notatki przy miejscu (z podpisem, wiele wierszy, próba HTML)", async () => {
+  await krok("edytor: dodanie notatki przy miejscu (z podpisem, wiele wierszy, próba HTML)", async () => {
     await s.click("#zakladki .zakladka:has-text('OKOLICE')");
     await s.waitForTimeout(300);
     await s.click('[data-element="trakt"] text >> nth=0');
@@ -318,21 +323,21 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector('[data-element="trakt"].el-ma-notatki');
     const kropka = await s.$eval('[data-element="trakt"] .el-kropka', (k) => k.getBoundingClientRect().width);
     zalozenie(kropka > 0, "brak czerwonej kropki przy miejscu z notatką");
-    await s.screenshot({ path: path.join(WYNIKI, "03_skryba_karta_miejsca.png") });
+    await s.screenshot({ path: path.join(WYNIKI, "03_edytor_karta_miejsca.png") });
   });
 
   await krok("na żywo: Gracz w drugiej karcie widzi nową notatkę bez odświeżania", async () => {
     await s2.waitForSelector("#widok-notatki .karta-tytul:has-text('Przemytnicy na Trakcie')", { timeout: 4000 });
   });
 
-  await krok("skryba: edycja notatki", async () => {
+  await krok("edytor: edycja notatki", async () => {
     await s.click("#panel .karta button:has-text('EDYTUJ')");
     await s.fill("dialog input >> nth=0", "Przemytnicy na Trakcie (potwierdzone)");
     await s.click("dialog button[type=submit]");
     await s.waitForSelector("#panel .karta-tytul:has-text('(potwierdzone)')");
   });
 
-  await krok("skryba: notatka ogólna (etykieta „notatka ogólna”)", async () => {
+  await krok("edytor: notatka ogólna (etykieta „notatka ogólna”)", async () => {
     await s.click("#zakladki .zakladka:has-text('NOTATKI')");
     await s.click("#widok-notatki button:has-text('NOWA NOTATKA')");
     await s.fill("dialog input >> nth=0", "Plan na następną sesję");
@@ -342,7 +347,7 @@ async function bezPrzewijaniaWBok(strona) {
     const meta = await s.textContent("#widok-notatki .karta:has-text('Plan na następną sesję') .karta-meta");
     zalozenie(meta.startsWith("notatka ogólna"), `etykieta notatki ogólnej: ${meta}`);
   });
-  await krok("skryba: wyszukiwarka notatek (bez polskich znaków, po nazwie miejsca)", async () => {
+  await krok("edytor: wyszukiwarka notatek (bez polskich znaków, po nazwie miejsca)", async () => {
     await s.click("#zakladki .zakladka:has-text('NOTATKI')");
     await s.fill("#widok-notatki input[type=search]", "nastepna sesje");
     await s.waitForTimeout(300);
@@ -356,7 +361,7 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForTimeout(200);
   });
 
-  await krok("skryba: usunięcie notatki (z potwierdzeniem)", async () => {
+  await krok("edytor: usunięcie notatki (z potwierdzeniem)", async () => {
     const przed = (await s.$$("#widok-notatki .karta")).length;
     await s.click("#widok-notatki .karta:has-text('Plan na następną sesję') button:has-text('USUŃ')");
     await s.click("dialog button:has-text('ANULUJ')");
@@ -631,7 +636,7 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(baza["kampanie/iliac/notatki/nowa-po-kopii"], "SCAL usunął dokument spoza pliku");
     zalozenie(baza["secrets/Player1"] && baza["secrets/Player2"] && baza["secrets/Player3"], "przywracanie naruszyło konta");
     const dziennik = await sa.textContent("#widok-admin .dziennik");
-    zalozenie(dziennik.includes("Pominięte dokumenty kont (admins/secrets): 1"), "dziennik nie mówi o pominiętych kontach");
+    zalozenie(dziennik.includes("Pominięte dokumenty kont (admins/secrets): 2"), "dziennik nie mówi o pominiętych kontach (admin i edytor)");
     zalozenie((await sa.textContent("#widok-admin .podglad-kopii")).includes("zostaną pominięte"), "podgląd nie ostrzega o pominięciu kont");
   });
 
@@ -652,7 +657,10 @@ async function bezPrzewijaniaWBok(strona) {
     const baza = await sa.evaluate(() => JSON.parse(localStorage.getItem("falszywa-baza")));
     zalozenie(!baza["kampanie/iliac/notatki/nowa-po-kopii"], "ZASTĄP nie usunął dokumentu spoza pliku");
     zalozenie(baza["kampanie/iliac/notatki/sierota"], "ZASTĄP zgubił dokument z pliku");
-    zalozenie(baza["secrets/Player1"] && baza["secrets/Player2"] && baza["secrets/Player3"] && baza["admins/Player1"], "ZASTĄP naruszył konta");
+    zalozenie(
+      baza["secrets/Player1"] && baza["secrets/Player2"] && baza["secrets/Player3"] && baza["admins/Player1"]?.rola === "admin" && baza["admins/Player2"]?.rola === "edytor",
+      "ZASTĄP naruszył konta"
+    );
     await sa.screenshot({ path: path.join(WYNIKI, "09_admin_przywracanie.png"), fullPage: true });
   });
 
@@ -668,7 +676,7 @@ async function bezPrzewijaniaWBok(strona) {
     const s3 = await nowaStrona(ctx, []);
     await s3.addInitScript(() => {
       localStorage.setItem("falszywa-baza-odmowa", "1");
-      sessionStorage.setItem("notatkirpg.sesja", JSON.stringify({ wersja: 2, kontoId: "Player3", login: "test-gracz", nazwa: "Gracz", rola: "gracz" }));
+      sessionStorage.setItem("notatkirpg.sesja", JSON.stringify({ wersja: 3, kontoId: "Player3", login: "test-gracz", nazwa: "Gracz", rola: "gracz" }));
     });
     await s3.goto(`${ADRES}/kampania.html?k=iliac`);
     await s3.waitForSelector("#srodek h2:has-text('BŁĄD ODCZYTU DANYCH')");
@@ -678,12 +686,17 @@ async function bezPrzewijaniaWBok(strona) {
     await s3.close();
   });
 
-  await krok("stara sesja (sprzed profili) nie wpuszcza — trzeba zalogować się ponownie", async () => {
-    const s4 = await nowaStrona(ctx, bledy);
-    await s4.addInitScript(() => sessionStorage.setItem("notatkirpg.sesja", JSON.stringify({ kontoId: "Player2", login: "test-skryba", rola: "gracz" })));
-    await s4.goto(`${ADRES}/kampania.html?k=iliac`);
-    await s4.waitForURL(/index\.html\?k=iliac$/);
-    await s4.close();
+  await krok("stare sesje (sprzed profili i sprzed roli „edytor”) nie wpuszczają — trzeba zalogować się ponownie", async () => {
+    for (const stara of [
+      { kontoId: "Player2", login: "test-edytor", rola: "gracz" },
+      { wersja: 2, kontoId: "Player2", login: "test-edytor", nazwa: "Skryba", rola: "skryba" }
+    ]) {
+      const s4 = await nowaStrona(ctx, bledy);
+      await s4.addInitScript((sesja) => sessionStorage.setItem("notatkirpg.sesja", JSON.stringify(sesja)), stara);
+      await s4.goto(`${ADRES}/kampania.html?k=iliac`);
+      await s4.waitForURL(/index\.html\?k=iliac$/);
+      await s4.close();
+    }
   });
 
   await krok("komputer: brak przewijania w bok", async () => {

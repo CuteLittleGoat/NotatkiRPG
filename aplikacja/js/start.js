@@ -1,7 +1,7 @@
 // Strona startowa (index.html): logowanie, a po zalogowaniu wybór kampanii.
 // Bez logowania strona nie pokazuje niczego poza formularzem (ani nazw kampanii).
 // Admin widzi wszystkie kampanie z rejestru i przy każdej pole „widoczna dla
-// graczy”; gracze (Skryba, Gracz) — tylko kampanie udostępnione przez admina.
+// graczy”; gracze (Edytor, Gracz) — tylko kampanie udostępnione przez admina.
 // Moduły z Firebase ładujemy osobno — gdyby serwer Firebase był niedostępny,
 // strona pokaże zrozumiały komunikat zamiast pustego ekranu.
 import { jestAdminem, kampaniaDlaUzytkownika, kampaniaWidocznaDlaGraczy, naZmianeSesji, nazwaKonta, pobierzSesje, wyczyscSesje } from "./sesja.js";
@@ -78,7 +78,7 @@ async function pokazKampanie(sesja, moje) {
   pozycje.clear();
   opis.hidden = !admin;
   opis.textContent = admin
-    ? "Zaznaczona kampania jest widoczna dla graczy (Skryby i Gracza). Odznaczoną widzisz tylko Ty — możesz ją spokojnie przygotowywać."
+    ? "Zaznaczona kampania jest widoczna dla graczy (konta edytora i konta do przeglądania). Odznaczoną widzisz tylko Ty — możesz ją spokojnie przygotowywać."
     : "";
   lista.append(el("li.przygaszony", { tekst: "Wczytywanie…", atrybuty: { id: "kampanie-ladowanie" } }));
 

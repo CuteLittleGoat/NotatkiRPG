@@ -197,23 +197,24 @@ test("dopasowanie: wszystkie słowa, w dowolnej kolejności", () => {
 });
 
 console.log("[profile kont i kampanie]");
-test("profil: admin z kolekcji admins, Skryba z DisplayName, reszta — Gracz", () => {
-  assert.equal(rolaKonta({ rolaAdmina: "admin", nazwa: "Admin" }), ROLE.ADMIN);
-  assert.equal(rolaKonta({ rolaAdmina: "admin", nazwa: "Skryba" }), ROLE.ADMIN);
-  assert.equal(rolaKonta({ nazwa: "Skryba" }), ROLE.SKRYBA);
-  assert.equal(rolaKonta({ nazwa: "  skryba " }), ROLE.SKRYBA);
-  assert.equal(rolaKonta({ nazwa: "Gracz" }), ROLE.GRACZ);
-  assert.equal(rolaKonta({ nazwa: "Admin" }), ROLE.GRACZ, "sama nazwa „Admin” nie daje uprawnień admina");
-  assert.equal(rolaKonta({ rolaAdmina: "gracz" }), ROLE.GRACZ);
-  assert.equal(rolaKonta({}), ROLE.GRACZ);
+test("profil tylko z pola „rola” w admins: admin, edytor, reszta — Gracz", () => {
+  assert.equal(rolaKonta("admin"), ROLE.ADMIN);
+  assert.equal(rolaKonta(" Admin "), ROLE.ADMIN);
+  assert.equal(rolaKonta("edytor"), ROLE.EDYTOR);
+  assert.equal(rolaKonta("Edytor"), ROLE.EDYTOR);
+  assert.equal(rolaKonta("skryba"), ROLE.GRACZ, "dawna nazwa profilu nie daje edycji");
+  assert.equal(rolaKonta("gracz"), ROLE.GRACZ);
+  assert.equal(rolaKonta(""), ROLE.GRACZ);
+  assert.equal(rolaKonta(undefined), ROLE.GRACZ, "brak dokumentu w admins = tylko czyta");
+  assert.equal(rolaKonta(123), ROLE.GRACZ);
 });
-test("edycja notatek tylko dla Skryby; nazwa konta z DisplayName", () => {
-  assert.ok(mozeEdytowac({ rola: ROLE.SKRYBA }));
+test("edycja notatek tylko dla Edytora; nazwa konta z DisplayName", () => {
+  assert.ok(mozeEdytowac({ rola: ROLE.EDYTOR }));
   assert.ok(!mozeEdytowac({ rola: ROLE.GRACZ }));
   assert.ok(!mozeEdytowac({ rola: ROLE.ADMIN }));
   assert.ok(!mozeEdytowac(null));
   assert.equal(nazwaKonta({ rola: ROLE.GRACZ, nazwa: "Drużyna" }), "Drużyna");
-  assert.equal(nazwaKonta({ rola: ROLE.SKRYBA, nazwa: "" }), "Skryba");
+  assert.equal(nazwaKonta({ rola: ROLE.EDYTOR, nazwa: "" }), "Edytor");
 });
 test("kampania: widoczność z bazy, a bez wpisu — domyślna z rejestru", () => {
   const iliac = { id: "iliac", widocznaDomyslnie: true };
@@ -228,7 +229,7 @@ test("kampania: admin widzi wszystkie, gracze — udostępnione, bez logowania �
   const ukryta = { id: "nowa" };
   const widoczna = { id: "iliac", widocznaDomyslnie: true };
   assert.ok(kampaniaDlaUzytkownika({ rola: ROLE.ADMIN }, ukryta, null));
-  assert.ok(!kampaniaDlaUzytkownika({ rola: ROLE.SKRYBA }, ukryta, null));
+  assert.ok(!kampaniaDlaUzytkownika({ rola: ROLE.EDYTOR }, ukryta, null));
   assert.ok(!kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, ukryta, null));
   assert.ok(kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, widoczna, null));
   assert.ok(!kampaniaDlaUzytkownika(null, widoczna, null));

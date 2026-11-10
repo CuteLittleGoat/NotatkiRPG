@@ -15,7 +15,9 @@ Pierwsze dwa uruchamia też GitHub Actions po każdej zmianie na `main` (zakład
 
 * Działa na **udawanym Firebase** (`e2e/falszywy-firebase/`) — podstawianym w
   miejsce bibliotek z `gstatic`. Prawdziwa baza nie jest używana. Dane testowe
-  (w tym konta `test-admin` / `test-skryba` / `test-gracz`) są wymyślone.
+  (w tym konta `test-admin` / `test-edytor` / `test-gracz`) są wymyślone. Ich
+  `DisplayName` są celowo mylące (np. konto do przeglądania nazywa się „Skryba”) —
+  test sprawdza, że uprawnienia wynikają tylko z pola `rola` w `admins`.
 * Rejestr kampanii w teście ma dodatkowo „Kampanię próbną” (domyślnie ukrytą) —
   do sprawdzenia, że gracze widzą tylko kampanie udostępnione przez admina.
 * Serwer plików: `e2e/serwer.cjs` (można go uruchomić osobno: `node testy/e2e/serwer.cjs 8000`).

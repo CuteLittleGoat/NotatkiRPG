@@ -11,7 +11,7 @@ W tym folderze:
 
 Reguły to coś w rodzaju regulaminu wejścia do bazy. Ponieważ logowanie odbywa
 się przez kolekcję `secrets` (a nie przez logowanie Firebase), baza **nie wie,
-kto pyta** — nie odróżni Gracza od Skryby ani od admina. Reguły pilnują więc
+kto pyta** — nie odróżni Gracza od Edytora ani od admina. Reguły pilnują więc
 tego, **co** wolno zrobić:
 
 * **Odczyt** — wszystko, czego potrzebuje aplikacja (lista kampanii, notatki,
@@ -31,13 +31,15 @@ wszystkie zapisy aplikacji przechodzą, a niedozwolone są odrzucane.
 
 ### Konta (zakładasz je ręcznie w konsoli)
 
-* `secrets/{id}` — pola `PlayerName` (login), `PlayerPassword` (hasło) i
-  `DisplayName` (nazwa konta widoczna na dole ekranu). Konto z `DisplayName` =
-  **„Skryba”** może dodawać, zmieniać i usuwać notatki; każde inne konto graczy
-  (np. „Gracz”) tylko czyta.
-* `admins/{id}` — pole `rola: "admin"` (ten sam `{id}` co w `secrets`) = konto admina.
+* `secrets/{id}` — pola `PlayerName` (login, widoczny u góry ekranu),
+  `PlayerPassword` (hasło) i `DisplayName` (nazwa konta widoczna na dole ekranu).
+  Te pola **nie wpływają na uprawnienia**.
+* `admins/{id}` (ten sam `{id}` co w `secrets`) — pole `rola`: `"admin"` = konto
+  admina, `"edytor"` = konto, które dodaje, zmienia i usuwa notatki. Konto **bez
+  dokumentu** w `admins` tylko przegląda (np. `Player3`).
 
-Nowe konto = nowy dokument w `secrets` (np. `Player4`) z tymi trzema polami.
+Nowe konto do przeglądania = nowy dokument w `secrets` (np. `Player4`) z tymi trzema
+polami. Nowe konto edytora = to samo plus dokument `admins/Player4` z `rola: "edytor"`.
 
 ### Jak opublikować reguły (krok po kroku)
 

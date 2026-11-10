@@ -2,9 +2,10 @@
 // bez logowania Firebase). UWAGA: przeglądarka musi czytać kolekcję secrets, więc
 // hasła są widoczne dla każdego, kto zajrzy do bazy — opis w README.md.
 //
-// Dokument konta w secrets: PlayerName (login), PlayerPassword (hasło), DisplayName
-// (nazwa na dole ekranu; „Skryba” = konto, które pisze notatki). Rola admina —
-// pole „rola” w admins/{id}. Kolekcji kont aplikacja nie zmienia.
+// Dokument konta w secrets: PlayerName (login, widoczny u góry ekranu),
+// PlayerPassword (hasło), DisplayName (nazwa konta na dole ekranu). Uprawnienia —
+// WYŁĄCZNIE pole „rola” w admins/{id} („admin” albo „edytor”; brak = tylko czyta).
+// Kolekcji kont aplikacja nie zmienia.
 import { db, collection, doc, getDoc, getDocs, query, where } from "./firebase.js";
 import { KOLEKCJA_ADMINOW, KOLEKCJA_SEKRETOW } from "./konfiguracja.js";
 import { el, opisBledu } from "./narzedzia.js";
@@ -36,7 +37,7 @@ export async function sprawdzLogowanie(login, haslo) {
   const daneAdmina = admin.exists() ? admin.data() : {};
   // DisplayName może być też w dokumencie admins/{id} — wtedy bierzemy go stamtąd.
   if (!konto.nazwa) konto.nazwa = tekst(daneAdmina.DisplayName);
-  return { ...konto, rola: rolaKonta({ rolaAdmina: daneAdmina.rola, nazwa: konto.nazwa }) };
+  return { ...konto, rola: rolaKonta(daneAdmina.rola) };
 }
 
 /**

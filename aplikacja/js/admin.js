@@ -64,7 +64,7 @@ export class WidokAdmina {
         el("h3.sekcja-tytul", { tekst: "KAMPANIA — WIDOCZNA DLA GRACZY" }),
         el("label.przelacznik-etykieta", { atrybuty: { for: "admin-kampania" } }, [
           this.poleKampanii,
-          el("span", { tekst: `„${nazwaKampanii}” na liście kampanii Skryby i Gracza` })
+          el("span", { tekst: `„${nazwaKampanii}” na liście kampanii graczy (edytora i konta do przeglądania)` })
         ]),
         el("p.przygaszony", {
           tekst: "Odznaczona kampania znika graczom z listy na stronie startowej, a kto ją właśnie ogląda, zobaczy informację, że jest niedostępna. To samo pole jest przy kampanii na liście „WYBIERZ KAMPANIĘ”."
@@ -222,7 +222,7 @@ export class WidokAdmina {
         }),
         el("p.przygaszony", {
           tekst:
-            "Reguły bazy pozwalają tylko na zapisy, których używa aplikacja, a konta (admins, secrets) są tylko do odczytu. Nadal jednak baza nie wie, kto pyta: profile Admin, Skryba i Gracz działają w wyglądzie aplikacji, a hasła z kolekcji secrets da się podejrzeć. Szczegóły: README.md."
+            "Reguły bazy pozwalają tylko na zapisy, których używa aplikacja, a konta (admins, secrets) są tylko do odczytu. Nadal jednak baza nie wie, kto pyta: profile Admin, Edytor i Gracz działają w wyglądzie aplikacji, a hasła z kolekcji secrets da się podejrzeć. Szczegóły: README.md."
         })
       ])
     );
