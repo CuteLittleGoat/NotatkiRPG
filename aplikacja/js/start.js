@@ -40,7 +40,7 @@ async function pokazLogowanie() {
     wyczysc(tresc);
     if (sesja) {
       tresc.append(
-        el("p", { tekst: `Zalogowano: ${opisRoli(sesja)} (${sesja.login}).` }),
+        el("p", { tekst: `Zalogowano na konto: ${sesja.login} (${opisRoli(sesja).toLowerCase()}).` }),
         el("p.przygaszony", { tekst: "Sesja trwa do zamknięcia tej karty przeglądarki." }),
         el("button.przycisk", { tekst: "WYLOGUJ", atrybuty: { type: "button" }, zdarzenia: { click: () => wyczyscSesje() } })
       );

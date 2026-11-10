@@ -5,19 +5,15 @@ wpis w rejestrze [`kampanie.json`](../kampanie.json) w katalogu głównym.
 
 ## Co jest w folderze kampanii
 
-| Plik | Co to jest | Trafia na stronę? |
-|---|---|---|
-| `kampania.json` | **manifest** — mapy (zakładki), miejsca, nazwy, opisy, ustawienia domyślne | tak (bez sekcji `zrodlo`) |
-| `mapa_*.svg` | mapy dla graczy w stylu Data-Slate — **robi je skrypt**, nie edytuj ręcznie | tak |
-| rysunek od MG, np. `Rysunki_*.svg` | wzór od Mistrza Gry, **zawiera spoilery** | **nie** |
-| `README.md` | opis kampanii | nie |
+| Plik | Co to jest |
+|---|---|
+| `kampania.json` | **manifest** — mapy (zakładki), miejsca, nazwy, opisy, ustawienia domyślne |
+| `mapa_*.svg` | mapy dla graczy w stylu Data-Slate — **robi je skrypt**, nie edytuj ręcznie |
+| rysunek od MG, np. `Rysunki_*.svg` | wzór od Mistrza Gry, **zawiera spoilery** — aplikacja go nie wczytuje |
+| `README.md` | opis kampanii |
 
-Na stronę trafia tylko to, co wskazuje manifest (kontroluje to
-[`narzedzia/zbuduj_strone.py`](../narzedzia/zbuduj_strone.py)). Pliki o innych
-nazwach — np. kolejne wersje rysunku MG — nigdy nie są publikowane.
-
-> Repozytorium jest publiczne: rysunek MG można obejrzeć na GitHubie. Strona
-> (GitHub Pages) go nie pokazuje i nie wczytuje.
+Aplikacja wczytuje tylko manifest i pliki map wskazane w manifeście. Rysunki od MG
+leżą w repozytorium (to w porządku — gracze korzystają tylko ze stron aplikacji).
 
 ## Konwencja rysunku od MG
 
@@ -99,7 +95,7 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 | `mapy[].kolor` | kolor ekranu na tej mapie |
 | `mapy[].widocznaDomyslnie` | czy gracze widzą zakładkę, dopóki admin tego nie zmieni |
 | `mapy[].start` | punkt `{x, y}` rysunku, na którym mapa otwiera się na małym ekranie |
-| `mapy[].zrodlo` | dla skryptu: `plik` (rysunek MG) i `obszar` (`"x y szerokość wysokość"` — fragment rysunku z tą mapą). Nie trafia na stronę. |
+| `mapy[].zrodlo` | dla skryptu: `plik` (rysunek MG) i `obszar` (`"x y szerokość wysokość"` — fragment rysunku z tą mapą). Aplikacja z tego nie korzysta. |
 | `kategorie` | nazwy grup w indeksie, np. `"iglica": "Iglice"` (kolejność = kolejność w indeksie) |
 | `elementy[]` | miejsca klikalne |
 | `elementy[].id` | identyfikator — taki sam jak `data-element` na rysunku |
@@ -109,5 +105,5 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 | `elementy[].dostepnyDomyslnie` | czy miejsce jest klikalne dla graczy, dopóki admin tego nie zmieni |
 | `elementy[].mapaSzczegolowa` | (opcjonalnie) mapa z planem tego miejsca — karta pokaże przycisk „Otwórz mapę” |
 
-Pamiętaj: manifest jest publiczny (trafia na stronę). Admin może ukryć miejsce w
-aplikacji, ale jego nazwę i opis da się przeczytać w pliku — wpisuj tylko rzeczy jawne.
+Pamiętaj: manifest jest publiczny. Admin może ukryć miejsce w aplikacji, ale jego
+nazwę i opis da się przeczytać w pliku — wpisuj tylko rzeczy jawne.

@@ -135,6 +135,30 @@ class TestPrzygotujMape(unittest.TestCase):
         self.assertNotIn("UWAGA", wyjscie)
 
 
+class TestMapGraczy(unittest.TestCase):
+    """Mapy, które pokazuje aplikacja: wszystkie kampanie z rejestru kampanie.json."""
+
+    def test_mapy_graczy_bez_sladow_mg_i_zgodne_z_manifestem(self):
+        import re
+
+        rejestr = json.loads((KORZEN / "kampanie.json").read_text(encoding="utf-8"))
+        for kampania in rejestr["kampanie"]:
+            folder = KORZEN / kampania["folder"]
+            manifest = json.loads((folder / "kampania.json").read_text(encoding="utf-8"))
+            zrodla = {(m.get("zrodlo") or {}).get("plik") for m in manifest.get("mapy", [])}
+            for mapa in manifest.get("mapy", []):
+                self.assertNotIn(mapa["plik"], zrodla, f"{kampania['id']}: mapa graczy wskazuje na rysunek MG")
+                tresc = (folder / mapa["plik"]).read_text(encoding="utf-8")
+                self.assertIsNone(
+                    re.search(r"tylko-mg|\bdla\s+MG\b|\(MG\)", tresc, re.IGNORECASE),
+                    f"{kampania['id']}/{mapa['plik']}: ślady materiału MG na mapie graczy",
+                )
+                self.assertIn(f'data-mapa="{mapa["id"]}"', tresc)
+                for element in manifest.get("elementy", []):
+                    if element.get("mapa") == mapa["id"]:
+                        self.assertIn(f'data-element="{element["id"]}"', tresc, f"brak miejsca {element['id']} na mapie {mapa['id']}")
+
+
 class TestGeometrii(unittest.TestCase):
     def test_sciezka_wzgledna(self):
         punkty = pm.punkty_sciezki("M10 10 l10 0 q5 5 10 0 z")

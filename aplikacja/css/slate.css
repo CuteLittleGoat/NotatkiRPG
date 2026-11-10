@@ -245,6 +245,14 @@ a {
   color: var(--fosfor);
   overflow-wrap: anywhere;
 }
+.konto-login {
+  display: inline-block;
+  max-width: 14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
 
 /* ---------------------------------------------------------------- zakładki */
 .zakladki {
@@ -730,6 +738,27 @@ dialog.okno-male > .okno-przyciski {
   z-index: 3;
   display: flex;
   gap: 6px;
+}
+.pasek-ukrycia {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  max-width: min(560px, calc(100% - 16px));
+  padding: 6px 10px;
+  font-size: 14px;
+  color: var(--klik);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px dashed var(--klik);
+  border-radius: 8px;
+}
+.indeks-zakladka {
+  margin: 0 8px 4px;
+  font-size: 14px;
 }
 .przycisk-mapy {
   min-width: 42px;

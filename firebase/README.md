@@ -71,13 +71,31 @@ przepustkę). Przed tym chronią już tylko reguły (np. konta są tylko do odcz
 
 ### Ważne: klucz reCAPTCHA musi być w projekcie Firebase
 
-Klucz reCAPTCHA Enterprise (`6LfZ…`) musi należeć do **tego samego projektu
-Google Cloud co Firebase**, czyli projektu o identyfikatorze **`notatkirpg-b601c`**
-(nazwa projektu może brzmieć „NotatkiRPG”). Sprawdź to w Google Cloud Console:
-w górnym pasku wybierz projekt i spójrz na jego **identyfikator** („ID”).
-Jeśli klucz powstał w innym, nowo założonym projekcie, utwórz go jeszcze raz w
-projekcie `notatkirpg-b601c` (tam też włącz „reCAPTCHA Enterprise API”), wpisz nowy
-klucz w App Check w Firebase i podmień `appCheckKluczWitryny` w `firebase-config.js`.
+Klucz reCAPTCHA (`6L…`) musi należeć do **tego samego projektu Google Cloud co
+Firebase**, czyli projektu o identyfikatorze **`notatkirpg-b601c`**. Uwaga: projekty
+mogą mieć taką samą nazwę („NotatkiRPG”) — liczy się **identyfikator**, widoczny w
+oknie wyboru projektu w Google Cloud Console.
+
+Objaw złego projektu: w panelu admina (ZABEZPIECZENIA) „Nie działa”, a w konsoli
+przeglądarki błąd 400 z tekstem „…the site key is from the same project as the one
+containing this app”.
+
+Naprawa krok po kroku:
+
+1. Otwórz <https://console.cloud.google.com/security/recaptcha?project=notatkirpg-b601c>
+   (adres sam wybiera właściwy projekt; sprawdź u góry, że identyfikator to `notatkirpg-b601c`).
+2. Jeśli pojawi się prośba o włączenie interfejsu reCAPTCHA Enterprise API — włącz go.
+3. **Utwórz klucz**: nazwa np. `NotatkiRPG`, typ **Witryna** (sieć), domena
+   `cutelittlegoat.github.io` (bez `https://` i bez `/NotatkiRPG`). Opcję „pole wyboru”
+   („Use checkbox challenge”) zostaw **wyłączoną**, weryfikację domeny — **włączoną**.
+   Nie dopisuj `localhost`.
+4. Skopiuj identyfikator nowego klucza (zaczyna się od `6L`).
+5. Konsola Firebase → **App Check** → **Aplikacje** → aplikacja webowa → dostawca
+   reCAPTCHA Enterprise → wklej nowy klucz → **Zapisz** (ważność przepustki możesz zostawić).
+6. Wpisz nowy klucz w `firebase/firebase-config.js` (`appCheckKluczWitryny`) — albo
+   poproś o to agenta AI. Po publikacji strony panel admina powinien pokazać „Działa”.
+7. Stary klucz (w innym projekcie) możesz usunąć, a niepotrzebny dodatkowy projekt —
+   wyłączyć, żeby się nie myliły.
 
 ### Włączenie wymuszania App Check — krok po kroku
 

@@ -11,7 +11,8 @@ export class Indeks {
   constructor(kontener, opcje) {
     this.kontener = kontener;
     this.opcje = opcje;
-    this.oczekujace = new Map(); // id → wartość zapisywana właśnie do bazy
+    this.oczekujace = new Map(); // id miejsca → wartość zapisywana właśnie do bazy
+    this.oczekujaceMapy = new Map(); // id mapy → widoczność zapisywana właśnie do bazy
     this.zbuduj();
   }
 
@@ -53,13 +54,10 @@ export class Indeks {
         .filter((e) => e.mapa === mapa.id && stan.elementDlaUzytkownika(e))
         .filter((e) => this.pasujeElement(e, zapytanie));
       if (!elementy.length && zapytanie) continue;
-      const ukryta = !stan.mapaWidocznaDlaGraczy(mapa);
       const sekcja = el("section.indeks-mapa", { atrybuty: { "aria-label": `Mapa ${mapa.nazwa}` } }, [
-        el("h3.indeks-naglowek", [
-          `◈ ${mapa.nazwa.toUpperCase()}`,
-          admin && ukryta ? el("span.znacznik-ukrycia", { tekst: " · zakładka ukryta przed graczami" }) : null
-        ])
+        el("h3.indeks-naglowek", { tekst: `◈ ${mapa.nazwa.toUpperCase()}` })
       ]);
+      if (admin) sekcja.append(this.przelacznikMapy(mapa));
       if (!elementy.length) sekcja.append(el("p.przygaszony.indeks-pusto", { tekst: "Brak dostępnych miejsc." }));
 
       const grupy = new Map();
@@ -148,6 +146,34 @@ export class Indeks {
     pole.addEventListener("change", () => this.przelacz(e, pole.checked));
     const li = el("li.indeks-admin", { klasa: zaznaczony ? "" : "pozycja-ukryta" }, [pole, przycisk]);
     return li;
+  }
+
+  /** Admin: pole „zakładka widoczna dla graczy” pod nazwą mapy. */
+  przelacznikMapy(mapa) {
+    const { stan } = this.opcje;
+    const widoczna = this.oczekujaceMapy.has(mapa.id) ? this.oczekujaceMapy.get(mapa.id) : stan.mapaWidocznaDlaGraczy(mapa);
+    const pole = el("input.przelacznik", {
+      atrybuty: { type: "checkbox", checked: widoczna, "aria-label": `Zakładka ${mapa.nazwa} widoczna dla graczy` }
+    });
+    pole.addEventListener("change", () => this.przelaczMape(mapa, pole.checked));
+    return el("label.przelacznik-etykieta.indeks-zakladka", { klasa: widoczna ? "" : "pozycja-ukryta" }, [
+      pole,
+      el("span", { tekst: widoczna ? "zakładka widoczna dla graczy" : "zakładka ukryta przed graczami" })
+    ]);
+  }
+
+  async przelaczMape(mapa, wartosc) {
+    const { dane, stan } = this.opcje;
+    this.oczekujaceMapy.set(mapa.id, wartosc);
+    try {
+      await dane.zapiszUstawienia({ mapy: { [mapa.id]: { widoczna: wartosc } } }, stan.sesja);
+      komunikat(wartosc ? `Zakładka „${mapa.nazwa}” widoczna dla graczy.` : `Zakładka „${mapa.nazwa}” ukryta przed graczami.`, "ok");
+    } catch (e) {
+      komunikat(opisBledu(e), "blad", 8000);
+    } finally {
+      this.oczekujaceMapy.delete(mapa.id);
+      this.render();
+    }
   }
 
   async przelacz(element, wartosc) {

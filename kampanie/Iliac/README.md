@@ -6,13 +6,13 @@ Ogólne zasady (konwencja rysunku, nowa wersja mapy, pola manifestu):
 
 ## Pliki
 
-| Plik | Co to jest | Na stronie? |
-|---|---|---|
-| `kampania.json` | manifest: mapy, miejsca, opisy, ustawienia domyślne | tak |
-| `mapa_okolice.svg` | mapa „Okolice” dla graczy (Data-Slate) — wygenerowana skryptem | tak |
-| `mapa_kopiec.svg` | mapa „Kopiec” dla graczy (Data-Slate) — wygenerowana skryptem | tak |
-| `Rysunki_kopca_Iliac.svg` | **rysunek od MG ze znacznikami — spoilery**; źródło dla skryptu | **nie** |
-| `Rysunki_kopca_Iliac_gracze.svg` | wersja dla graczy w stylu pergaminu (od MG); aplikacja jej nie używa | nie |
+| Plik | Co to jest |
+|---|---|
+| `kampania.json` | manifest: mapy, miejsca, opisy, ustawienia domyślne |
+| `mapa_okolice.svg` | mapa „Okolice” dla graczy (Data-Slate) — wygenerowana skryptem |
+| `mapa_kopiec.svg` | mapa „Kopiec” dla graczy (Data-Slate) — wygenerowana skryptem |
+| `Rysunki_kopca_Iliac.svg` | **rysunek od MG ze znacznikami — spoilery**; źródło dla skryptu, aplikacja go nie wczytuje |
+| `Rysunki_kopca_Iliac_gracze.svg` | wersja dla graczy w stylu pergaminu (od MG); aplikacja jej nie używa |
 
 Mapy odtwarza polecenie (z katalogu głównego repozytorium):
 

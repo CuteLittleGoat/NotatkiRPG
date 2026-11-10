@@ -26,8 +26,11 @@ Przeczytaj ten plik w całości, zanim cokolwiek zmienisz. Potem: `README.md`
   commitach, dokumentacji ani w odpowiedziach w czacie (użytkownik może być graczem).
 * Mapy dla graczy robi **wyłącznie** skrypt `narzedzia/przygotuj_mape.py` —
   nie edytuj plików `mapa_*.svg` ręcznie i nie wyłączaj kontroli bezpieczeństwa skryptu.
-* Aplikacja nigdy nie wczytuje rysunków MG; na stronę trafia tylko to, co wybiera
-  `narzedzia/zbuduj_strone.py` (lista dozwolonych plików — nie zamieniaj jej na listę zakazanych).
+* Aplikacja nigdy nie wczytuje rysunków MG. Strona jest publikowana przez GitHub Pages
+  **wprost z gałęzi `main`** (całe repozytorium, także rysunki MG) — to świadoma decyzja
+  użytkownika: gracze korzystają tylko ze stron aplikacji, a w repozytorium mogą być
+  sekrety MG. **Nie dodawaj zabezpieczeń przed przeglądaniem plików** (list wykluczeń,
+  osobnej publikacji itp.), jeśli użytkownik o to nie poprosi.
 * **Nie dopisuj do manifestów miejsc z własnej inicjatywy** — o tym, co jest
   klikalne, decyduje użytkownik. Skrypt map wypisuje nowe miejsca jako propozycję.
 
@@ -101,7 +104,7 @@ wzoru (`dokumentacja/Kod_Wzoru.txt`). Każde naprawia błąd widziany na tableta
 | widoczność (domyślne z manifestu + ustawienia admina) | `aplikacja/js/stan.js` |
 | zapis/odczyt bazy | `aplikacja/js/dane.js` |
 | kopia i przywracanie | `aplikacja/js/kopia.js`, format: `aplikacja/js/kopia-format.js` |
-| publikacja strony | `narzedzia/zbuduj_strone.py`, `.github/workflows/strona.yml` |
+| publikacja strony | GitHub Pages: Settings → Pages → Deploy from a branch (`main`, `/`); testy po zmianach: `.github/workflows/testy.yml` |
 | reguły bazy i ich test | `firebase/firestore.rules`, `testy/reguly/`, opis: `firebase/README.md` |
 | App Check | `aplikacja/js/firebase.js`, klucz witryny w `firebase/firebase-config.js` |
 
@@ -119,7 +122,7 @@ cd testy/reguly && npm install && npm test     # po każdej zmianie reguł lub z
 ```
 
 * Pierwsze dwa nie wymagają żadnych pakietów (Node 22+, Python 3.9+) i uruchamia
-  je też GitHub Actions przed publikacją.
+  je też GitHub Actions po każdej zmianie na `main` (workflow „Testy”).
 * Test e2e wymaga pakietu `playwright` z Chromium; używa **udawanego Firebase**
   (`testy/e2e/falszywy-firebase/`), nie prawdziwej bazy. Zrzuty ekranu zapisuje w
   `testy/e2e/wyniki/` (folder nie jest wersjonowany) — obejrzyj je po zmianach wyglądu.

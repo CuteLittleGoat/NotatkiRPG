@@ -49,21 +49,20 @@ w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glor
    [`firebase/README.md`](firebase/README.md).
 2. **Ustaw repozytorium jako publiczne** (Settings → General → Danger Zone →
    Change visibility). W darmowym planie GitHub Pages działa tylko dla repozytoriów publicznych.
-3. **Włącz GitHub Pages** (jednorazowo): **Settings → Pages → Build and deployment →
-   Source** → **GitHub Actions**. Potem w zakładce **Actions** wybierz „Publikacja
-   strony (GitHub Pages)” → **Run workflow** (albo poczekaj na następną zmianę na `main`).
+3. **Włącz GitHub Pages** (jednorazowo, zrobione): **Settings → Pages → Build and
+   deployment → Deploy from a branch** → gałąź `main`, folder `/ (root)`.
 4. Od tej chwili **po każdej zmianie na gałęzi `main` strona publikuje się sama**
-   (trwa 1–2 minuty). Adres: `https://cutelittlegoat.github.io/NotatkiRPG/`
-   (pokazuje się też w Settings → Pages).
+   (trwa 1–2 minuty; w zakładce Actions widać „pages build and deployment”, a obok
+   test „Testy”). Adres: `https://cutelittlegoat.github.io/NotatkiRPG/`.
 5. Otwórz stronę, **zaloguj się kontem admina**, zakładka **ADMIN** → sekcja
    **ZABEZPIECZENIA**: powinno być „Działa”. Wtedy **włącz wymuszanie App Check**
    dla Cloud Firestore (krok po kroku w [`firebase/README.md`](firebase/README.md)).
 6. W zakładce **ADMIN** ustaw, co widzą gracze (zakładki map, miejsca, kolory).
 7. **Rób kopię zapasową** (zakładka ADMIN) — najlepiej po każdej sesji.
 
-Ważne: na stronę trafiają **tylko** pliki aplikacji, rejestr kampanii, manifesty
-i mapy dla graczy. Rysunki od MG zostają wyłącznie w repozytorium (wybiera to
-skrypt [`narzedzia/zbuduj_strone.py`](narzedzia/zbuduj_strone.py)).
+Strona publikuje się wprost z repozytorium, więc pod jej adresem leżą wszystkie
+pliki (także rysunki od MG). Aplikacja ich nie wczytuje ani nie pokazuje — gracze
+korzystają tylko ze stron aplikacji (Twoja decyzja).
 
 ## Role i uprawnienia
 
@@ -114,7 +113,7 @@ NotatkiRPG/
 ├── narzedzia/                 skrypty: przygotowanie map, złożenie strony, szablon kampanii
 ├── testy/                     testy automatyczne (jednostkowe, skryptów, reguł bazy, całej aplikacji)
 ├── dokumentacja/              materiały pomocnicze (Kod_Wzoru.txt — wzór klikalnej mapy)
-├── .github/workflows/         automatyczna publikacja na GitHub Pages
+├── .github/workflows/         testy uruchamiane po każdej zmianie na main
 ├── AGENTS.md                  zasady pracy dla agentów AI
 └── README.md                  ten plik
 ```
@@ -220,8 +219,9 @@ logowania Firebase — Twoja decyzja):
    manifestu (`kampania.json`) i pliki map są publiczne — ciekawski gracz może w
    nich przeczytać nazwy i opisy wszystkich miejsc z manifestu. W manifeście trzymaj
    tylko rzeczy, których odkrycie nie zepsuje gry.
-4. **Repozytorium będzie publiczne** — rysunki od MG (`Rysunki_*.svg`) może obejrzeć
-   każdy na GitHubie (zdecydowałeś/-aś, że to akceptowalne). Na stronę nie trafiają.
+4. **Repozytorium jest publiczne**, a strona publikuje się wprost z niego — rysunki
+   od MG (`Rysunki_*.svg`) może otworzyć każdy, kto zna ich adres. Aplikacja ich nie
+   pokazuje; gracze korzystają tylko z jej stron (Twoja decyzja).
 
 Kopia zapasowa po każdej sesji to najlepsza ochrona przed przypadkowym lub
 złośliwym skasowaniem notatek.
@@ -238,8 +238,8 @@ złośliwym skasowaniem notatek.
 
 Przyjęte na tym etapie — każdą można zmienić:
 
-1. **Publikacja:** GitHub Pages przez GitHub Actions; na stronę trafiają tylko pliki
-   z listy dozwolonych (rysunki MG — nie). Repozytorium publiczne, rysunki MG w repozytorium.
+1. **Publikacja:** GitHub Pages wprost z gałęzi `main` (Deploy from a branch).
+   Repozytorium publiczne, rysunki MG w repozytorium — aplikacja z nich nie korzysta.
 2. **Reguły bazy (wersja 2):** zapis tylko tam i tylko w takim kształcie, jakiego
    używa aplikacja; konta tylko do odczytu, więc **przywracanie kopii pomija konta**.
 3. **Mapy:** dwie zakładki — **Okolice** (panel A rysunku; domyślnie widoczna) i
@@ -278,12 +278,12 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   wyszukiwanie bez polskich znaków.
 * **Skrypty** (Python, 9): przygotowanie map — usuwanie materiału MG, przerwanie
   przy śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), raport
-  nowych i brakujących miejsc; złożenie strony — rysunki MG nie trafiają na stronę.
+  nowych i brakujących miejsc; mapy graczy wszystkich kampanii bez śladów materiału MG.
 * **Reguły bazy w emulatorze Firestore** (24): każdy zapis i odczyt aplikacji
   (logowanie, notatki, postęp, powiązania, ustawienia admina, kopia i przywracanie)
   przechodzi; obce pola, za długie teksty, nieznane kolekcje i każda zmiana kont są
   odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
-* **Cała aplikacja w przeglądarce** (Chromium, 53 kroki) na **udawanym Firebase**:
+* **Cała aplikacja w przeglądarce** (Chromium, 54 kroki) na **udawanym Firebase**:
   role (gość/gracz/admin), logowanie i ogólny komunikat błędu, notatki (dodanie,
   edycja, usunięcie z potwierdzeniem, notatka ogólna), postęp, powiązania z grafem,
   zmiany na żywo w drugiej karcie, checkboxy admina działające na żywo u gracza,

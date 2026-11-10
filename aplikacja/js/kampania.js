@@ -120,6 +120,26 @@ async function start() {
   $("przycisk-calosc").addEventListener("click", () => aktywnaPrzegladarka()?.widokDomyslny());
   SZEROKI.addEventListener?.("change", () => ustawIndeks(SZEROKI.matches ? pamiecOdczyt(KLUCZ_INDEKSU, "1") === "1" : false));
 
+  // Admin na ukrytej zakładce: pasek z przyciskiem „ODSŁOŃ GRACZOM”.
+  function odswiezPasekUkrycia() {
+    const mapa = biezaca?.rodzaj === "mapa" ? stan.mapyWgId.get(biezaca.id) : null;
+    $("pasek-ukrycia").hidden = !(mapa && stan.widokAdmina() && !stan.mapaWidocznaDlaGraczy(mapa));
+  }
+  $("przycisk-odslon").addEventListener("click", async () => {
+    const mapa = biezaca?.rodzaj === "mapa" ? stan.mapyWgId.get(biezaca.id) : null;
+    if (!mapa) return;
+    const przycisk = $("przycisk-odslon");
+    przycisk.disabled = true;
+    try {
+      await dane.zapiszUstawienia({ mapy: { [mapa.id]: { widoczna: true } } }, stan.sesja);
+      komunikat(`Zakładka „${mapa.nazwa}” widoczna dla graczy.`, "ok");
+    } catch (e) {
+      komunikat(opisBledu(e), "blad", 8000);
+    } finally {
+      przycisk.disabled = false;
+    }
+  });
+
   function aktywnaPrzegladarka() {
     return biezaca?.rodzaj === "mapa" ? przegladarki.get(biezaca.id) : null;
   }
@@ -238,6 +258,7 @@ async function start() {
       if (wybor.id === "powiazania") powiazania.render();
     }
     renderZakladek();
+    odswiezPasekUkrycia();
     if (!zHasha) zapiszHash();
   }
 
@@ -305,7 +326,8 @@ async function start() {
       );
       return;
     }
-    konto.append(el("span.konto-rola", [opisRoli(s), el("span.tylko-szeroki", { tekst: `: ${s.login}` })]));
+    // Są tylko dwa konta (graczy i admina), więc w nagłówku wystarczy nazwa konta.
+    konto.append(el("span.konto-rola", ["KONTO: ", el("span.konto-login", { tekst: s.login, atrybuty: { title: s.login } })]));
     if (jestAdminem(s)) {
       const podglad = el("input.przelacznik", { atrybuty: { type: "checkbox", checked: stan.podgladGracza, id: "podglad-gracza" } });
       podglad.addEventListener("change", () => {
@@ -332,7 +354,7 @@ async function start() {
     stan.sesja = sesja;
     stan.podgladGracza = false;
     stan.powiadom("sesja");
-    if (sesja) komunikat(`Zalogowano: ${opisRoli(sesja)}.`, "ok");
+    if (sesja) komunikat(`Zalogowano na konto: ${sesja.login}.`, "ok");
   });
 
   // ------------------------------------------------------------- status
@@ -383,6 +405,7 @@ async function start() {
         ustawMotyw(stan.kolorKampanii());
       }
       renderZakladek();
+      odswiezPasekUkrycia();
       indeks.render();
       panel.render();
       notatki.render();

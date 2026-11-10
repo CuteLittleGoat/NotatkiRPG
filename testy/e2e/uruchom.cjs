@@ -201,7 +201,7 @@ async function bezPrzewijaniaWBok(strona) {
   await krok("gracz: logowanie z okna na stronie kampanii", async () => {
     await zaloguj(s, "test-gracz", "haslo-gracza");
     const konto = await s.textContent("#konto");
-    zalozenie(konto.includes("GRACZ: test-gracz"), `konto: ${konto}`);
+    zalozenie(konto.includes("KONTO: test-gracz"), `konto: ${konto}`);
     const sesja = await s.evaluate(() => sessionStorage.getItem("notatkirpg.sesja"));
     zalozenie(!/haslo/i.test(sesja), "hasło zapisane w sesji!");
   });
@@ -372,6 +372,23 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(dostepne.includes("iglica-sentinel") && !dostepne.includes("wrothgar"), `dostępne na Kopcu: ${dostepne}`);
     await s.waitForTimeout(500);
     await s.screenshot({ path: path.join(WYNIKI, "07_gracz_kopiec.png") });
+  });
+
+  await krok("admin: ukrycie zakładki w indeksie i odsłonięcie paskiem na mapie (na żywo u gracza)", async () => {
+    await sa.click("#zakladki .zakladka:has-text('KOPIEC')");
+    await sa.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kopiec"]');
+    if (!(await sa.$eval("#indeks", (x) => !x.hidden))) await sa.click("#przycisk-indeks");
+    const pole = '#indeks input[aria-label="Zakładka Kopiec widoczna dla graczy"]';
+    await sa.waitForSelector(pole);
+    zalozenie(await sa.$eval(pole, (x) => x.checked), "pole w indeksie nie pokazuje, że zakładka jest widoczna");
+    zalozenie(await sa.$eval("#pasek-ukrycia", (x) => x.hidden), "pasek ukrycia widoczny na widocznej zakładce");
+    await sa.uncheck(pole);
+    await s.waitForFunction(() => ![...document.querySelectorAll("#zakladki .zakladka")].some((z) => z.textContent.includes("KOPIEC")), null, { timeout: 4000 });
+    await sa.waitForSelector("#pasek-ukrycia:not([hidden])");
+    await sa.screenshot({ path: path.join(WYNIKI, "08a_admin_ukryta_zakladka.png") });
+    await sa.click("#przycisk-odslon");
+    await sa.waitForSelector("#pasek-ukrycia", { state: "hidden" });
+    await s.waitForSelector("#zakladki .zakladka:has-text('KOPIEC')", { timeout: 4000 });
   });
 
   await krok("admin: podgląd gracza ukrywa niedostępne miejsca", async () => {

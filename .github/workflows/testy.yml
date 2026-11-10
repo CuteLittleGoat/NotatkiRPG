@@ -1,0 +1,31 @@
+# Testy po każdej zmianie na gałęzi main (zakładka Actions → „Testy”).
+# Stronę publikuje samo GitHub Pages wprost z gałęzi main
+# (Settings → Pages → Deploy from a branch) — ten plik niczego nie publikuje.
+name: Testy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pobranie repozytorium
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Testy jednostkowe (format kopii, wyszukiwanie)
+        run: node testy/jednostkowe.mjs
+
+      - name: Testy skryptu map (bez śladów materiału MG na mapach graczy)
+        run: python3 -m unittest discover -s testy -p "test_*.py" -v

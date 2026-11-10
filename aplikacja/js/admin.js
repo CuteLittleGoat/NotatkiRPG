@@ -50,7 +50,10 @@ export class WidokAdmina {
     );
 
     // ---- mapy i miejsca ----
-    const sekcjaMap = el("section.panel-ramka", [el("h3.sekcja-tytul", { tekst: "MAPY I MIEJSCA" })]);
+    const sekcjaMap = el("section.panel-ramka", [
+      el("h3.sekcja-tytul", { tekst: "ZAKŁADKI MAP I MIEJSCA" }),
+      el("p.przygaszony", { tekst: "Widoczność zakładki i miejsc zmienisz też w indeksie obok mapy (pola wyboru) albo paskiem na ukrytej mapie." })
+    ]);
     this.kolorKampanii = this.listaKolorow(stan.kolorKampanii());
     this.kolorKampanii.addEventListener("change", () => this.zapisz({ kolor: this.kolorKampanii.value }, "Zmieniono kolor ekranu."));
     sekcjaMap.append(el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor ekranu poza mapami:" }), this.kolorKampanii]));

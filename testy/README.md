@@ -5,11 +5,11 @@ Polecenia uruchamiaj z katalogu głównego repozytorium.
 | Test | Polecenie | Wymaga |
 |---|---|---|
 | jednostkowe — format kopii CSV, kodowanie typów, wyszukiwanie | `node testy/jednostkowe.mjs` | Node 22+ |
-| skrypty map i publikacji | `python3 -m unittest discover -s testy -p "test_*.py" -v` | Python 3.9+ |
+| skrypt map i mapy graczy (bez śladów materiału MG) | `python3 -m unittest discover -s testy -p "test_*.py" -v` | Python 3.9+ |
 | cała aplikacja w przeglądarce (komputer, telefony, tablet) | `node testy/e2e/uruchom.cjs` | pakiet `playwright` + Chromium |
 | reguły bazy (`firebase/firestore.rules`) w emulatorze Firestore | `cd testy/reguly && npm install && npm test` | Node 20+, Java 11+ (pakiety instaluje `npm install` w tym folderze) |
 
-Pierwsze dwa uruchamia też GitHub Actions przed każdą publikacją strony.
+Pierwsze dwa uruchamia też GitHub Actions po każdej zmianie na `main` (zakładka Actions → „Testy”).
 
 ## Test całej aplikacji (e2e)
 
