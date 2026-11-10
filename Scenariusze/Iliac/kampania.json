@@ -1,0 +1,256 @@
+{
+  "id": "iliac",
+  "nazwa": "Kopiec Iliac",
+  "naglowek": "KOPIEC ILIAC",
+  "system": "Warhammer 40,000 / Wrath & Glory",
+  "wersjaMapy": "2026-11-10",
+  "kolor": "zielony",
+  "mapy": [
+    {
+      "id": "okolice",
+      "nazwa": "Okolice",
+      "plik": "mapa_okolice.svg",
+      "kolor": "zielony",
+      "widocznaDomyslnie": true,
+      "start": { "x": 650, "y": 470 },
+      "zrodlo": { "plik": "Rysunki_kopca_Iliac.svg", "obszar": "20 84 1160 740" }
+    },
+    {
+      "id": "kopiec",
+      "nazwa": "Kopiec",
+      "plik": "mapa_kopiec.svg",
+      "kolor": "zielony",
+      "widocznaDomyslnie": false,
+      "start": { "x": 560, "y": 1232 },
+      "zrodlo": { "plik": "Rysunki_kopca_Iliac.svg", "obszar": "20 844 1160 810" }
+    }
+  ],
+  "kategorie": {
+    "kopiec": "Kopce",
+    "iglica": "Iglice",
+    "dzielnica": "Dzielnice i miejsca",
+    "budowla": "Budowle",
+    "szlak": "Szlaki i połączenia",
+    "teren": "Teren i wody",
+    "orbita": "Orbita"
+  },
+  "elementy": [
+    {
+      "id": "kopiec-iliac",
+      "nazwa": "Kopiec Iliac",
+      "aliasy": [],
+      "kategoria": "kopiec",
+      "opis": "Miasto-kopiec Iliac, ok. 30 km szerokości.",
+      "mapa": "okolice",
+      "mapaSzczegolowa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "ocean-sciekow",
+      "nazwa": "Ocean ścieków",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Ocean ścieków na zachód od kopca.",
+      "mapa": "okolice",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "droga-wybrzeza",
+      "nazwa": "Droga Wybrzeża",
+      "aliasy": [],
+      "kategoria": "szlak",
+      "opis": "Droga biegnąca wybrzeżem z północy na południe — do innych kopców.",
+      "mapa": "okolice",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "trakt",
+      "nazwa": "Trakt",
+      "aliasy": [],
+      "kategoria": "szlak",
+      "opis": "Droga i tuba transportowa prowadząca od kopca na wschód.",
+      "mapa": "okolice",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "kanion-gorniczy",
+      "nazwa": "Kanion górniczy",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Kanion na północny wschód od kopca.",
+      "mapa": "okolice",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "szkielet-karnozaura",
+      "nazwa": "Szkielet karnozaura",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Szkielet przy Drodze Wybrzeża, na północ od kopca.",
+      "mapa": "okolice",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "brassyl",
+      "nazwa": "Brassyl — płyta na orbicie",
+      "aliasy": [],
+      "kategoria": "orbita",
+      "opis": "Płyta na niskiej orbicie.",
+      "mapa": "okolice",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "zatoka",
+      "nazwa": "Zatoka",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Zatoka w sercu kopca, ok. 20 km długości.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "iglica-daggerfall",
+      "nazwa": "Iglica Daggerfall (ród Smoka)",
+      "aliasy": [],
+      "kategoria": "iglica",
+      "opis": "Iglica rodu Smoka na północnym brzegu Zatoki.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "dzielnica-smoka",
+      "nazwa": "Dzielnica Smoka",
+      "aliasy": [],
+      "kategoria": "dzielnica",
+      "opis": "Dzielnica u stóp Iglicy Daggerfall.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "iglica-sentinel",
+      "nazwa": "Iglica Sentinel (ród Księżyca)",
+      "aliasy": [],
+      "kategoria": "iglica",
+      "opis": "Iglica rodu Księżyca na południowym brzegu Zatoki.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "iglica-wayrest",
+      "nazwa": "Iglica Wayrest (ród Róży)",
+      "aliasy": [],
+      "kategoria": "iglica",
+      "opis": "Iglica rodu Róży na wschodnim krańcu Zatoki.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "port-sw-betony",
+      "nazwa": "Port Świętego Betony",
+      "aliasy": [],
+      "kategoria": "dzielnica",
+      "opis": "Port przy wejściu do Zatoki od strony oceanu.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "iglica-cumownicza",
+      "nazwa": "Iglica Cumownicza",
+      "aliasy": [],
+      "kategoria": "iglica",
+      "opis": "Iglica na północno-zachodnim brzegu kopca.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "szprychy",
+      "nazwa": "Szprychy",
+      "aliasy": [],
+      "kategoria": "szlak",
+      "opis": "Przewody z pomostami łączące iglice.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "wieza-chlodnicy",
+      "nazwa": "Wieża Chłodnicy",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Wieża pośrodku Zatoki, w węźle Szprych.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "wrothgar",
+      "nazwa": "Wrothgar — martwa iglica",
+      "aliasy": [],
+      "kategoria": "iglica",
+      "opis": "Martwa iglica w północno-wschodniej części kopca.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "balfiera",
+      "nazwa": "Balfiera — filary i wieża Direnni",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Filary i wieża Direnni we wschodniej części Zatoki.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "hala-cryngaine",
+      "nazwa": "Hala Cryngaine",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Budowla nad północnym brzegiem Zatoki.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "reich-gradkeep",
+      "nazwa": "Reich Gradkeep",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Budowla nad północnym brzegiem Zatoki.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "menevia",
+      "nazwa": "Menevia — cypel z kryptami",
+      "aliasy": [],
+      "kategoria": "dzielnica",
+      "opis": "Cypel z kryptami nad Zatoką.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "cybiades",
+      "nazwa": "Cybiades",
+      "aliasy": [],
+      "kategoria": "dzielnica",
+      "opis": "Miejsce przy południowym brzegu Zatoki.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "woodborne-hall",
+      "nazwa": "Woodborne Hall",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Budowla w północno-wschodniej części kopca.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "orsinium",
+      "nazwa": "Orsinium (podkopiec)",
+      "aliasy": [],
+      "kategoria": "dzielnica",
+      "opis": "Podkopiec w północno-wschodniej części kopca.",
+      "mapa": "kopiec",
+      "dostepnyDomyslnie": false
+    }
+  ]
+}

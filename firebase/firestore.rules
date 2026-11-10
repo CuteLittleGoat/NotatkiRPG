@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// ===========================================================================
+// NotatkiRPG — reguły Firestore na ETAP SZKICU.
+//
+// Baza jest OTWARTA BEZTERMINOWO (decyzja właściciela projektu, 2026-11-10).
+// Oznacza to, że KAŻDY, kto zna konfigurację strony (jest w jej kodzie), może
+// czytać, zmieniać i usuwać WSZYSTKIE dane — także loginy i hasła z kolekcji
+// „secrets”. Role gracz/admin działają tylko w wyglądzie aplikacji.
+//
+// Tych reguł aplikacja nie publikuje sama — wkleja je właściciel w konsoli
+// Firebase (instrukcja: firebase/README.md). Droga do zabezpieczenia bazy:
+// README.md, rozdział „Bezpieczeństwo — droga na później”.
+// ===========================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

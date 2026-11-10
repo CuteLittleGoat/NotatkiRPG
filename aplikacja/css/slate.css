@@ -1,0 +1,1187 @@
+/* ==========================================================================
+   NotatkiRPG — styl „Data-Slate”: monochromatyczny fosfor na ciemnym tle.
+   Własny, ogólny styl — bez logotypów i grafik Games Workshop.
+
+   Motywy: klasa na <body> — .motyw-zielony / .motyw-bursztynowy.
+   Kolory --tlo i --fosfor muszą być zgodne z MOTYWY w narzedzia/przygotuj_mape.py
+   (z nich skrypt liczy kolory map).
+   ========================================================================== */
+
+:root,
+.motyw-zielony {
+  --tlo: #020b05;
+  --tlo-panel: #000;
+  --tlo-pole: #03130a;
+  --fosfor: #6cf58c;
+  --tekst: #aef5c0;
+  --przygaszony: #62a274;
+  --akcent: #3bd965;
+  --linia: rgba(108, 245, 140, 0.22);
+  --linia-mocna: rgba(108, 245, 140, 0.55);
+  --poswiata: 0 0 18px rgba(108, 245, 140, 0.32);
+  --cien-tekstu: 0 0 6px rgba(108, 245, 140, 0.5);
+  --klik: #ffd24a;
+  --blad: #ff6b5f;
+  --zebra: rgba(108, 245, 140, 0.05);
+  --font: "Ubuntu Mono", "DejaVu Sans Mono", Consolas, "Fira Code", monospace;
+  --font-hud: "VT323", "Ubuntu Mono", Consolas, monospace;
+}
+
+.motyw-bursztynowy {
+  --tlo: #0d0702;
+  --tlo-pole: #170d03;
+  --fosfor: #ffb347;
+  --tekst: #ffd9a3;
+  --przygaszony: #b0843f;
+  --akcent: #ffa126;
+  --linia: rgba(255, 179, 71, 0.22);
+  --linia-mocna: rgba(255, 179, 71, 0.55);
+  --poswiata: 0 0 18px rgba(255, 179, 71, 0.32);
+  --cien-tekstu: 0 0 6px rgba(255, 179, 71, 0.5);
+  --klik: #7fe0ff;
+  --zebra: rgba(255, 179, 71, 0.05);
+}
+
+/* ---------------------------------------------------------------- podstawy */
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+html {
+  /* Własne podświetlenie przycisków i miejsc — bez niebieskiego prostokąta przeglądarki. */
+  -webkit-tap-highlight-color: transparent;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  /* Odcina „pociągnij, żeby odświeżyć” — inaczej gest na mapie potrafił zostać
+     przejęty przez przeglądarkę w środku przesuwania (wzór: Kod_Wzoru.txt). */
+  overscroll-behavior: none;
+}
+body {
+  background: var(--tlo);
+  color: var(--tekst);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body.strona-kampanii {
+  overflow: hidden;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 700;
+}
+a {
+  color: var(--fosfor);
+}
+::selection {
+  background: var(--fosfor);
+  color: var(--tlo);
+}
+
+/* ---------------------------------------------------------------- ekran */
+.slate {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.75);
+}
+.slate-gora {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 6px 12px;
+  background: var(--tlo-panel);
+  border-bottom: 1px solid var(--linia);
+}
+.slate-tytul {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-hud);
+  font-weight: normal;
+  font-size: 27px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: var(--fosfor);
+  text-shadow: var(--cien-tekstu);
+  overflow-wrap: anywhere;
+}
+.slate-powrot {
+  flex: 0 0 auto;
+  text-decoration: none;
+  font-size: 20px;
+  line-height: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--linia-mocna);
+  border-radius: 6px;
+}
+.slate-powrot:hover,
+.slate-powrot:focus-visible {
+  background: var(--fosfor);
+  color: var(--tlo);
+  outline: none;
+}
+.slate-srodek {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.slate-przewijany {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.slate-dol {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: var(--przygaszony);
+  background: var(--tlo-panel);
+  border-top: 1px solid var(--linia);
+}
+.status-na-zywo {
+  color: var(--fosfor);
+}
+.status-pamiec {
+  color: var(--klik);
+}
+.status-blad {
+  color: var(--blad);
+}
+
+/* Linie skanowania — statyczny gradient CSS (filtry SVG liczone co klatkę potrafią
+   „położyć” tablet). Delikatne migotanie wyłączane przy prefers-reduced-motion. */
+.skan {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.32;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.32) 0 1px, transparent 1px 3px);
+  animation: migotanie 7s infinite;
+}
+@keyframes migotanie {
+  0%,
+  100% {
+    opacity: 0.32;
+  }
+  46% {
+    opacity: 0.36;
+  }
+  47% {
+    opacity: 0.46;
+  }
+  48% {
+    opacity: 0.32;
+  }
+  80% {
+    opacity: 0.35;
+  }
+}
+
+.ozdoba {
+  color: var(--akcent);
+  font-size: 13px;
+  letter-spacing: 0.09em;
+}
+.przygaszony {
+  color: var(--przygaszony);
+}
+.ostrzezenie {
+  color: var(--klik);
+  border-left: 3px solid var(--klik);
+  padding-left: 8px;
+  font-size: 15px;
+}
+.formularz-blad {
+  color: var(--blad);
+}
+.baner-bledu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9;
+  margin: 0;
+  padding: 8px 12px;
+  background: #1c0402;
+  color: var(--blad);
+  border-bottom: 1px solid var(--blad);
+}
+
+/* ---------------------------------------------------------------- konto */
+.konto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-left: auto;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+.konto-rola {
+  color: var(--fosfor);
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- zakładki */
+.zakladki {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 10px;
+  background: var(--tlo-panel);
+  border-bottom: 1px solid var(--linia);
+}
+.zakladka {
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--tekst);
+  background: transparent;
+  border: 1px solid var(--linia);
+  border-radius: 6px;
+  padding: 5px 11px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.zakladka:hover,
+.zakladka:focus-visible {
+  border-color: var(--fosfor);
+  outline: none;
+}
+.zakladka[aria-selected="true"] {
+  background: var(--fosfor);
+  border-color: var(--fosfor);
+  color: var(--tlo);
+  box-shadow: var(--poswiata);
+}
+.zakladka-mapy {
+  border-color: var(--linia-mocna);
+}
+.zakladka-ukryta {
+  border-style: dashed;
+}
+.znacznik-ukrycia {
+  color: var(--klik);
+  font-size: 0.9em;
+}
+.zakladka[aria-selected="true"] .znacznik-ukrycia {
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------- przyciski i pola */
+.przycisk {
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--tekst);
+  background: #000;
+  border: 1px solid var(--linia-mocna);
+  border-radius: 6px;
+  padding: 6px 12px;
+  min-height: 38px;
+  cursor: pointer;
+}
+.przycisk:hover,
+.przycisk:focus-visible {
+  background: var(--fosfor);
+  color: var(--tlo);
+  border-color: var(--fosfor);
+  outline: none;
+}
+.przycisk:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.przycisk-glowny {
+  border-color: var(--fosfor);
+  color: var(--fosfor);
+}
+.przycisk-niebezpieczny {
+  border-color: var(--blad);
+  color: var(--blad);
+}
+.przycisk-niebezpieczny:hover,
+.przycisk-niebezpieczny:focus-visible {
+  background: var(--blad);
+  border-color: var(--blad);
+  color: #000;
+}
+.przycisk-maly {
+  font-size: 13px;
+  padding: 3px 9px;
+  min-height: 32px;
+}
+.przycisk-ikona {
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  color: var(--tekst);
+  background: #000;
+  border: 1px solid var(--linia-mocna);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.przycisk-ikona:hover,
+.przycisk-ikona:focus-visible {
+  background: var(--fosfor);
+  color: var(--tlo);
+  outline: none;
+}
+.odnosnik {
+  font: inherit;
+  color: var(--fosfor);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-align: left;
+}
+.odnosnik:focus-visible {
+  outline: 2px solid var(--klik);
+  outline-offset: 2px;
+}
+.pole {
+  font: inherit;
+  font-size: 16px; /* 16 px: iPhone nie przybliża strony przy wpisywaniu */
+  color: var(--tekst);
+  background: var(--tlo-pole);
+  border: 1px solid var(--linia-mocna);
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+textarea.pole {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.4;
+}
+select.pole {
+  cursor: pointer;
+}
+.pole:focus {
+  outline: 2px solid var(--klik);
+  outline-offset: 1px;
+}
+.pole::placeholder {
+  color: var(--przygaszony);
+}
+.etykieta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+}
+.etykieta small {
+  font-size: 13px;
+}
+.etykieta-pozioma {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+.etykieta-pozioma .pole {
+  width: auto;
+}
+.przelacznik {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--fosfor);
+  cursor: pointer;
+}
+.przelacznik-etykieta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.konto-podglad {
+  font-size: 13px;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------- okna (dialog) */
+dialog.okno {
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  overflow: auto;
+  color: var(--tekst);
+  background: var(--tlo-panel);
+  border: 1px solid var(--fosfor);
+  border-radius: 10px;
+  box-shadow: var(--poswiata);
+}
+dialog.okno-male {
+  width: min(460px, calc(100vw - 24px));
+}
+dialog.okno::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+}
+.okno-pasek {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--tlo-panel);
+  border-bottom: 1px solid var(--linia);
+}
+.okno-naglowek {
+  margin: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--linia);
+  color: var(--akcent);
+  font-size: 13px;
+  letter-spacing: 0.09em;
+}
+.okno-tresc {
+  margin: 12px 14px;
+}
+.okno-przyciski {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+dialog.okno-male > .okno-przyciski {
+  margin: 0 14px 14px;
+}
+.formularz {
+  padding: 12px 14px 14px;
+}
+@media (max-width: 600px) {
+  dialog.okno:not(.okno-male) {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- komunikaty */
+.komunikaty {
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  z-index: 50;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(520px, calc(100vw - 24px));
+  pointer-events: none;
+}
+.komunikat {
+  padding: 8px 12px;
+  background: #000;
+  color: var(--tekst);
+  border: 1px solid var(--fosfor);
+  border-radius: 6px;
+  box-shadow: var(--poswiata);
+}
+.komunikat-blad {
+  border-color: var(--blad);
+  color: var(--blad);
+}
+
+/* ---------------------------------------------------------------- widoki */
+.widok {
+  position: absolute;
+  inset: 0;
+}
+.widok-lista {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tresc-widoku {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px 14px 48px;
+}
+.widok-naglowek {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.widok-naglowek h2,
+.tresc-widoku > h2 {
+  margin: 6px 0;
+  font-family: var(--font-hud);
+  font-weight: normal;
+  font-size: 30px;
+  letter-spacing: 0.06em;
+  color: var(--fosfor);
+  text-shadow: var(--cien-tekstu);
+}
+.filtry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+.filtry .pole {
+  flex: 1 1 180px;
+  width: auto;
+}
+.filtry .przycisk {
+  flex: 0 0 auto;
+}
+.sekcja-tytul {
+  margin: 16px 0 8px;
+  padding-bottom: 4px;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: var(--akcent);
+  border-bottom: 1px solid var(--linia);
+}
+.podsekcja {
+  margin: 14px 0 4px;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+}
+.panel-ramka {
+  margin: 14px 0;
+  padding: 2px 14px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--linia);
+  border-radius: 10px;
+}
+
+/* ---------------------------------------------------------------- karty wpisów */
+.karta {
+  margin: 10px 0;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--linia);
+  border-left: 3px solid var(--fosfor);
+  border-radius: 6px;
+}
+.karta-tytul {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--fosfor);
+  overflow-wrap: anywhere;
+}
+.karta-meta {
+  margin: 2px 0 6px;
+  font-size: 14px;
+  color: var(--przygaszony);
+  overflow-wrap: anywhere;
+}
+.karta-tresc {
+  margin: 6px 0 0;
+  white-space: pre-wrap; /* zachowanie podziałów wierszy */
+  overflow-wrap: anywhere;
+}
+.karta-przyciski {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.karta-stan-zamkniete {
+  opacity: 0.7;
+  border-left-color: var(--przygaszony);
+}
+.karta-stan-w-toku {
+  border-left-color: var(--klik);
+}
+.znacznik-stanu {
+  font-size: 14px;
+  color: var(--akcent);
+}
+.relacja {
+  color: var(--przygaszony);
+  font-weight: normal;
+}
+.karta-powiazanie.rodzaj-wrogosc {
+  border-left-color: var(--blad);
+}
+.karta-powiazanie.rodzaj-niepewne {
+  border-left-style: dashed;
+}
+
+/* ---------------------------------------------------------------- widok map */
+.widok-map {
+  display: flex;
+}
+.obszar-map {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--tlo);
+}
+.plansza {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* touch-action TAKŻE na kontenerze HTML, nie tylko na SVG — obsługa tej
+     właściwości na elementach SVG bywa w przeglądarkach niepewna. */
+  touch-action: none;
+  outline: none;
+  background: var(--tlo);
+}
+.plansza:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--klik);
+}
+.plansza svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.plansza.ciagniemy svg {
+  cursor: grabbing;
+}
+/* Napisy znikają na czas szczypania — przy każdej nowej skali przeglądarka
+   układa tekst od nowa i to był główny koszt klatki (wzór: Kod_Wzoru.txt). */
+.plansza.szczypiemy svg text {
+  display: none;
+}
+.ladowanie {
+  position: absolute;
+  top: 45%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  color: var(--przygaszony);
+  letter-spacing: 0.12em;
+}
+.plansza > .formularz-blad {
+  position: absolute;
+  top: 40%;
+  left: 16px;
+  right: 16px;
+  text-align: center;
+}
+.brak-map {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--przygaszony);
+  letter-spacing: 0.05em;
+}
+.pasek-mapy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+}
+.przycisk-mapy {
+  min-width: 42px;
+  min-height: 42px;
+  padding: 4px 10px;
+  font-size: 17px;
+  background: rgba(0, 0, 0, 0.8);
+}
+#przycisk-indeks {
+  font-size: 14px;
+  letter-spacing: 0.1em;
+}
+#przycisk-indeks[aria-expanded="true"] {
+  border-color: var(--fosfor);
+  color: var(--fosfor);
+}
+
+/* Elementy mapy. Tło rysunku nie reaguje na wskaźnik — klikalne są tylko
+   elementy dostępne dla bieżącego użytkownika. Elementy niedostępne wyglądają
+   dokładnie jak tło (bez narożników, bez podświetlenia, bez fokusu). */
+.plansza svg .ds-rysunek {
+  pointer-events: none;
+}
+.plansza svg .el-dostepny {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.plansza svg .el-dostepny:focus {
+  outline: none;
+}
+.plansza svg .el-dekor {
+  display: none;
+}
+.plansza svg .el-dostepny .el-dekor {
+  display: inline;
+}
+.plansza svg .el-strefa {
+  fill: transparent;
+  stroke: none;
+}
+.plansza svg .el-strefa-linia {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16px;
+  stroke-linecap: round;
+}
+.plansza svg .el-naroznik {
+  fill: none;
+  stroke: var(--klik);
+  stroke-width: 1.6px;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.72;
+}
+.plansza svg.mapa-slate .el-dostepny:hover .el-naroznik,
+.plansza svg.mapa-slate .el-dostepny:focus-visible .el-naroznik,
+.plansza svg.mapa-slate .el-dostepny.wybrany .el-naroznik {
+  opacity: 1;
+  stroke-width: 2.6px;
+}
+.plansza svg.mapa-slate .el-dostepny:hover text,
+.plansza svg.mapa-slate .el-dostepny:focus-visible text,
+.plansza svg.mapa-slate .el-dostepny.wybrany text {
+  fill: var(--klik);
+}
+/* Widok admina: miejsca ukryte przed graczami — przerywane, przygaszone narożniki. */
+.plansza svg.mapa-slate .el-ukryty .el-naroznik {
+  stroke: var(--przygaszony);
+  stroke-dasharray: 3 3;
+}
+.plansza svg.mapa-slate .el-ukryty:hover .el-naroznik,
+.plansza svg.mapa-slate .el-ukryty.wybrany .el-naroznik {
+  stroke: var(--klik);
+}
+
+/* ---------------------------------------------------------------- indeks */
+.indeks {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--tlo-panel);
+  border-right: 1px solid var(--linia);
+}
+.indeks-pasek,
+.panel-pasek {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--linia);
+}
+.indeks-pasek .ozdoba {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+.indeks-zamknij {
+  display: none;
+}
+.indeks-szukajka {
+  padding: 8px 10px 4px;
+}
+.indeks-info {
+  margin: 2px 12px 4px;
+  font-size: 13px;
+}
+.indeks-lista {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 6px 24px;
+}
+.indeks-naglowek {
+  margin: 14px 6px 2px;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--akcent);
+}
+.indeks-kategoria {
+  margin: 8px 8px 2px;
+  font-size: 13px;
+  font-weight: normal;
+  letter-spacing: 0.08em;
+  color: var(--przygaszony);
+}
+.indeks-pusto {
+  margin: 4px 8px;
+  font-size: 14px;
+}
+.indeks-pozycje {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.indeks-pozycja {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  color: var(--tekst);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.indeks-pozycja:hover,
+.indeks-pozycja:focus-visible {
+  background: var(--fosfor);
+  color: var(--tlo);
+  outline: none;
+}
+.indeks-nazwa {
+  overflow-wrap: anywhere;
+}
+.indeks-admin {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 6px;
+}
+.pozycja-ukryta .indeks-nazwa {
+  opacity: 0.6;
+}
+.licznik {
+  flex: 0 0 auto;
+  min-width: 24px;
+  padding: 0 6px;
+  font-size: 13px;
+  text-align: center;
+  border: 1px solid var(--linia-mocna);
+  border-radius: 10px;
+}
+
+/* ---------------------------------------------------------------- panel miejsca */
+.panel-elementu {
+  flex: 0 0 410px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: var(--tlo-panel);
+  border-left: 1px solid var(--fosfor);
+  box-shadow: var(--poswiata);
+}
+.panel-pasek {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--tlo-panel);
+}
+.panel-tresc {
+  padding: 2px 14px 32px;
+}
+.panel-nazwa {
+  margin: 12px 0 2px;
+  font-size: 23px;
+  letter-spacing: 0.04em;
+  color: var(--fosfor);
+  text-shadow: var(--cien-tekstu);
+  overflow-wrap: anywhere;
+}
+.panel-klasa {
+  margin: 2px 0;
+  font-size: 14px;
+  color: var(--przygaszony);
+}
+.panel-opis {
+  margin: 10px 0;
+}
+.panel-admin {
+  margin: 12px 0;
+  padding: 8px 10px;
+  border: 1px dashed var(--klik);
+  border-radius: 6px;
+}
+.panel-sekcja-naglowek {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px solid var(--linia);
+}
+.panel-sekcja-naglowek h3 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: var(--akcent);
+}
+.panel-tresc > .przycisk {
+  margin: 6px 0;
+}
+
+/* ---------------------------------------------------------------- admin */
+.admin-mapa {
+  margin-top: 12px;
+  padding-top: 2px;
+  border-top: 1px solid var(--linia);
+}
+.admin-wiersz {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 8px 0;
+}
+.lista-elementow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0 14px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tryby {
+  margin: 12px 0;
+  padding: 6px 12px;
+  border: 1px solid var(--linia);
+  border-radius: 6px;
+}
+.tryby legend {
+  padding: 0 6px;
+  color: var(--akcent);
+}
+.tryby input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  accent-color: var(--fosfor);
+}
+.tabela {
+  width: 100%;
+  margin: 8px 0;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.tabela th,
+.tabela td {
+  padding: 4px 8px;
+  text-align: left;
+  border-top: 1px solid var(--linia);
+  overflow-wrap: anywhere;
+}
+.tabela tbody tr:nth-child(even) {
+  background: var(--zebra);
+}
+.dziennik {
+  max-height: 340px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #000;
+  border: 1px solid var(--linia);
+  border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------- graf powiązań */
+.graf {
+  margin: 10px 0;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--linia);
+  border-radius: 8px;
+}
+.graf-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  font-family: var(--font);
+}
+.graf-krawedz {
+  stroke: var(--fosfor);
+  stroke-width: 1.6;
+  opacity: 0.75;
+}
+.graf-krawedz.rodzaj-wrogosc {
+  stroke: var(--blad);
+}
+.graf-krawedz.rodzaj-niepewne {
+  stroke-dasharray: 6 5;
+  opacity: 0.55;
+}
+.graf-krawedz.rodzaj-dlug,
+.graf-krawedz.rodzaj-zaleznosc {
+  stroke: var(--klik);
+}
+.graf-wezel {
+  fill: var(--fosfor);
+}
+.graf-nazwa {
+  fill: var(--tekst);
+  font-size: 16px;
+}
+.graf-rodzaj {
+  fill: var(--przygaszony);
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------- strona startowa */
+.lista-kampanii {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.kampania {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0;
+  padding: 12px 14px;
+  color: var(--tekst);
+  text-decoration: none;
+  border: 1px solid var(--linia-mocna);
+  border-radius: 8px;
+}
+.kampania:hover,
+.kampania:focus-visible {
+  border-color: var(--fosfor);
+  box-shadow: var(--poswiata);
+  outline: none;
+}
+.kampania-nazwa {
+  font-family: var(--font-hud);
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: 0.05em;
+  color: var(--fosfor);
+  text-shadow: var(--cien-tekstu);
+}
+.kampania-opis {
+  font-size: 15px;
+  color: var(--przygaszony);
+}
+.formularz-logowania {
+  max-width: 440px;
+  padding: 4px 0 0;
+}
+
+/* ---------------------------------------------------------------- węższe ekrany */
+@media (max-width: 1279px) {
+  /* Indeks wysuwa się NAD mapę, zamiast zwężać ją do paska. */
+  .indeks {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 6;
+    width: min(340px, 88vw);
+    border-right: 1px solid var(--fosfor);
+    box-shadow: var(--poswiata);
+  }
+  .indeks-zamknij {
+    display: inline-block;
+  }
+}
+@media (max-width: 1023px) {
+  /* Karta miejsca zakrywa mapę (telefon, tablet w pionie). */
+  .panel-elementu {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    border-left: none;
+  }
+}
+@media (max-width: 700px) {
+  body {
+    font-size: 16px;
+  }
+  .tylko-szeroki,
+  .zakladka-ikona {
+    display: none;
+  }
+  .slate-tytul {
+    font-size: 21px;
+  }
+  .slate-gora {
+    padding: 5px 8px;
+  }
+  .zakladki {
+    padding: 5px 6px;
+    gap: 4px;
+  }
+  .zakladka {
+    font-size: 14px;
+    padding: 3px 8px;
+    min-height: 34px;
+  }
+  .ozdoba-dluga {
+    display: none;
+  }
+  .tresc-widoku {
+    padding: 8px 10px 40px;
+  }
+  .widok-naglowek h2,
+  .tresc-widoku > h2 {
+    font-size: 25px;
+  }
+  .konto {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skan {
+    animation: none;
+  }
+}

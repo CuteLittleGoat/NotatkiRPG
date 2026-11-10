@@ -1,0 +1,287 @@
+<!-- Mapa dla graczy w stylu Data-Slate. Plik wygenerowany przez narzedzia/przygotuj_mape.py na podstawie rysunku od MG — nie edytuj go ręcznie, tylko uruchom skrypt ponownie. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 844 1160 810" class="mapa-slate" data-mapa="kopiec" data-wersja="2026-11-10" role="img" aria-label="Mapa: Kopiec" preserveAspectRatio="xMidYMid meet">
+ <defs>
+  <style>
+svg.mapa-slate[data-mapa="kopiec"]{font-family:"Ubuntu Mono","DejaVu Sans Mono",Consolas,monospace;background:#020b05}
+svg.mapa-slate[data-mapa="kopiec"] .h{paint-order:stroke;stroke:#020b05;stroke-width:3px;stroke-linejoin:round}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f0{fill:#020b05}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f3{fill:#051209}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f4{fill:#06140a}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f5{fill:#07170c}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f11{fill:#0e2514}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f14{fill:#112c18}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f24{fill:#1b4325}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f27{fill:#1f4a29}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f28{fill:#204d2b}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f33{fill:#255832}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f35{fill:#275d34}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f36{fill:#285f36}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f39{fill:#2b663a}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f40{fill:#2c693b}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f42{fill:#2f6d3e}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f43{fill:#30703f}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f45{fill:#327442}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f52{fill:#39854b}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f55{fill:#3c8c4f}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f57{fill:#3e9052}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f67{fill:#49a85f}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f68{fill:#4aaa61}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f72{fill:#4eb366}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f74{fill:#50b869}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f84{fill:#5bd076}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f89{fill:#60db7d}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f95{fill:#67e985}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f96{fill:#68ec87}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f99{fill:#6bf38b}
+svg.mapa-slate[data-mapa="kopiec"] .ds-f100{fill:#6cf58c}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s10{stroke:#0d2212}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s15{stroke:#122e19}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s20{stroke:#173a20}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s25{stroke:#1c4627}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s39{stroke:#2b663a}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s49{stroke:#367e47}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s79{stroke:#56c470}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s89{stroke:#60db7d}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s90{stroke:#61de7e}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s96{stroke:#68ec87}
+svg.mapa-slate[data-mapa="kopiec"] .ds-s100{stroke:#6cf58c}
+svg.mapa-slate[data-mapa="kopiec"] .ds-c2{stop-color:#041008}
+svg.mapa-slate[data-mapa="kopiec"] .ds-c5{stop-color:#07170c}
+svg.mapa-slate[data-mapa="kopiec"] .ds-c10{stop-color:#0d2212}
+svg.mapa-slate[data-mapa="kopiec"] .ds-c21{stop-color:#183c21}
+svg.mapa-slate[data-mapa="kopiec"] .ds-c27{stop-color:#1f4a29}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .h{paint-order:stroke;stroke:#0d0702;stroke-width:3px;stroke-linejoin:round}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f0{fill:#0d0702}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f3{fill:#140c04}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f4{fill:#170e05}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f5{fill:#191005}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f11{fill:#281a0a}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f14{fill:#2f1f0c}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f24{fill:#473013}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f27{fill:#4e3515}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f28{fill:#513715}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f33{fill:#5d4019}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f35{fill:#62431a}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f36{fill:#64451b}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f39{fill:#6b4a1d}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f40{fill:#6e4c1e}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f42{fill:#734f1f}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f43{fill:#755120}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f45{fill:#7a5421}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f52{fill:#8b6026}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f55{fill:#926628}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f57{fill:#976929}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f67{fill:#af7a30}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f68{fill:#b27c31}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f72{fill:#bb8334}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f74{fill:#c08635}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f84{fill:#d8973c}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f89{fill:#e4a03f}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f95{fill:#f3aa44}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f96{fill:#f5ac44}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f99{fill:#fdb146}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-f100{fill:#ffb347}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s10{stroke:#251809}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s15{stroke:#31210c}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s20{stroke:#3d2910}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s25{stroke:#4a3213}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s39{stroke:#6b4a1d}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s49{stroke:#845b24}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s79{stroke:#cc8f39}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s89{stroke:#e4a03f}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s90{stroke:#e7a240}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s96{stroke:#f5ac44}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-s100{stroke:#ffb347}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-c2{stop-color:#120a03}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-c5{stop-color:#191005}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-c10{stop-color:#251809}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-c21{stop-color:#402b10}
+.motyw-bursztynowy svg.mapa-slate[data-mapa="kopiec"] .ds-c27{stop-color:#4e3515}
+</style>
+  <radialGradient id="kopiec-ilc-papier" cx="50%" cy="45%" r="80%">
+   <stop offset="0" class="ds-c2" />
+   <stop offset=".7" class="ds-c5" />
+   <stop offset="1" class="ds-c10" />
+  </radialGradient>
+  <linearGradient id="kopiec-ilc-szlam" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" class="ds-c21" />
+   <stop offset="1" class="ds-c27" />
+  </linearGradient>
+  <pattern id="kopiec-ilc-fale" width="40" height="22" patternUnits="userSpaceOnUse">
+   <path d="M3 7q5-4 10 0t10 0M22 18q5-4 10 0t10 0" fill="none" stroke-width=".8" opacity=".55" class="ds-s49" />
+  </pattern>
+  <pattern id="kopiec-ilc-zabudowa" width="9" height="9" patternUnits="userSpaceOnUse">
+   <path d="M0 4.5h9M4.5 0v9" stroke-width=".5" opacity=".55" class="ds-f55 ds-s39" />
+  </pattern>
+  <pattern id="kopiec-ilc-slumsy" width="7" height="7" patternUnits="userSpaceOnUse">
+   <rect x="1" y="1" width="2.4" height="2" opacity=".55" class="ds-f39" />
+   <rect x="4.2" y="4" width="2" height="1.8" opacity=".45" class="ds-f39" />
+  </pattern>
+  <clipPath id="kopiec-kadr">
+   <rect x="20" y="844" width="1160" height="810" rx="8" />
+  </clipPath>
+ </defs>
+ <g class="ds-rysunek" clip-path="url(#kopiec-kadr)">
+  <rect x="0.0" y="0.0" width="1200.0" height="2580.0" rx="0" stroke="none" stroke-width="1.2" class="ds-f3" />
+  <rect x="20.0" y="844.0" width="1160.0" height="810.0" rx="8" fill="url(#kopiec-ilc-papier)" stroke-width="1.6" class="ds-s79" />
+  <text x="40.0" y="874.0" font-size="21" font-weight="bold" class="h ds-f100">B. Plan kopca Iliac</text>
+  <text x="40.0" y="894.0" font-size="12.5" font-style="italic" class="h ds-f89">Rzut z góry. Zatoka ok. 20 km długości. Rysunek orientacyjny, bez skali.</text>
+  <polygon points="30.0,908.0 150.0,908.0 160.0,960.0 176.0,1040.0 188.0,1120.0 192.0,1180.0 192.0,1300.0 186.0,1380.0 172.0,1470.0 160.0,1560.0 150.0,1644.0 30.0,1644.0" fill="url(#kopiec-ilc-szlam)" stroke="none" stroke-width="1" />
+  <polygon points="30.0,908.0 150.0,908.0 160.0,960.0 176.0,1040.0 188.0,1120.0 192.0,1180.0 192.0,1300.0 186.0,1380.0 172.0,1470.0 160.0,1560.0 150.0,1644.0 30.0,1644.0" fill="url(#kopiec-ilc-fale)" stroke="none" stroke-width="1" />
+  <polyline points="150.0,908.0 160.0,960.0 176.0,1040.0 188.0,1120.0 192.0,1180.0 192.0,1300.0 186.0,1380.0 172.0,1470.0 160.0,1560.0 150.0,1644.0" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ds-s96" />
+  <text x="95.0" y="1250.0" font-size="17" text-anchor="middle" font-style="italic" transform="rotate(-90 95.0 1250.0)" letter-spacing="2" class="h ds-f100">Ocean ścieków</text>
+  <polygon points="192.0,930.0 420.0,906.0 700.0,900.0 930.0,905.0 1100.0,900.0 1150.0,960.0 1160.0,1120.0 1150.0,1300.0 1120.0,1460.0 1010.0,1560.0 760.0,1580.0 480.0,1585.0 260.0,1570.0 192.0,1520.0" stroke-width="1.4" class="ds-f11 ds-s89" />
+  <polygon points="192.0,930.0 420.0,906.0 700.0,900.0 930.0,905.0 1100.0,900.0 1150.0,960.0 1160.0,1120.0 1150.0,1300.0 1120.0,1460.0 1010.0,1560.0 760.0,1580.0 480.0,1585.0 260.0,1570.0 192.0,1520.0" fill="url(#kopiec-ilc-slumsy)" stroke="none" stroke-width="1" />
+  <polygon points="205.0,960.0 420.0,938.0 700.0,932.0 930.0,937.0 1080.0,935.0 1120.0,985.0 1128.0,1120.0 1118.0,1300.0 1090.0,1440.0 990.0,1530.0 760.0,1548.0 480.0,1552.0 270.0,1540.0 205.0,1500.0" stroke-width="1.2" class="ds-f14 ds-s89" />
+  <polygon points="205.0,960.0 420.0,938.0 700.0,932.0 930.0,937.0 1080.0,935.0 1120.0,985.0 1128.0,1120.0 1118.0,1300.0 1090.0,1440.0 990.0,1530.0 760.0,1548.0 480.0,1552.0 270.0,1540.0 205.0,1500.0" fill="url(#kopiec-ilc-zabudowa)" stroke="none" stroke-width="1" />
+  <text x="640.0" y="925.0" font-size="11.5" text-anchor="middle" font-style="italic" class="h ds-f100">slumsy u podstawy</text>
+  <text x="700.0" y="1574.0" font-size="11.5" text-anchor="middle" font-style="italic" class="h ds-f100">slumsy u podstawy</text>
+  <polyline points="172.0,908.0 178.0,1040.0 186.0,1150.0 196.0,1236.0" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 4" class="ds-s90" />
+  <polyline points="168.0,1644.0 176.0,1460.0 188.0,1340.0 196.0,1244.0" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 4" class="ds-s90" />
+  <polyline points="988.0,1240.0 1060.0,1236.0 1170.0,1230.0" fill="none" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" class="ds-s96" />
+  <polyline points="988.0,1240.0 1060.0,1236.0 1170.0,1230.0" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ds-s10" />
+  <text x="1090.0" y="1220.0" font-size="12" text-anchor="middle" font-style="italic" class="h ds-f100">Trakt ▶</text>
+  <text x="176.0" y="1086.0" font-size="11.5" font-style="italic" transform="rotate(-88 176.0 1086.0)" class="h ds-f100">Droga Wybrzeża</text>
+  <g data-element="zatoka">
+   <polygon points="192.0,1188.0 300.0,1180.0 420.0,1170.0 540.0,1168.0 650.0,1172.0 760.0,1185.0 840.0,1205.0 884.0,1226.0 884.0,1258.0 830.0,1272.0 740.0,1285.0 620.0,1292.0 500.0,1296.0 380.0,1300.0 280.0,1300.0 192.0,1292.0" fill="url(#kopiec-ilc-szlam)" stroke-width="1.6" class="ds-s96" />
+   <polygon points="192.0,1188.0 300.0,1180.0 420.0,1170.0 540.0,1168.0 650.0,1172.0 760.0,1185.0 840.0,1205.0 884.0,1226.0 884.0,1258.0 830.0,1272.0 740.0,1285.0 620.0,1292.0 500.0,1296.0 380.0,1300.0 280.0,1300.0 192.0,1292.0" fill="url(#kopiec-ilc-fale)" stroke="none" stroke-width="1" />
+   <text x="360.0" y="1199.0" font-size="16" text-anchor="middle" font-style="italic" letter-spacing="3" class="h ds-f100">Z A T O K A</text>
+   <text x="360.0" y="1291.0" font-size="11.5" text-anchor="middle" font-style="italic" class="h ds-f100">szlam, smog, barki</text>
+  </g>
+  <g data-element="szprychy">
+   <line x1="560.0" y1="1232.0" x2="330.0" y2="1086.0" stroke-width="3.2" opacity="0.75" class="ds-f40 ds-s100" />
+   <line x1="560.0" y1="1232.0" x2="330.0" y2="1086.0" stroke-width="1.1" class="ds-f40 ds-s15" />
+   <line x1="560.0" y1="1232.0" x2="432.0" y2="1396.0" stroke-width="3.2" opacity="0.75" class="ds-f43 ds-s100" />
+   <line x1="560.0" y1="1232.0" x2="432.0" y2="1396.0" stroke-width="1.1" class="ds-f43 ds-s15" />
+   <line x1="560.0" y1="1232.0" x2="944.0" y2="1240.0" stroke-width="3.2" opacity="0.75" class="ds-f72 ds-s100" />
+   <line x1="560.0" y1="1232.0" x2="944.0" y2="1240.0" stroke-width="1.1" class="ds-f72 ds-s15" />
+   <text x="392.0" y="1062.0" font-size="11" font-style="italic" class="h ds-f100">Szprychy</text>
+  </g>
+  <g data-element="wieza-chlodnicy">
+   <circle cx="560.0" cy="1232.0" r="15.0" stroke-width="1.6" class="ds-f42 ds-s100" />
+   <circle cx="560.0" cy="1232.0" r="5.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <text x="560.0" y="1218.0" font-size="11.5" text-anchor="middle" font-weight="bold" class="h ds-f100">Wieża Chłodnicy</text>
+  </g>
+  <g data-element="iglica-daggerfall">
+   <circle cx="330.0" cy="1080.0" r="36.0" stroke-width="1.6" class="ds-f36 ds-s100" />
+   <circle cx="330.0" cy="1080.0" r="22.3" stroke-width="1" class="ds-f36 ds-s96" />
+   <circle cx="330.0" cy="1080.0" r="9.0" stroke-width="1" class="ds-f96 ds-s100" />
+   <text x="330.0" y="1036.0" font-size="14" text-anchor="middle" font-weight="bold" class="h ds-f100">DAGGERFALL</text>
+  </g>
+  <g data-element="dzielnica-smoka">
+   <text x="330.0" y="1135.0" font-size="11.5" text-anchor="middle" font-style="italic" class="h ds-f100">dzielnica Smoka</text>
+   <text x="330.0" y="1149.0" font-size="11" text-anchor="middle" font-style="italic" class="h ds-f100">(nawiedzana nocą)</text>
+  </g>
+  <g data-element="iglica-sentinel">
+   <circle cx="432.0" cy="1402.0" r="36.0" stroke-width="1.6" class="ds-f36 ds-s100" />
+   <circle cx="432.0" cy="1402.0" r="22.3" stroke-width="1" class="ds-f36 ds-s96" />
+   <circle cx="432.0" cy="1402.0" r="9.0" stroke-width="1" class="ds-f96 ds-s100" />
+   <text x="432.0" y="1456.0" font-size="14" text-anchor="middle" font-weight="bold" class="h ds-f100">SENTINEL</text>
+   <text x="432.0" y="1472.0" font-size="11" text-anchor="middle" font-style="italic" class="h ds-f100">pod iglicą: krypty-więzienia</text>
+  </g>
+  <g data-element="iglica-wayrest">
+   <circle cx="948.0" cy="1240.0" r="38.0" stroke-width="1.6" class="ds-f35 ds-s100" />
+   <circle cx="948.0" cy="1240.0" r="23.6" stroke-width="1" class="ds-f35 ds-s96" />
+   <circle cx="948.0" cy="1240.0" r="9.5" stroke-width="1" class="ds-f95 ds-s100" />
+   <text x="948.0" y="1302.0" font-size="14" text-anchor="middle" font-weight="bold" class="h ds-f100">WAYREST</text>
+  </g>
+  <g data-element="wrothgar">
+   <circle cx="1060.0" cy="975.0" r="32.0" stroke-width="1.6" class="ds-f67 ds-s100" />
+   <circle cx="1060.0" cy="975.0" r="17.6" stroke-width="1" class="ds-f74 ds-s100" />
+   <line x1="1060.0" y1="975.0" x2="1037.6" y2="968.6" stroke-width="0.8" class="ds-f100 ds-s25" />
+   <line x1="1060.0" y1="975.0" x2="1069.6" y2="994.2" stroke-width="0.8" class="ds-f100 ds-s25" />
+   <line x1="1060.0" y1="975.0" x2="1076.0" y2="959.0" stroke-width="0.8" class="ds-f100 ds-s25" />
+   <text x="1060.0" y="1027.0" font-size="13.5" text-anchor="middle" font-weight="bold" class="h ds-f100">WROTHGAR</text>
+   <text x="1060.0" y="1042.0" font-size="11" text-anchor="middle" font-style="italic" class="h ds-f100">martwa iglica</text>
+  </g>
+  <g data-element="port-sw-betony">
+   <line x1="205.0" y1="1188.0" x2="205.0" y2="1292.0" stroke-width="6" class="ds-f100 ds-s100" />
+   <line x1="205.0" y1="1188.0" x2="205.0" y2="1292.0" stroke-width="2.4" class="ds-f100 ds-s20" />
+   <line x1="199.0" y1="1196.0" x2="211.0" y2="1196.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <line x1="199.0" y1="1210.0" x2="211.0" y2="1210.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <line x1="199.0" y1="1224.0" x2="211.0" y2="1224.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <line x1="199.0" y1="1238.0" x2="211.0" y2="1238.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <line x1="199.0" y1="1252.0" x2="211.0" y2="1252.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <line x1="199.0" y1="1266.0" x2="211.0" y2="1266.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <line x1="199.0" y1="1280.0" x2="211.0" y2="1280.0" stroke-width="1" class="ds-f100 ds-s100" />
+   <rect x="186.0" y="1228.0" width="26.0" height="22.0" rx="0" stroke-width="1.4" class="ds-f68 ds-s100" />
+   <text x="214.0" y="1322.0" font-size="13.5" font-weight="bold" class="h ds-f100">PORT ŚW. BETONY</text>
+   <text x="214.0" y="1338.0" font-size="11.5" font-style="italic" class="h ds-f100">Brama i Przesmyk</text>
+  </g>
+  <g data-element="iglica-cumownicza">
+   <circle cx="244.0" cy="1150.0" r="16.0" stroke-width="1.6" class="ds-f52 ds-s100" />
+   <circle cx="244.0" cy="1150.0" r="9.9" stroke-width="1" class="ds-f45 ds-s96" />
+   <circle cx="244.0" cy="1150.0" r="4.0" stroke-width="1" class="ds-f96 ds-s100" />
+   <line x1="232.0" y1="1162.0" x2="210.0" y2="1190.0" stroke-width="2" class="ds-f96 ds-s100" />
+   <text x="242.0" y="1124.0" font-size="11.5" text-anchor="middle" font-weight="bold" class="h ds-f100">Iglica Cumownicza</text>
+   <text x="242.0" y="1110.0" font-size="11" text-anchor="middle" font-style="italic" class="h ds-f100">dok Brassylu</text>
+  </g>
+  <g data-element="balfiera">
+   <circle cx="730.0" cy="1206.0" r="5.0" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <circle cx="748.0" cy="1197.0" r="4.5" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <circle cx="770.0" cy="1210.0" r="9.0" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <circle cx="792.0" cy="1202.0" r="4.5" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <circle cx="742.0" cy="1224.0" r="4.5" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <circle cx="764.0" cy="1232.0" r="4.5" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <circle cx="788.0" cy="1224.0" r="4.5" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <circle cx="770.0" cy="1210.0" r="3.0" stroke="none" stroke-width="1.2" class="ds-f5" />
+   <line x1="770.0" y1="1298.0" x2="770.0" y2="1222.0" stroke-width="0.8" opacity="0.7" class="ds-f100 ds-s96" />
+   <text x="770.0" y="1310.0" font-size="11.5" text-anchor="middle" class="h ds-f100">Balfiera — wieża Direnni</text>
+  </g>
+  <g data-element="cybiades">
+   <circle cx="482.0" cy="1284.0" r="6.0" stroke-width="1.2" class="ds-f45 ds-s100" />
+   <text x="482.0" y="1316.0" font-size="11" text-anchor="middle" font-style="italic" class="h ds-f100">Cybiades</text>
+  </g>
+  <g data-element="hala-cryngaine">
+   <rect x="420.0" y="1112.0" width="54.0" height="26.0" rx="0" stroke-width="1.2" class="ds-f24 ds-s96" />
+   <text x="447.0" y="1104.0" font-size="11.5" text-anchor="middle" class="h ds-f100">Hala Cryngaine</text>
+  </g>
+  <g data-element="reich-gradkeep">
+   <rect x="548.0" y="1118.0" width="30.0" height="18.0" rx="0" stroke-width="1.2" class="ds-f27 ds-s96" />
+   <text x="563.0" y="1110.0" font-size="11.5" text-anchor="middle" class="h ds-f100">Reich Gradkeep</text>
+  </g>
+  <g data-element="menevia">
+   <path d="M770 1176 q14 -18 34 -16 q18 2 22 18" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="ds-f28 ds-s96" />
+   <text x="796.0" y="1172.0" font-size="15" text-anchor="middle" class="ds-f100">†</text>
+   <text x="806.0" y="1150.0" font-size="11.5" text-anchor="middle" class="h ds-f100">Menevia — krypty</text>
+  </g>
+  <g data-element="woodborne-hall">
+   <circle cx="902.0" cy="1108.0" r="16.0" stroke-width="1.2" class="ds-f33 ds-s96" />
+   <circle cx="902.0" cy="1108.0" r="16.0" fill="url(#kopiec-ilc-zabudowa)" stroke="none" stroke-width="1.2" />
+   <text x="902.0" y="1082.0" font-size="11.5" text-anchor="middle" class="h ds-f100">Woodborne Hall</text>
+  </g>
+  <g data-element="orsinium">
+   <path d="M945 1010 q30 -16 62 0 q10 20 -6 34 q-30 14 -58 0 q-12 -16 2 -34z" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 3" class="ds-s96" />
+   <text x="976.0" y="1068.0" font-size="11.5" text-anchor="middle" class="h ds-f100">Orsinium (podkopiec)</text>
+  </g>
+  <path d="M860 1468 l10 -16 l10 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="ds-s89" />
+  <path d="M882 1474 l10 -16 l10 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="ds-s89" />
+  <path d="M904 1468 l10 -16 l10 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="ds-s89" />
+  <path d="M926 1474 l10 -16 l10 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="ds-s89" />
+  <path d="M948 1468 l10 -16 l10 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="ds-s89" />
+  <path d="M970 1474 l10 -16 l10 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="ds-s89" />
+  <path d="M992 1468 l10 -16 l10 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" class="ds-s89" />
+  <text x="940.0" y="1528.0" font-size="11.5" text-anchor="middle" class="h ds-f100">Smoczy Ogon</text>
+  <circle cx="1120.0" cy="1460.0" r="22.0" stroke-width="1" class="ds-f3 ds-s79" />
+  <polygon points="1120.0,1430.0 1113.0,1460.0 1120.0,1455.0 1127.0,1460.0" stroke-width="0.8" class="ds-f99 ds-s100" />
+  <polygon points="1120.0,1490.0 1113.0,1460.0 1120.0,1465.0 1127.0,1460.0" stroke-width="0.8" class="ds-f4 ds-s100" />
+  <text x="1120.0" y="1426.0" font-size="13" text-anchor="middle" font-weight="bold" class="h ds-f100">N</text>
+  <rect x="40.0" y="1445.0" width="280.0" height="102.0" rx="5" stroke-width="1" opacity="0.95" class="ds-f0 ds-s79" />
+  <text x="50.0" y="1463.0" font-size="12.5" font-weight="bold" class="ds-f100">Legenda</text>
+  <circle cx="66.0" cy="1477.0" r="8.0" stroke-width="1.6" class="ds-f57 ds-s100" />
+  <circle cx="66.0" cy="1477.0" r="5.0" stroke-width="1" class="ds-f45 ds-s96" />
+  <circle cx="66.0" cy="1477.0" r="2.0" stroke-width="1" class="ds-f96 ds-s100" />
+  <text x="92.0" y="1481.0" font-size="11.5" class="ds-f100">iglica żywa</text>
+  <circle cx="66.0" cy="1496.0" r="8.0" stroke-width="1.6" class="ds-f100 ds-s100" />
+  <circle cx="66.0" cy="1496.0" r="4.4" stroke-width="1" class="ds-f84 ds-s100" />
+  <line x1="66.0" y1="1496.0" x2="60.4" y2="1494.4" stroke-width="0.8" class="ds-f100 ds-s25" />
+  <line x1="66.0" y1="1496.0" x2="68.4" y2="1500.8" stroke-width="0.8" class="ds-f100 ds-s25" />
+  <line x1="66.0" y1="1496.0" x2="70.0" y2="1492.0" stroke-width="0.8" class="ds-f100 ds-s25" />
+  <text x="92.0" y="1500.0" font-size="11.5" class="ds-f100">iglica martwa (Wrothgar)</text>
+  <line x1="54.0" y1="1515.0" x2="82.0" y2="1515.0" stroke-width="3.2" opacity="0.75" class="ds-f100 ds-s100" />
+  <line x1="54.0" y1="1515.0" x2="82.0" y2="1515.0" stroke-width="1.1" class="ds-f100 ds-s15" />
+  <text x="92.0" y="1519.0" font-size="11.5" class="ds-f100">Szprycha (przewód z pomostem)</text>
+  <rect x="54.0" y="1528.0" width="28.0" height="12.0" rx="0" fill="none" stroke-width="1.3" stroke-dasharray="4 3" class="ds-s96" />
+  <text x="92.0" y="1538.0" font-size="11.5" class="ds-f100">pod ziemią (podkopiec, krypty)</text>
+ </g>
+</svg>

@@ -1,0 +1,10 @@
+{
+  "kampanie": [
+    {
+      "id": "iliac",
+      "nazwa": "Kopiec Iliac",
+      "folder": "Scenariusze/Iliac",
+      "opis": "Warhammer 40,000 / Wrath & Glory"
+    }
+  ]
+}

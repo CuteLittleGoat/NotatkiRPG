@@ -1,0 +1,23 @@
+{
+  "id": "nowy-scenariusz",
+  "nazwa": "Nazwa scenariusza",
+  "naglowek": "NAZWA NA EKRANIE",
+  "system": "System RPG",
+  "wersjaMapy": "RRRR-MM-DD",
+  "kolor": "zielony",
+  "mapy": [
+    {
+      "id": "plan",
+      "nazwa": "Plan",
+      "plik": "mapa_plan.svg",
+      "kolor": "zielony",
+      "widocznaDomyslnie": false,
+      "start": { "x": 500, "y": 400 },
+      "zrodlo": { "plik": "Rysunek_MG.svg", "obszar": "0 0 1000 800" }
+    }
+  ],
+  "kategorie": {
+    "miejsce": "Miejsca"
+  },
+  "elementy": []
+}
