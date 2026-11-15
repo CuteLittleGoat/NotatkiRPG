@@ -10,7 +10,7 @@
       "id": "okolice",
       "nazwa": "Okolice",
       "plik": "mapa_okolice.svg",
-      "kolor": "zielony",
+      "kolor": "oryginalny",
       "widocznaDomyslnie": true,
       "start": { "x": 650, "y": 470 },
       "zrodlo": { "plik": "Rysunki_kopca_Iliac.svg", "obszar": "20 84 1160 740" }
@@ -19,7 +19,7 @@
       "id": "kopiec",
       "nazwa": "Kopiec",
       "plik": "mapa_kopiec.svg",
-      "kolor": "zielony",
+      "kolor": "oryginalny",
       "widocznaDomyslnie": false,
       "start": { "x": 560, "y": 1232 },
       "zrodlo": { "plik": "Rysunki_kopca_Iliac.svg", "obszar": "20 844 1160 810" }

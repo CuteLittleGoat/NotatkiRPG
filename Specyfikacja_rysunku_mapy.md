@@ -14,7 +14,10 @@ pierwszeństwo ma kod — popraw wtedy ten plik.
 > zielony, bursztynowy, czerwony); każde klikalne miejsce w osobnej grupie
 > `<g data-element="id-miejsca">` z podpisem `<text>`, wszystko tajne w
 > `<g class="tylko-mg">`, każda mapa w osobnym, nienachodzącym prostokącie rysunku.
-> Na koniec: `python3 narzedzia/przygotuj_mape.py kampanie/NazwaKampanii --sprawdz`.
+> Na koniec: `python3 narzedzia/przygotuj_mape.py kampanie/NazwaKampanii --sprawdz`,
+> a potem obejrzyj mapę: `node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_….svg`.
+> Gotowe, duże przykłady: rysunki kampanii **Wzór** (`kampanie/Template/Rysunek_*.svg`),
+> praktyczne wskazówki z ich rysowania: [rozdział 17](#17-praktyczne-wskazówki-z-rysowania-map-kampanii-wzór).
 
 ## Spis treści
 
@@ -34,6 +37,7 @@ pierwszeństwo ma kod — popraw wtedy ten plik.
 14. [Nowa wersja istniejącego rysunku](#14-nowa-wersja-istniejącego-rysunku)
 15. [Lista kontrolna](#15-lista-kontrolna)
 16. [Pełny przykład](#16-pełny-przykład)
+17. [Praktyczne wskazówki (z rysowania map kampanii „Wzór”)](#17-praktyczne-wskazówki-z-rysowania-map-kampanii-wzór)
 
 ---
 
@@ -57,8 +61,9 @@ ale **nie jest to strona HTML**:
 
 * **jeden rysunek z kilkoma panelami** (tak jest w kampanii Iliac) — każda mapa to
   prostokątny fragment rysunku (`obszar`);
-* **osobny plik na każdą mapę** — wtedy `obszar` danej mapy obejmuje cały rysunek
-  (`"0 0 szerokość wysokość"` z `viewBox`).
+* **osobny plik na każdą mapę** (tak jest w kampanii Wzór) — wtedy `obszar` danej
+  mapy obejmuje cały rysunek (`"0 0 szerokość wysokość"` z `viewBox`). Prostsze: nie
+  trzeba pilnować granic paneli (rozdział 4).
 
 ---
 
@@ -85,8 +90,8 @@ interaktywna mapa w przeglądarce: przesuwanie, przybliżanie, klikalne miejsca,
    MG (rozdział 6.3), przerywa pracę i **nie zapisuje żadnego pliku**.
 5. Odczytuje miejsca klikalne (`data-element`) i sprawdza ich identyfikatory.
 6. Usuwa wszystkie `<title>`, `<desc>`, `<metadata>`, atrybuty `font-family`,
-   nieużywane definicje (`<defs>`) i arkusze `<style>` — ale **tylko te w `<defs>`
-   i na najwyższym poziomie** (`<style>` schowany w grupie zostaje — rozdział 10).
+   nieużywane definicje (`<defs>`) i **wszystkie arkusze `<style>`** — w dowolnym
+   miejscu rysunku, także schowane w grupie albo w deseniu (rozdział 7).
 7. **Dodaje kolory motywów fosforu**: każdemu kształtowi nadaje klasę `ds-…` z
    poziomem jasności liczonym z jego koloru (rozdział 8) i dopisuje reguły dla
    motywów zielonego, bursztynowego i czerwonego. **Oryginalne kolory zostają** w
@@ -112,9 +117,9 @@ interaktywna mapa w przeglądarce: przesuwanie, przybliżanie, klikalne miejsca,
   bieżącego użytkownika. Miejsca niedostępne wyglądają **dokładnie jak tło**, ale
   **są widoczne** (rysunek i podpis zostają na mapie);
 * pokazuje mapę w kolorze wybranym przez admina osobno dla każdej mapy (domyślnie
-  `mapy[].kolor` z manifestu): **zielony**, **bursztynowy**, **czerwony** (fosfor na
-  ciemnym ekranie) albo **kolory oryginału** (mapa w kolorach rysunku, interfejs
-  aplikacji zielony). Jeden plik mapy obsługuje wszystkie tryby — zmiana koloru nie
+  `mapy[].kolor` z manifestu, a bez tego pola — kolory oryginału): **kolory
+  oryginału** (mapa w kolorach rysunku, interfejs aplikacji zielony) albo
+  **zielony**, **bursztynowy**, **czerwony** (fosfor na ciemnym ekranie). Jeden plik mapy obsługuje wszystkie tryby — zmiana koloru nie
   wymaga ponownego uruchamiania skryptu.
 
 Wniosek dla rysującego: **nie rysuj** własnych ramek podświetlenia, kropek, przycisków
@@ -322,10 +327,12 @@ czytelny na liniach i deseniach. W rysunku zdefiniuj ją w `<defs>`:
 * W trybie **kolory oryginału** obwódka ma kolor `stroke` z reguły `.h` rysunku
   (tylko kolor — `#rrggbb` albo `rgb()`; grubość zawsze 3). Bez takiej reguły —
   biała. Ustaw więc `stroke` na kolor „papieru” Twojej mapy (np. `#f3ead2`).
-* Z całego `<style>` skrypt bierze **tylko** ten kolor; resztę arkusza usuwa.
-  `<style>` musi leżeć **w `<defs>`** (albo bezpośrednio w `<svg>`): `<style>`
-  schowany w grupie przechodzi do mapy graczy, a w aplikacji działałby na **całą
-  stronę** (sprawdzone). Nie definiuj w nim kolorów innych elementów (rozdział 8).
+* Z arkuszy `<style>` skrypt bierze **tylko** ten kolor, a same arkusze usuwa —
+  **każdy**, w dowolnym miejscu rysunku (także schowany w grupie). W aplikacji mapa
+  staje się częścią strony, więc arkusz z rysunku działałby na **całą stronę** (np.
+  mógłby ją ukryć) — dlatego żaden nie trafia do mapy graczy (sprawdza to test).
+  Regułę `.h` trzymaj dla porządku w `<defs>`. Nie definiuj w arkuszu kolorów innych
+  elementów (rozdział 8) — i tak przepadną.
 
 **Nazwy klas zarezerwowane** — nie nadawaj ich elementom rysunku: `el`, `el-…`,
 `ds-…`, `wybrany`, `mapa-slate`, `motyw-…`, `plansza` (używa ich aplikacja) oraz
@@ -421,7 +428,9 @@ Dodatkowo skrypt **przygasza** duże powierzchnie, żeby nie oślepiały:
 * **Krój pisma znika**: skrypt usuwa wszystkie `font-family`, mapa używa czcionki
   o stałej szerokości (Ubuntu Mono / DejaVu Sans Mono / Consolas) — w każdym trybie,
   także w kolorach oryginału. Napisy będą zwykle **szersze** niż w podglądzie —
-  zostaw wokół nich zapas miejsca.
+  zostaw wokół nich zapas miejsca. Licz szerokość napisu jak dla najszerszej z tych
+  czcionek: **liczba znaków × `font-size` × 0,6** (+ `letter-spacing` × liczba znaków),
+  np. „Zejście do piwnic” w rozmiarze 13 ≈ 133 jednostki (rozdział 17.2).
 * Krój i rozmiar podawaj osobnymi atrybutami (`font-family`, `font-size`, …), **nie**
   skrótem `style="font: …"` — skrót nie jest rozpoznawany i zostaje w mapie razem z
   oryginalną czcionką (sprawdzone).
@@ -446,7 +455,7 @@ Dodatkowo skrypt **przygasza** duże powierzchnie, żeby nie oślepiały:
 | atrybut `id` | ✅ | unikalny w pliku; odwołania tylko przez `url(#id)` i `href="#id"` (skrypt dokleja do nich nazwę mapy) |
 | `transform` | ✅ | `translate`, `rotate`, `scale`, `matrix`, `skewX`, `skewY` |
 | `style` (atrybut w elemencie) | ✅ | tylko proste właściwości (`fill`, `stroke`, …) |
-| `<style>` (arkusz) | ⚠️ | tylko reguła `.h` i **tylko w `<defs>`** (rozdział 7); skrypt bierze z niej kolor obwódki, a arkusz usuwa — kolorów innych elementów w nim nie definiuj |
+| `<style>` (arkusz) | ⚠️ | tylko reguła `.h`, najlepiej w `<defs>` (rozdział 7); skrypt bierze z niej kolor obwódki, a **każdy** arkusz usuwa (w dowolnym miejscu rysunku) — kolorów innych elementów w nim nie definiuj |
 | `use`, `symbol` | ❌ | `<use>` na najwyższym poziomie **znika** z map (sprawdzone); powiel kształty zamiast odwołań |
 | `image` | ❌ | aplikacja usuwa obrazki z zewnątrz i `data:` — mapa ma być w pełni wektorowa |
 | `filter`, `mask` | ❌ | rozdział 8.5 |
@@ -475,7 +484,7 @@ Z rysunkiem wiążą się:
 | `mapy[].plik` | `mapa_{id}.svg` — plik, który zrobi skrypt |
 | `mapy[].zrodlo.plik` | nazwa pliku rysunku, np. `Rysunek_MG.svg` |
 | `mapy[].zrodlo.obszar` | `"x y szerokość wysokość"` panelu tej mapy (rozdział 4) |
-| `mapy[].kolor` | kolor na start (admin może go zmienić w aplikacji): `zielony`, `bursztynowy`, `czerwony` albo `oryginalny` (mapa w kolorach rysunku) |
+| `mapy[].kolor` | kolor na start (admin może go zmienić w aplikacji): `oryginalny` (mapa w kolorach rysunku — domyślny, także gdy pola brak), `zielony`, `bursztynowy` albo `czerwony` |
 | `mapy[].start` | `{ "x": …, "y": … }` — punkt **wewnątrz obszaru**, na który mapa otwiera się na telefonie |
 | `elementy[].id` | dokładnie taki sam jak `data-element` na rysunku |
 | `elementy[].mapa` | `id` mapy, na której obszarze leży miejsce |
@@ -522,11 +531,21 @@ Gdy raport jest czysty, zapis map (bez `--sprawdz`):
 python3 narzedzia/przygotuj_mape.py kampanie/NazwaKampanii
 ```
 
-Potem **obejrzyj wynik**: otwórz każdy `mapa_*.svg` w przeglądarce (ciemne tło,
-jasne linie) i sprawdź, czy wszystko jest czytelne i czy nic nie zdradza tajemnic.
+Potem **obejrzyj wynik** we wszystkich trybach kolorów — narzędzie robi obrazki PNG
+(w `testy/e2e/wyniki/podglad/`, poza repozytorium; wymaga pakietu `playwright` jak test e2e):
+
+```bash
+node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_okolice.svg
+node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_okolice.svg --szerokosc=3000 --wycinek=900,600,1000,600
+```
+
+Sprawdź, czy wszystko jest czytelne, czy napisy mieszczą się w kadrze i nie nachodzą
+na siebie (czcionka mapy jest szersza niż w rysunku) i czy nic nie zdradza tajemnic.
+Bez tego narzędzia: otwórz `mapa_*.svg` w przeglądarce (motyw zielony).
 Na koniec testy z `AGENTS.md` (rozdział 6) — test
-`testy/test_przygotuj_mape.py` sprawdza m.in., czy w mapach dla graczy nie ma śladów MG
-i czy każde miejsce z manifestu jest na swojej mapie.
+`testy/test_przygotuj_mape.py` sprawdza m.in., czy w mapach dla graczy nie ma śladów MG,
+czy każde miejsce z manifestu jest na swojej mapie i czy pliki `mapa_*.svg` są
+**aktualne** (takie, jakie zrobiłby teraz skrypt z rysunku i manifestu).
 
 ---
 
@@ -571,7 +590,7 @@ Plik:
 - [ ] samodzielny plik `.svg` (nie HTML), korzeń `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 W H">`
 - [ ] poprawny XML: zamknięte znaczniki, brak `&nbsp;` i innych encji HTML, UTF-8
 - [ ] brak `<image>`, `<use>`, `<filter>`, `<mask>`, `<script>`, `<foreignObject>`, odnośników, animacji
-- [ ] `<style>` (jeśli jest) tylko w `<defs>`; brak skrótu `style="font: …"`
+- [ ] `<style>` (jeśli jest) tylko z regułą `.h`, w `<defs>`; brak skrótu `style="font: …"`
 
 Układ:
 
@@ -605,6 +624,9 @@ Na koniec:
 
 - [ ] `python3 narzedzia/przygotuj_mape.py kampanie/… --sprawdz` bez `BŁĄD` i bez `UWAGA`
 - [ ] lista „NOWE ELEMENTY” przekazana użytkownikowi do decyzji (manifestu nie uzupełniać samemu)
+- [ ] mapy zapisane skryptem i obejrzane w `narzedzia/podglad_mapy.cjs` we wszystkich trybach
+  (napisy w kadrze, bez nachodzenia; nic nie zdradza tajemnic)
+- [ ] testy z `AGENTS.md` (rozdział 6) przechodzą
 
 ---
 
@@ -613,6 +635,12 @@ Na koniec:
 Wymyślony rysunek (nie pochodzi z żadnej kampanii) z dwoma panelami: **A — Okolice**
 i **B — Miasto**. Sprawdzony skryptem: 2 grupy `tylko-mg` usunięte, 3 miejsca na
 mapie „okolice”, 2 na mapie „miasto”, bez błędów.
+
+Większe, kompletne przykłady (osobny plik na każdą mapę, dziesiątki miejsc, desenie,
+napisy z obwódką, przykładowa grupa `tylko-mg`): rysunki kampanii **Wzór** —
+`kampanie/Template/Rysunek_kraina.svg` (mapa fantasy), `Rysunek_palac.svg` (plan
+budynku, szkic) i `Rysunek_pole_bitwy.svg` (mapa taktyczna), razem z manifestem
+`kampanie/Template/kampania.json`.
 
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1700" width="1200" height="1700"
@@ -693,13 +721,13 @@ użytkownika):
 "mapy": [
   {
     "id": "okolice", "nazwa": "Okolice", "plik": "mapa_okolice.svg",
-    "kolor": "zielony", "widocznaDomyslnie": true,
+    "kolor": "oryginalny", "widocznaDomyslnie": true,
     "start": { "x": 600, "y": 400 },
     "zrodlo": { "plik": "Rysunek_MG.svg", "obszar": "20 20 1160 780" }
   },
   {
     "id": "miasto", "nazwa": "Miasto", "plik": "mapa_miasto.svg",
-    "kolor": "zielony", "widocznaDomyslnie": false,
+    "kolor": "oryginalny", "widocznaDomyslnie": false,
     "start": { "x": 600, "y": 1230 },
     "zrodlo": { "plik": "Rysunek_MG.svg", "obszar": "20 840 1160 820" }
   }
@@ -720,3 +748,128 @@ Co dzieje się z przykładem:
   napisy — jasnym fosforem; w trybie kolorów oryginału mapa wygląda jak rysunek
   (beżowy papier, brązowe linie), a napisy z `class="h"` mają obwódkę `#efe3c4`
   z reguły `.h` (sprawdzone w przeglądarce we wszystkich czterech trybach).
+
+---
+
+## 17. Praktyczne wskazówki (z rysowania map kampanii „Wzór”)
+
+Trzy mapy kampanii **Wzór** (`kampanie/Template/`) — mapa fantasy, szkic planu pałacu
+i mapa taktyczna pola bitwy — powstały z krótkich skryptów Pythona
+(`kampanie/Template/generator/`). Poniżej problemy, które wyszły przy ich rysowaniu,
+i sprawdzone rozwiązania. Liczby (rozmiary, liczba elementów) pochodzą z tych map.
+
+### 17.1 Sposób pracy
+
+* **Generator zamiast ręcznego rysowania**, gdy na mapie są setki powtarzalnych rzeczy
+  (drzewa, góry, domy, leje, worki z piaskiem). Skrypt ze **stałym ziarnem losowania**
+  daje za każdym razem ten sam plik, więc poprawka = zmiana w skrypcie i ponowne
+  uruchomienie, a historia zmian w repozytorium zostaje czytelna. Wzory:
+  `kampanie/Template/generator/` (tylko biblioteka standardowa; `wspolne.py` ma
+  gładkie krzywe, losowanie punktów w obszarze i linie „odręczne”). Rysunek z
+  Inkscape też jest w porządku — specyfikacja dotyczy pliku, nie narzędzia.
+* **Cykl pracy:** generator → `przygotuj_mape.py --sprawdz` → `przygotuj_mape.py` →
+  `node narzedzia/podglad_mapy.cjs …` → poprawki. Oglądaj **mapę dla graczy**
+  (`mapa_*.svg`), nie tylko rysunek — dopiero w niej widać czcionkę aplikacji i motywy
+  fosforu. Najpierw całość, potem fragmenty w powiększeniu (`--szerokosc=3000
+  --wycinek=…`): nachodzące napisy i źle narysowane drzwi widać dopiero przy 2–3×.
+* **Osobny plik na każdą mapę** (`obszar` = cały rysunek) jest prostszy niż jeden
+  rysunek z panelami — nie trzeba pilnować granic paneli.
+* Po każdej zmianie rysunku albo manifestu uruchom skrypt map — inaczej test
+  „mapy aktualne względem rysunków” (`testy/test_przygotuj_mape.py`) nie przejdzie.
+
+### 17.2 Napisy — najczęstszy problem
+
+* W aplikacji napisy mają czcionkę o stałej szerokości, szerszą niż szeryfowa czy
+  odręczna z rysunku. **Pięć napisów** w mapach „Wzoru” wychodziło za kadr albo
+  nachodziło na inne dopiero w mapie dla graczy. Planuj miejsce wzorem
+  **znaki × `font-size` × 0,6** (czcionka zastępcza DejaVu Sans Mono; Ubuntu Mono
+  ma ok. 0,5 — margines bezpieczeństwa).
+* Przy prawej krawędzi: `text-anchor="end"` albo napis w dwóch liniach (`<tspan>`).
+  Nazwę złożoną z kilku linii zapisz jako **jeden** `<text>` z kilkoma `<tspan>` —
+  złote narożniki obejmą wtedy cały blok.
+* **Napis na gęstym tle** (las, góry, leje): zostaw w tle wolne miejsce na napis
+  (np. nie stawiaj drzew w prostokącie napisu) zamiast liczyć tylko na obwódkę `h`.
+  Nazwę pasma gór najlepiej postawić w pustym miejscu obok gór, nie na szczytach.
+* **Napis na drodze** (asfalt): jasny tekst bez `class="h"`, przesunięty z linii
+  środkowej — przerywana linia przecinała litery.
+* Mapa szersza niż ekran otwiera się **przybliżona na punkt `start`** (na komputerze
+  1280 px mapa 1600 jednostek też) — miejsca przy brzegach są wtedy poza kadrem i
+  gracz dochodzi do nich przesuwaniem albo przez indeks. `start` stawiaj w
+  najważniejszym miejscu (Wzór: miasto, hol pałacu, barykada).
+
+### 17.3 Duże obszary klikalne i kolejność rysowania
+
+* **Las, jezioro, ziemia niczyja:** jako pierwszy kształt w grupie `data-element`
+  daj półprzezroczysty wielokąt w kolorze obszaru (`fill-opacity="0.4"`–`0.6`) —
+  dzięki niemu klikalny jest cały obszar, a nie tylko pojedyncze drzewa czy leje.
+  Taką grupę zapisz **przed** mniejszymi miejscami, które na niej leżą.
+* **Rzeka przez miasto:** wypełniony grunt miasta (w grupie miasta) zasłania rzekę
+  narysowaną wcześniej — narysuj ten odcinek rzeki jeszcze raz w grupie miasta (tą
+  samą ścieżką; poza murami pokrywa się z oryginałem i nie widać różnicy).
+* **Plan budynku:** pomieszczenie = grupa `data-element` z wypełnionym prostokątem
+  podłogi (klikalna cała podłoga), meblami i podpisem; korytarze i pomieszczenia
+  gospodarcze jako zwykłe tło. **Ściany rysuj na końcu** (na wierzchu): tło nie
+  przechwytuje kliknięć, więc pokój pod ścianą dalej działa, a ściany są wyraźne.
+* **Obrócony obiekt** (np. czołg wzdłuż drogi): kształty w zwykłej podgrupie
+  `<g transform="rotate(…)">` wewnątrz grupy `data-element`, a podpis **poza**
+  obrotem — zostanie poziomy i czytelny.
+* Nie wszystko musi być klikalne: małe osady, karczma czy korytarze jako tło
+  pokazują graczom, że mapa jest „pełna”, a indeks zostaje krótki.
+
+### 17.4 Kolory i motywy fosforu
+
+* **Grube linie świecą pełną mocą.** Skrypt przygasza tylko duże **wypełnienia**
+  (rozdział 8.2), obrysów nie. Szeroką drogę, rzekę czy pas startowy rysuj jako
+  **wypełniony wielokąt** (brzegi = linia środkowa przesunięta w obie strony), nie
+  jako `stroke-width="40"` — inaczej w motywie zielonym będzie oślepiającym pasem.
+* **Czerwona przerywana linia jest zakazana także w treści dla graczy** (np. trasa
+  patrolu wroga na mapie wojskowej) — skrypt przerwie pracę. Użyj linii ciągłej
+  albo przerywanej pomarańczowej/żółtej (np. `#d9a520`; „czerwony” dla skryptu to
+  odcień do ok. 15°).
+* Wzór o dużym kontraście na dużej powierzchni (szachownica posadzki) męczy oko —
+  rozjaśnij ciemne pola.
+* Tytuł i legendę stawiaj na **jasnej** tabliczce z ciemnym tekstem (np. `#e6dcc0`) —
+  dobrze wygląda w obu rodzajach trybów. Ciemna tabliczka z jasnym tekstem zamieni się
+  w motywach fosforu w świecący prostokąt z ciemnymi literami.
+* „Akwarelowe” podbarwienie pomieszczeń czy pól: wypełnienie z `fill-opacity` —
+  działa w obu trybach. Paleta „Wzoru”: fantasy — 6 rodzin barw (papier, zielenie
+  lasu, szarości gór, błękit wody, czerwień dachów, brąz dróg); pałac — sepia z
+  przygaszonymi kolorami pomieszczeń; pole bitwy — najwięcej barw (ochra gruntu,
+  oliwkowy czołg, żółto-czarne pasy ostrzegawcze, błękit sił własnych, czerwień wroga,
+  zieleń skażenia, ogień), a mimo to czytelna, bo każda barwa ma jedno znaczenie.
+
+### 17.5 Liczba elementów i wydajność
+
+* **Wiele drobnych kresek w jednym kolorze** (kępki trawy, pagórki, szwy worków z
+  piaskiem, deski w okopach, gruz, pnie drzew) → **jedna** ścieżka `<path>` z wieloma
+  odcinkami `M…`. Mapy „Wzoru”: Kraina ok. 1800 elementów (ok. 520 drzew po 2
+  elementy), Pole bitwy ok. 760, Pałac ok. 530 — wszystkie płynnie przesuwają się w
+  teście na telefonach i tablecie.
+* **Drzewa:** pnie wszystkich drzew w jednej ścieżce narysowanej **przed** koronami,
+  a korony posortowane od góry mapy do dołu — bliższe drzewa przykrywają dalsze.
+* **Naturalny rozkład** (drzewa, leje, kępki): punkty w minimalnej odległości od siebie
+  (tzw. losowanie Poissona — `poisson()` w `generator/wspolne.py`) zamiast siatki albo
+  zwykłego losowania (zlepione grupy i dziury).
+* **Nie przesadzaj z gęstością:** pierwsza wersja pola bitwy miała 220 lejów, które
+  zasłaniały obiekty i napisy. Pomogła lista prostokątów „bez lejów” wokół obiektów i
+  napisów — zostało ok. 90.
+
+### 17.6 Styl „odręczny” bez filtrów
+
+* Filtrów nie wolno (rozdział 8.5), więc szkic robi się geometrią: linie podzielone na
+  krótkie odcinki lekko przesunięte w poprzek (`drgajaca()`), druga cienka kreska obok
+  grubej ściany, nieregularne krzywe dla plam, kleksów i brzegów.
+* **Postarzały papier:** kratka jako `<pattern>`, ciemniejszy brzeg arkusza jako jedna
+  ścieżka z dziurą (`fill-rule="evenodd"`), plamy po kawie jako półprzezroczyste okręgi.
+  Unikaj dużego, wyraźnego owalu na środku mapy — wygląda jak błąd rysunku.
+* **Drzwi i okna na planie:** przerwa w ścianie + skrzydło (kreska) + ćwierćokrąg
+  otwarcia (`A` w ścieżce); okno — jasny prostokąt na ścianie z cienką kreską szyby.
+* Odręczne dopiski („ołówkiem”) dodają klimatu, ale są **jawne** — na mapie dla graczy
+  piszemy tylko to, co postacie mogą wiedzieć.
+
+### 17.7 Szablon a materiał MG
+
+* Każdy rysunek „Wzoru” ma jedną przykładową grupę `tylko-mg` (ramka z napisem
+  „Przykład: notatka dla MG…”, czerwona przerywana obwódka). Raport skryptu pokazuje
+  dla każdego rysunku „usunięto 1 grup(y)”, a test map graczy potwierdza, że nic z niej
+  nie zostało — dobry sposób, żeby sprawdzić kontrolę bezpieczeństwa na własnym rysunku.

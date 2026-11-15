@@ -1,6 +1,12 @@
 {
   "kampanie": [
     {
+      "id": "wzor",
+      "nazwa": "Wzór",
+      "folder": "kampanie/Template",
+      "widocznaDomyslnie": true
+    },
+    {
       "id": "iliac",
       "nazwa": "Kopiec Iliac",
       "folder": "kampanie/Iliac",

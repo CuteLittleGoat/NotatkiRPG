@@ -113,6 +113,30 @@ class TestPrzygotujMape(unittest.TestCase):
             # Obwódka napisów „h” w trybie oryginalnym — kolor z reguły .h rysunku.
             self.assertRegex(mapa, r"\.motyw-oryginalny svg\.mapa-slate\[data-mapa=\"plan\"\] \.h\{[^}]*stroke:#ffffff")
 
+    def test_arkusze_stylow_rysunku_usuwane_wszedzie(self):
+        # <style> schowany w grupie, w deseniu, w miejscu klikalnym i w przestrzeni nazw
+        # XHTML: w aplikacji działałby na całą stronę — w mapie zostaje tylko arkusz skryptu.
+        dodatek = (
+            '<g><style>body{display:none}</style><rect x="20" y="400" width="30" height="30" fill="#334455"/></g>'
+            '<g data-element="z-arkuszem"><style>.el{stroke-width:777px}</style><text x="60" y="420" font-size="12">Z arkuszem</text></g>'
+            '<g><pattern id="w-deseniu" width="4" height="4"><style>html{filter:blur(9px)}</style></pattern>'
+            '<rect x="100" y="400" width="30" height="30" fill="url(#w-deseniu)"/></g>'
+            '<g><style xmlns="http://www.w3.org/1999/xhtml">*{visibility:hidden}</style>'
+            '<rect x="150" y="400" width="30" height="30" fill="#556677"/></g>'
+        )
+        with tempfile.TemporaryDirectory() as t:
+            folder = przygotuj_folder(Path(t), dodatek)
+            kod, wyjscie = uruchom(str(folder))
+            self.assertEqual(kod, 0, wyjscie)
+            mapa = (folder / "mapa_plan.svg").read_text(encoding="utf-8")
+            self.assertEqual(mapa.count("<style"), 1, "w mapie został arkusz z rysunku")
+            for zakazane in ("display:none", "777px", "blur(9px)", "visibility:hidden", "1999/xhtml"):
+                self.assertNotIn(zakazane, mapa)
+            self.assertIn('data-element="z-arkuszem"', mapa)
+            self.assertIn('id="plan-w-deseniu"', mapa)
+            # Kolor obwódki napisów „h” nadal pochodzi z reguły .h rysunku.
+            self.assertRegex(mapa, r"\.motyw-oryginalny svg\.mapa-slate\[data-mapa=\"plan\"\] \.h\{[^}]*stroke:#ffffff")
+
     def test_raport_nowych_i_brakujacych_elementow(self):
         with tempfile.TemporaryDirectory() as t:
             folder = przygotuj_folder(Path(t))
@@ -146,15 +170,50 @@ class TestPrzygotujMape(unittest.TestCase):
             self.assertEqual(kod, 1)
             self.assertIn("Nieprawidłowy identyfikator", wyjscie)
 
-    def test_prawdziwa_kampania_iliac(self):
-        folder = KORZEN / "kampanie" / "Iliac"
-        if not (folder / "Rysunki_kopca_Iliac.svg").exists():
-            self.skipTest("brak rysunku MG kampanii Iliac w repozytorium")
-        kod, wyjscie = uruchom(str(folder), "--sprawdz")
-        self.assertEqual(kod, 0, wyjscie)
-        self.assertNotIn("NOWE ELEMENTY", wyjscie)
-        self.assertNotIn("BRAK NA RYSUNKU", wyjscie)
-        self.assertNotIn("UWAGA", wyjscie)
+    def test_prawdziwe_kampanie_bez_uwag(self):
+        """Każda kampania z rejestru: rysunki zgodne z manifestem (bez nowych, brakujących i podejrzanych miejsc)."""
+        rejestr = json.loads((KORZEN / "kampanie.json").read_text(encoding="utf-8"))
+        for kampania in rejestr["kampanie"]:
+            with self.subTest(kampania=kampania["id"]):
+                folder = KORZEN / kampania["folder"]
+                manifest = json.loads((folder / "kampania.json").read_text(encoding="utf-8"))
+                zrodla = {(m.get("zrodlo") or {}).get("plik") for m in manifest.get("mapy", [])} - {None}
+                if not all((folder / z).exists() for z in zrodla):
+                    self.skipTest(f"brak rysunku MG kampanii {kampania['id']} w repozytorium")
+                kod, wyjscie = uruchom(str(folder), "--sprawdz")
+                self.assertEqual(kod, 0, wyjscie)
+                self.assertNotIn("NOWE ELEMENTY", wyjscie)
+                self.assertNotIn("BRAK NA RYSUNKU", wyjscie)
+                self.assertNotIn("UWAGA", wyjscie)
+
+    def test_mapy_graczy_aktualne_wzgledem_rysunkow(self):
+        """Pliki mapa_*.svg w repozytorium = wynik skryptu (nikt ich nie poprawiał ręcznie i nie zapomniał
+        uruchomić skryptu po zmianie rysunku, manifestu albo kolorów motywów)."""
+        import shutil
+
+        rejestr = json.loads((KORZEN / "kampanie.json").read_text(encoding="utf-8"))
+        for kampania in rejestr["kampanie"]:
+            with self.subTest(kampania=kampania["id"]):
+                folder = KORZEN / kampania["folder"]
+                manifest = json.loads((folder / "kampania.json").read_text(encoding="utf-8"))
+                mapy = [m for m in manifest.get("mapy", []) if m.get("zrodlo")]
+                if not all((folder / m["zrodlo"]["plik"]).exists() for m in mapy):
+                    self.skipTest(f"brak rysunku MG kampanii {kampania['id']} w repozytorium")
+                with tempfile.TemporaryDirectory() as t:
+                    kopia = Path(t) / "kampania"
+                    kopia.mkdir()
+                    shutil.copy(folder / "kampania.json", kopia)
+                    for m in mapy:
+                        shutil.copy(folder / m["zrodlo"]["plik"], kopia)
+                    kod, wyjscie = uruchom(str(kopia))
+                    self.assertEqual(kod, 0, wyjscie)
+                    for m in mapy:
+                        self.assertEqual(
+                            (kopia / m["plik"]).read_text(encoding="utf-8"),
+                            (folder / m["plik"]).read_text(encoding="utf-8"),
+                            f"{kampania['folder']}/{m['plik']} nie jest aktualna — uruchom: "
+                            f"python3 narzedzia/przygotuj_mape.py {kampania['folder']}",
+                        )
 
 
 class TestMapGraczy(unittest.TestCase):

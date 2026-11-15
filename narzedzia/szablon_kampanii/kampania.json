@@ -10,7 +10,7 @@
       "id": "plan",
       "nazwa": "Plan",
       "plik": "mapa_plan.svg",
-      "kolor": "zielony",
+      "kolor": "oryginalny",
       "widocznaDomyslnie": false,
       "start": { "x": 500, "y": 400 },
       "zrodlo": { "plik": "Rysunek_MG.svg", "obszar": "0 0 1000 800" }

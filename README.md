@@ -3,6 +3,9 @@
 Aplikacja internetowa dla graczy kampanii RPG. Łączy **interaktywne mapy w stylu
 ekranu Data-Slate** ze **wspólnym notatnikiem drużyny** zapisywanym na żywo
 w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glory).
+Kampania przykładowa **Wzór** (pierwsza na liście) pokazuje możliwości aplikacji na
+trzech mapach w różnych stylach i jest wzorem do kopiowania przy nowej kampanii —
+opis: [`kampanie/Template/README.md`](kampanie/Template/README.md).
 
 > **Etap: pierwszy szkic.** Bazę chronią reguły (tylko zapisy używane przez
 > aplikację, konta tylko do odczytu) i App Check (zapytania tylko ze strony
@@ -32,11 +35,14 @@ w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glor
 * **Wybór kampanii** po zalogowaniu — admin widzi wszystkie kampanie i przy każdej
   zaznacza, czy jest **widoczna dla graczy**; Edytor i Gracz widzą tylko kampanie
   udostępnione (admin może więc spokojnie przygotowywać kilka kampanii naraz).
+  Kolejność na liście = kolejność wpisów w rejestrze `kampanie.json` (zmiana nazwy i
+  kolejności z poziomu aplikacji — analiza: [`Analizy/Kolejnosc.md`](Analizy/Kolejnosc.md)).
 * **Zakładki** — pierwsza jest **Notatki**, potem mapy (każda mapa to osobna
   zakładka). **Każdą zakładkę admin może ukryć albo odsłonić graczom** polem wyboru
   przy jej nazwie (widzi je tylko admin); ukryta zakładka ma przerywaną ramkę. Kolor
-  ekranu (zielony, bursztynowy, czerwony albo **kolory oryginału** — mapa w kolorach
-  rysunku, interfejs zielony) admin ustawia osobno dla każdej mapy.
+  map (**kolory oryginału** — mapa w kolorach rysunku, domyślnie — albo zielony,
+  bursztynowy, czerwony) admin ustawia osobno dla każdej mapy, a **kolor interface**
+  (ekranu poza mapami; domyślnie zielony) — osobno dla kampanii.
 * **Miejsca na mapie** — admin zaznacza przy miejscu pole „dostępne dla graczy”.
   Zaznaczone miejsce dostaje złote narożniki: można je kliknąć i robić przy nim
   notatki. Odznaczone wygląda jak zwykłe tło mapy (żeby nie zdradzać, że jest ważne).
@@ -125,7 +131,8 @@ NIEDOSTĘPNA”. To samo pole jest w zakładce ADMIN kampanii → „KAMPANIA”
 zaznaczone = zakładka widoczna dla graczy, odznaczone = ukryta (ukryte zakładki
 mają przerywaną ramkę i znak ⊘). To samo jest w zakładce ADMIN → „ZAKŁADKI”.
 Pola wyboru przy miejscach są w indeksie, w karcie miejsca i w zakładce ADMIN.
-Tam też: kolory, „ZAZNACZ/ODZNACZ WSZYSTKIE”, „PRZYWRÓĆ DOMYŚLNE” (ustawienia z
+Tam też: kolory („Kolor interface” — ekran poza mapami, „Kolor map” — przy każdej
+mapie), „ZAZNACZ/ODZNACZ WSZYSTKIE”, „PRZYWRÓĆ DOMYŚLNE” (ustawienia z
 manifestu), kopia i przywracanie. Pole **PODGLĄD GRACZA** w nagłówku pokazuje
 zakładki, mapy i indeks tak, jak widzą je gracze.
 
@@ -139,7 +146,7 @@ i na liście kampanii. Przycisk WYCZYŚĆ opróżnia log.
 NotatkiRPG/
 ├── index.html                 strona startowa: logowanie, potem wybór kampanii
 ├── kampania.html              strona kampanii (?k=iliac): notatki, mapy, admin
-├── kampanie.json              rejestr kampanii (id, nazwa, folder, widocznaDomyslnie)
+├── kampanie.json              rejestr kampanii (id, nazwa, folder, widocznaDomyslnie); kolejność = kolejność na liście
 ├── aplikacja/                 wspólny kod aplikacji
 │   ├── css/slate.css          wygląd Data-Slate (motywy zielony / bursztynowy / czerwony / kolory oryginału)
 │   ├── grafika/ikona.svg      ikona karty przeglądarki
@@ -147,8 +154,9 @@ NotatkiRPG/
 ├── firebase/                  firebase-config.js, firestore.rules, README.md (reguły, App Check)
 ├── kampanie/                  kampanie — każda w osobnym folderze
 │   ├── README.md              konwencja rysunków MG, nowa wersja mapy, nowa kampania
+│   ├── Template/              kampania przykładowa „Wzór” (3 mapy: fantasy, plan pałacu, pole bitwy; generatory rysunków)
 │   └── Iliac/                 kampania „Kopiec Iliac” (manifest, mapy, rysunki MG)
-├── narzedzia/                 skrypt przygotowania map, szablon kampanii
+├── narzedzia/                 skrypt przygotowania map, podgląd map w kolorach motywów, szablon kampanii
 ├── testy/                     testy automatyczne (jednostkowe, skryptów, reguł bazy, całej aplikacji)
 ├── dokumentacja/              materiały pomocnicze (Kod_Wzoru.txt — wzór klikalnej mapy)
 ├── Analizy/                   analizy pomysłów do decyzji (np. Blokada_kont.md) — nie są częścią aplikacji
@@ -195,12 +203,13 @@ Dane każdej kampanii są osobno, pod jej identyfikatorem (dla Iliac: `iliac`):
 |---|---|
 | `kampanie/{kampaniaId}` | `nazwa`, `utworzono`, `widoczna` (czy gracze widzą kampanię: true/false), `zmieniono`, `kontoIdZmiany` — tworzy go aplikacja przy pierwszym zapisie |
 | `…/notatki/{id}` | `elementId` (id miejsca albo `null` = notatka ogólna), `tytul`, `tresc`, `podpis`, `kontoId`, `utworzono`, `zmieniono`, `kontoIdZmiany` (starsze notatki mogą mieć jeszcze pole `kategoria` — aplikacja go już nie używa) |
-| `…/ustawienia/mapy` | ustawienia admina: `zakladki.{id}` (widoczność zakładek innych niż mapy, np. `notatki`), `mapy.{mapaId}.widoczna`, `mapy.{mapaId}.kolor`, `elementy.{elementId}` (true/false), `kolor` (ekran poza mapami) |
+| `…/ustawienia/mapy` | ustawienia admina: `zakladki.{id}` (widoczność zakładek innych niż mapy, np. `notatki`), `mapy.{mapaId}.widoczna`, `mapy.{mapaId}.kolor`, `elementy.{elementId}` (true/false), `kolor` (kolor interface — ekran poza mapami) |
 
 Brak wpisu w `ustawienia/mapy` = ustawienie domyślne (z manifestu kampanii:
 `widocznaDomyslnie`, `dostepnyDomyslnie`, `kolor`; zakładka Notatki — widoczna).
 Brak pola `widoczna` w `kampanie/{id}` = wartość `widocznaDomyslnie` z rejestru
-`kampanie.json` (Iliac: widoczna; nowa kampania bez tego pola — ukryta).
+`kampanie.json` (Iliac i Wzór: widoczne; nowa kampania bez tego pola — ukryta).
+Kampania Wzór zapisuje dane tak samo jak każda inna: `kampanie/wzor/…`.
 
 Konta (zakładane ręcznie w konsoli Firebase, aplikacja je tylko czyta):
 
@@ -306,10 +315,13 @@ Przyjęte na tym etapie — każdą można zmienić:
 5. **Miejsce niedostępne** wygląda jak tło mapy dla graczy: bez narożników,
    podświetlenia, podpowiedzi i bez reakcji na kliknięcie. Podpisy narysowane na
    mapie dla graczy zostają (to część zatwierdzonej mapy dla graczy).
-6. **Kolory:** domyślnie zielony; admin ustawia kolor osobno dla każdej mapy i dla
-   ekranu poza mapami. Motywy: zielony, bursztynowy, czerwony oraz — tylko dla map —
-   **kolory oryginału** (mapa w kolorach rysunku od MG, interfejs zielony; pod
-   kolorowe mapy). W motywach bursztynowym i czerwonym klikalność oznacza błękit
+6. **Kolory:** admin ustawia kolor osobno dla każdej mapy („Kolor map”) i dla
+   ekranu poza mapami („Kolor interface”). Motywy: zielony, bursztynowy, czerwony
+   oraz — tylko dla map — **kolory oryginału** (mapa w kolorach rysunku od MG,
+   interfejs zielony). Mapy domyślnie są w **kolorach oryginału** (pierwsza pozycja
+   na liście; Twoja prośba), interfejs — **zielony**. Domyślne kolory podaje manifest
+   kampanii (`mapy[].kolor`, `kolor`); kolor wybrany przez admina w aplikacji ma
+   pierwszeństwo, a „PRZYWRÓĆ DOMYŚLNE” wraca do koloru z manifestu. W motywach bursztynowym i czerwonym klikalność oznacza błękit
    (złoto byłoby nieodróżnialne od bursztynu), w czerwonym kropka „są notatki” i
    błędy są żółte, a w kolorach oryginału klikalne miejsca na mapie mają malinowe
    narożniki (widoczne i na jasnym, i na ciemnym rysunku). Pliki map zawierają
@@ -354,25 +366,44 @@ Przyjęte na tym etapie — każdą można zmienić:
 20. **LOG admina** w zakładce Admin: do 300 ostatnich komunikatów w `sessionStorage`
     (znika po wylogowaniu albo zamknięciu przeglądarki). U admina potwierdzenia nie
     wyskakują na ekranie; błędy tak (najwyżej dwa naraz — dotyczy to wszystkich kont).
+21. **Kampania przykładowa „Wzór”** (Twoja prośba; folder `kampanie/Template`,
+    identyfikator `wzor`): **pierwsza na liście** (pierwszy wpis w `kampanie.json`) i od
+    początku **widoczna dla graczy** — do prezentacji aplikacji; admin ukrywa ją jednym
+    kliknięciem. Trzy mapy (fantasy z miastem i osadami połączonymi traktami, plan
+    pałacu w stylu szkicu grozy, pole bitwy sci-fi), wszystkie widoczne, w kolorach
+    oryginału; 39 miejsc, z czego 8 czeka na odsłonięcie przez admina (pokazuje
+    ukrywanie). Miejsce „Pałac Kruków” otwiera mapę „Pałac” (przykład mapy szczegółowej).
+    Rysunki zrobiono skryptami z `kampanie/Template/generator/` (pomoc dla kolejnych map).
+22. **Kolor map domyślnie „kolory oryginału”** (Twoja prośba) — pierwsza pozycja na
+    liście kolorów mapy; dotyczy też map Iliac (manifest: `oryginalny`). Kolor
+    interfejsu domyślnie zielony. Pola w zakładce Admin: „Kolor interface” (dawniej
+    „Kolor ekranu poza mapami”) i „Kolor map” (dawniej „Kolor mapy”). Kolor wybrany
+    wcześniej przez admina w aplikacji zostaje bez zmian.
+23. **Skrypt map usuwa każdy arkusz `<style>` z rysunku** (także schowany w grupie) —
+    wcześniej taki arkusz trafiał do mapy graczy i mógł zmienić wygląd całej strony.
+    Z arkusza rysunku skrypt bierze tylko kolor obwódki napisów (`.h`).
 
 ## Testy — co sprawdzono, a czego nie
 
 Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/README.md)):
 
-* **Testy jednostkowe** (Node, 22): format CSV (cudzysłowy, przecinki, nowe linie,
+* **Testy jednostkowe** (Node, 23): format CSV (cudzysłowy, przecinki, nowe linie,
   BOM), kodowanie typów Firestore, odczyt błędnych plików, partie po 500,
-  wyszukiwanie bez polskich znaków, profile kont (Admin / Edytor / Gracz — tylko z pola `rola`) i
-  widoczność kampanii (z bazy albo domyślna z rejestru).
-* **Skrypty** (Python, 9): przygotowanie map — usuwanie materiału MG, przerwanie
-  przy śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), raport
-  nowych i brakujących miejsc; mapy graczy wszystkich kampanii bez śladów materiału MG.
+  wyszukiwanie bez polskich znaków, profile kont (Admin / Edytor / Gracz — tylko z pola `rola`),
+  widoczność kampanii (z bazy albo domyślna z rejestru) i domyślne kolory (mapy —
+  kolory oryginału, pierwsze na liście; interfejs — zielony).
+* **Skrypty** (Python, 14): przygotowanie map — usuwanie materiału MG, przerwanie
+  przy śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), usuwanie
+  każdego arkusza `<style>` z rysunku (także schowanego w grupie), raport nowych i
+  brakujących miejsc; dla wszystkich kampanii z rejestru: raport bez uwag, mapy graczy
+  bez śladów materiału MG i **aktualne** względem rysunków.
 * **Reguły bazy w emulatorze Firestore** (27): każdy zapis i odczyt aplikacji
   (logowanie, lista kampanii, widoczność kampanii, notatki — także starsze z polem
   `kategoria`, ustawienia admina z widocznością zakładek, kopia i przywracanie)
   przechodzi; obce pola, za długie teksty, widoczność inna niż tak/nie, nieznane
   kolekcje (w tym usunięte `postep` i `powiazania`) i każda zmiana kont są
   odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
-* **Cała aplikacja w przeglądarce** (Chromium, 66 kroków) na **udawanym Firebase**:
+* **Cała aplikacja w przeglądarce** (Chromium, 73 kroki) na **udawanym Firebase**:
   bez logowania nic nie widać (strona startowa bez nazw kampanii, strona kampanii
   przenosi do logowania i po nim wraca), trzy profile (Gracz tylko czyta — nawet z
   `DisplayName` „Skryba”, Edytor pisze — z dowolnym `DisplayName`, Admin ustawia),
@@ -384,16 +415,19 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   miejsca, edycja, usunięcie z potwierdzeniem, notatka ogólna), czerwona kropka,
   zmiany na żywo w drugiej karcie, checkboxy admina działające na żywo u gracza,
   ukrywanie i odsłanianie każdej zakładki (bez paska na mapie), kolory bursztynowy,
-  czerwony i kolory oryginału (mapa w kolorach rysunku, interfejs zielony), „podgląd gracza”,
+  czerwony i kolory oryginału (mapa w kolorach rysunku, interfejs zielony; listy
+  kolorów — „kolory oryginału” pierwsze i domyślne dla map), „podgląd gracza”,
+  kampania Wzór (pierwsza na liście, trzy mapy w kolorach oryginału, miejsca dostępne
+  i ukryte, przejście z „Pałacu Kruków” do mapy „Pałac”, bez materiału MG),
   LOG admina (wpisy z godziną, najnowsze na górze, bez wyskakujących potwierdzeń,
   przetrwa odświeżenie, czyści się przyciskiem i przy wylogowaniu; przy błędach
   najwyżej dwa komunikaty na ekranie), status App Check, kopia CSV (z `secrets` i
   bez), przywracanie „Scal” i „Zastąp” (z kopią bezpieczeństwa, z pominięciem kont),
   odporność na wstrzyknięcie HTML w notatce, klawiatura, komunikat przy odmowie
   dostępu; **telefony (iPhone 13, Pixel 5) i tablet (iPad Mini pionowo i poziomo)**:
-  brak przewijania w bok (logowanie, listy kampanii, mapa, indeks, panel admina),
-  przesuwanie palcem, szczypanie dwoma palcami, stuknięcie w miejsce, log admina
-  widoczny na ekranie.
+  brak przewijania w bok (logowanie, listy kampanii, mapa, indeks, panel admina,
+  pole bitwy kampanii Wzór), przesuwanie palcem, szczypanie dwoma palcami, stuknięcie
+  w miejsce, log admina widoczny na ekranie.
 * **Prawdziwe biblioteki Firebase 13.2.0** (aplikacja, App Check, baza) wczytują się z
   `gstatic` i uruchamiają bez błędów (połączenia z usługami Google zablokowane na
   czas testu). Wcześniej, przy zamkniętych regułach, sprawdzono też połączenie z

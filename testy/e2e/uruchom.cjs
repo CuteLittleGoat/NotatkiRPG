@@ -124,7 +124,7 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector("#sekcja-logowania input[name=login]");
     zalozenie(await s.$eval("#sekcja-kampanii", (x) => x.hidden), "lista kampanii widoczna bez logowania");
     const tekst = await s.textContent("body");
-    zalozenie(!/iliac|próbna/i.test(tekst), "nazwa kampanii widoczna bez logowania");
+    zalozenie(!/iliac|próbna|wzór/i.test(tekst), "nazwa kampanii widoczna bez logowania");
     zalozenie(!/reCAPTCHA/i.test(tekst), "w stopce nadal jest napis o reCAPTCHA");
     await s.screenshot({ path: path.join(WYNIKI, "01_start.png") });
   });
@@ -173,11 +173,13 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(!/haslo/i.test(sesja), "hasło zapisane w sesji!");
   });
 
-  await krok("gracz: lista kampanii — tylko udostępnione (bez ukrytej kampanii próbnej), bez opisu", async () => {
+  await krok("gracz: lista kampanii — tylko udostępnione (bez ukrytej kampanii próbnej), Wzór pierwszy, bez opisu", async () => {
     await s.goto(`${ADRES}/index.html`);
     await s.waitForSelector("#kampanie a.kampania");
+    await s.waitForFunction(() => document.querySelectorAll("#kampanie li:not([hidden]) a.kampania").length >= 2);
     const nazwy = await s.$$eval("#kampanie li:not([hidden]) a.kampania", (a) => a.map((x) => x.textContent.trim()));
-    zalozenie(JSON.stringify(nazwy) === JSON.stringify(["▸ KOPIEC ILIAC"]), `lista kampanii gracza: ${JSON.stringify(nazwy)}`);
+    // Kolejność listy = kolejność wpisów w kampanie.json („Wzór” jest pierwszy).
+    zalozenie(JSON.stringify(nazwy) === JSON.stringify(["▸ WZÓR", "▸ KOPIEC ILIAC"]), `lista kampanii gracza: ${JSON.stringify(nazwy)}`);
     zalozenie(!/próbna/i.test(await s.textContent("#srodek")), "gracz widzi nazwę ukrytej kampanii");
     zalozenie((await s.$$("#kampanie input")).length === 0, "gracz widzi pola widoczności kampanii");
     zalozenie((await s.textContent("#status-konto")) === "KONTO: Skryba", "brak nazwy konta u dołu strony startowej");
@@ -267,6 +269,50 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(tekst.includes("NOTATKI BEZ MIEJSCA NA MAPIE"), "brak sekcji „bez miejsca”");
     zalozenie(tekst.includes("Notatka z ukrytego miejsca") && tekst.includes("Stara notatka"), "brak notatek bez miejsca");
     zalozenie(!/Brassyl/i.test(tekst), "nazwa ukrytego miejsca wyciekła do widoku notatek");
+  });
+
+  await krok("gracz: kampania Wzór — trzy mapy w kolorach oryginału, interfejs zielony", async () => {
+    await s.goto(`${ADRES}/kampania.html?k=wzor`);
+    await s.waitForSelector("#widok-notatki:not([hidden]) .lista-wpisow");
+    zalozenie((await s.textContent("#tytul")).includes("WZÓR"), `nagłówek kampanii: ${await s.textContent("#tytul")}`);
+    const zakladki = await s.$$eval("#zakladki .zakladka", (z) => z.map((x) => x.textContent.trim()));
+    zalozenie(
+      JSON.stringify(zakladki) === JSON.stringify(["▤ NOTATKI", "◈ KRAINA", "◈ PAŁAC", "◈ POLE BITWY"]),
+      `zakładki kampanii Wzór: ${JSON.stringify(zakladki)}`
+    );
+    zalozenie(await s.evaluate(() => document.body.classList.contains("motyw-zielony")), "interfejs (Notatki) nie jest zielony");
+    for (const [zakladka, mapa, klikalne, tlo] of [
+      ["KRAINA", "kraina", ["wysogrod", "trakt-krolewski", "puszcza-mglista", "palac-krukow"], ["kamieniec", "smocza-jama"]],
+      ["PAŁAC", "palac", ["hol-wejsciowy", "biblioteka", "dziedziniec"], ["gabinet", "kaplica", "zejscie-do-piwnic"]],
+      ["POLE BITWY", "pole-bitwy", ["czolg", "okopy-obrony", "barykada-drogowa"], ["pole-minowe", "stanowisko-artylerii"]]
+    ]) {
+      await s.click(`#zakladki .zakladka:has-text('${zakladka}')`);
+      await s.waitForSelector(`.plansza:not([hidden]) svg[data-mapa="${mapa}"] .el`);
+      await s.waitForFunction(() => document.body.classList.contains("motyw-oryginalny"), null, { timeout: 4000 });
+      const stany = await s.$$eval(`svg[data-mapa="${mapa}"] [data-element]`, (g) =>
+        Object.fromEntries(g.map((x) => [x.dataset.element, x.classList.contains("el-dostepny")]))
+      );
+      for (const id of klikalne) zalozenie(stany[id] === true, `${mapa}: ${id} powinien być klikalny`);
+      for (const id of tlo) zalozenie(stany[id] === false, `${mapa}: ${id} powinien wyglądać jak tło`);
+      zalozenie((await s.$$(`svg[data-mapa="${mapa}"] .tylko-mg`)).length === 0, `${mapa}: na mapie gracza jest materiał MG`);
+      await s.waitForTimeout(400);
+      await s.screenshot({ path: path.join(WYNIKI, `02c_gracz_wzor_${mapa}.png`) });
+    }
+  });
+
+  await krok("gracz: Pałac Kruków na mapie Kraina otwiera plan pałacu (mapa szczegółowa)", async () => {
+    await s.click("#zakladki .zakladka:has-text('KRAINA')");
+    await s.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kraina"] [data-element="palac-krukow"].el-dostepny');
+    await s.waitForTimeout(300);
+    // Mapa otwiera się przybliżona na miasto (punkt „start”) — pałac jest na skraju, więc przez indeks.
+    if (!(await s.$eval("#indeks", (x) => !x.hidden))) await s.click("#przycisk-indeks");
+    await s.click("#indeks .indeks-pozycja:has-text('Pałac Kruków')");
+    await s.waitForSelector("#panel:not([hidden]) .panel-nazwa:has-text('Pałac Kruków')");
+    const kategorie = await s.$$eval("#indeks .indeks-kategoria", (k) => k.map((x) => x.textContent));
+    zalozenie(kategorie[0] === "Miasta i osady", `kolejność kategorii w indeksie: ${kategorie}`);
+    await s.click("#panel button:has-text('OTWÓRZ MAPĘ: PAŁAC')");
+    await s.waitForSelector('.plansza:not([hidden]) svg[data-mapa="palac"]');
+    zalozenie((await s.textContent('#zakladki [aria-selected="true"]')).includes("PAŁAC"), "nie przełączono na zakładkę Pałac");
   });
 
   await krok("gracz: wylogowanie → ekran logowania, sesja wyczyszczona", async () => {
@@ -390,7 +436,12 @@ async function bezPrzewijaniaWBok(strona) {
     await sa.waitForSelector(`${POLE_PROBNEJ}:not([disabled])`);
     const pola = await sa.$$eval("#kampanie input.przelacznik", (p) => p.map((x) => [x.getAttribute("aria-label"), x.checked]));
     zalozenie(
-      JSON.stringify(pola) === JSON.stringify([["Kampania Kopiec Iliac widoczna dla graczy", true], ["Kampania Kampania próbna widoczna dla graczy", false]]),
+      JSON.stringify(pola) ===
+        JSON.stringify([
+          ["Kampania Wzór widoczna dla graczy", true],
+          ["Kampania Kopiec Iliac widoczna dla graczy", true],
+          ["Kampania Kampania próbna widoczna dla graczy", false]
+        ]),
       `pola widoczności kampanii: ${JSON.stringify(pola)}`
     );
     zalozenie((await sa.$$("#kampanie .kampania-ukryta")).length === 1, "ukryta kampania nie jest wyróżniona");
@@ -480,7 +531,8 @@ async function bezPrzewijaniaWBok(strona) {
     await s.screenshot({ path: path.join(WYNIKI, "06_gracz_okolice_bursztyn.png") });
     await s.click("#zakladki .zakladka:has-text('KOPIEC')");
     await s.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kopiec"]');
-    await s.waitForFunction(() => document.body.classList.contains("motyw-zielony"));
+    // Mapa bez koloru ustawionego przez admina — domyślnie w kolorach oryginału.
+    await s.waitForFunction(() => document.body.classList.contains("motyw-oryginalny"));
     const dostepne = await s.$$eval('.plansza:not([hidden]) svg [data-element].el-dostepny', (g) => g.map((x) => x.dataset.element));
     zalozenie(dostepne.includes("iglica-sentinel") && !dostepne.includes("wrothgar"), `dostępne na Kopcu: ${dostepne}`);
     await s.waitForTimeout(500);
@@ -488,10 +540,17 @@ async function bezPrzewijaniaWBok(strona) {
   });
 
   await krok("admin → gracz na żywo: kolor czerwony i kolory oryginału mapy Kopiec", async () => {
-    const listaEkranu = await sa.$$eval('#widok-admin select[aria-label="Kolor ekranu poza mapami"] option', (o) => o.map((x) => x.value));
-    zalozenie(listaEkranu.includes("czerwony") && !listaEkranu.includes("oryginalny"), `lista kolorów ekranu: ${listaEkranu}`);
+    // Kolor interfejsu: bez „kolorów oryginału”, domyślnie zielony.
+    const listaEkranu = await sa.$$eval('#widok-admin select[aria-label="Kolor interface"] option', (o) => o.map((x) => x.value));
+    zalozenie(JSON.stringify(listaEkranu) === JSON.stringify(["zielony", "bursztynowy", "czerwony"]), `lista kolorów interfejsu: ${listaEkranu}`);
+    zalozenie((await sa.$eval('#widok-admin select[aria-label="Kolor interface"]', (x) => x.value)) === "zielony", "interfejs domyślnie nie jest zielony");
+    // Kolor mapy: „kolory oryginału” pierwsze na liście i domyślne.
     const listaMapy = await sa.$$eval('#widok-admin select[aria-label="Kolor mapy Kopiec"] option', (o) => o.map((x) => x.value));
-    zalozenie(["zielony", "bursztynowy", "czerwony", "oryginalny"].every((k) => listaMapy.includes(k)), `lista kolorów mapy: ${listaMapy}`);
+    zalozenie(JSON.stringify(listaMapy) === JSON.stringify(["oryginalny", "zielony", "bursztynowy", "czerwony"]), `lista kolorów mapy: ${listaMapy}`);
+    zalozenie((await sa.$eval('#widok-admin select[aria-label="Kolor mapy Kopiec"]', (x) => x.value)) === "oryginalny", "mapa domyślnie nie jest w kolorach oryginału");
+    const etykiety = await sa.$$eval("#widok-admin .etykieta-pozioma > span", (e) => e.map((x) => x.textContent));
+    zalozenie(etykiety.includes("Kolor interface:") && etykiety.includes("Kolor map:"), `nazwy pól kolorów: ${etykiety}`);
+    zalozenie(!/poza mapami|Kolor mapy:/.test(await sa.textContent("#widok-admin")), "stare nazwy pól kolorów");
 
     // Kolor fosforu i kolor z atrybutu rysunku pierwszego wypełnionego kształtu mapy.
     const kolory = () =>
@@ -827,6 +886,22 @@ async function bezPrzewijaniaWBok(strona) {
       zalozenie(w2 < w1, `szczypanie nie przybliżyło mapy (${w1} → ${w2})`);
       const napisy = await t.$eval(".plansza:not([hidden])", (x) => x.classList.contains("szczypiemy"));
       zalozenie(!napisy, "po szczypaniu napisy zostały ukryte");
+    });
+    await krok(`${nazwa}: kampania Wzór — pole bitwy bez przewijania w bok, stuknięcie w czołg`, async () => {
+      await t.goto(`${ADRES}/kampania.html?k=wzor#pole-bitwy`);
+      await t.waitForSelector('.plansza:not([hidden]) svg[data-mapa="pole-bitwy"] .el-dostepny');
+      await t.waitForTimeout(500);
+      await bezPrzewijaniaWBok(t);
+      await t.screenshot({ path: path.join(WYNIKI, `10_${plik}_wzor_pole_bitwy.png`) });
+      await t.click("#przycisk-calosc");
+      await t.waitForTimeout(200);
+      await t.tap('[data-element="czolg"] text >> nth=0');
+      await t.waitForSelector("#panel:not([hidden]) .panel-nazwa:has-text('Czołg')");
+      await t.click("#panel .przycisk-ikona");
+      await t.waitForSelector("#panel", { state: "hidden" });
+      await t.goto(`${ADRES}/kampania.html?k=iliac#okolice`);
+      await t.waitForSelector(".plansza svg .el-dostepny");
+      await t.waitForTimeout(300);
     });
     await krok(`${nazwa}: stuknięcie w miejsce otwiera kartę`, async () => {
       await t.click("#przycisk-calosc");

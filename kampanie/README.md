@@ -1,7 +1,14 @@
 # Kampanie — mapy i manifesty
 
 Każda kampania ma tu własny folder, np. `kampanie/Iliac/`, i
-wpis w rejestrze [`kampanie.json`](../kampanie.json) w katalogu głównym.
+wpis w rejestrze [`kampanie.json`](../kampanie.json) w katalogu głównym. **Kolejność
+wpisów w rejestrze = kolejność kampanii na liście „WYBIERZ KAMPANIĘ”** (dlatego
+kampania przykładowa „Wzór” jest wpisana jako pierwsza).
+
+| Folder | Kampania |
+|---|---|
+| [`Template/`](Template/README.md) | **Wzór** — kampania przykładowa: prezentacja aplikacji i wzór do kopiowania (3 mapy w różnych stylach, generatory rysunków) |
+| [`Iliac/`](Iliac/README.md) | **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glory) |
 
 ## Co jest w folderze kampanii
 
@@ -9,8 +16,9 @@ wpis w rejestrze [`kampanie.json`](../kampanie.json) w katalogu głównym.
 |---|---|
 | `kampania.json` | **manifest** — mapy (zakładki), miejsca, nazwy, opisy, ustawienia domyślne |
 | `mapa_*.svg` | mapy dla graczy w stylu Data-Slate — **robi je skrypt**, nie edytuj ręcznie |
-| rysunek od MG, np. `Rysunki_*.svg` | wzór od Mistrza Gry, **zawiera spoilery** — aplikacja go nie wczytuje |
+| rysunek od MG, np. `Rysunki_*.svg` | wzór od Mistrza Gry, **zawiera spoilery** — aplikacja go nie wczytuje (jeden rysunek z panelami albo osobny plik na każdą mapę) |
 | `README.md` | opis kampanii |
+| `generator/` (nieobowiązkowy) | skrypty, które rysują rysunek od MG (tak jest w kampanii Wzór) |
 
 Aplikacja wczytuje tylko manifest i pliki map wskazane w manifeście. Rysunki od MG
 leżą w repozytorium (to w porządku — gracze korzystają tylko ze stron aplikacji).
@@ -66,7 +74,15 @@ uruchamiająca skrypt nie zobaczyła spoilera).
    python3 narzedzia/przygotuj_mape.py kampanie/Iliac
    ```
 
-5. Zmień `wersjaMapy` w manifeście (data), zapisz zmiany i wypchnij je na `main` —
+5. Obejrzyj mapy we wszystkich kolorach (obrazki PNG w `testy/e2e/wyniki/podglad/`;
+   wymaga pakietu `playwright`, jak test e2e) — czy napisy mieszczą się w kadrze i
+   nic nie zdradza tajemnic:
+
+   ```bash
+   node narzedzia/podglad_mapy.cjs kampanie/Iliac/mapa_okolice.svg
+   ```
+
+6. Zmień `wersjaMapy` w manifeście (data), zapisz zmiany i wypchnij je na `main` —
    strona opublikuje się sama.
 
 **Zmiana nazwy miejsca:** zmień `nazwa` w manifeście, a starą nazwę dopisz do
@@ -78,8 +94,11 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 
 1. Utwórz folder `kampanie/NazwaKampanii/`.
 2. Skopiuj do niego szablon [`narzedzia/szablon_kampanii/kampania.json`](../narzedzia/szablon_kampanii/kampania.json)
-   i uzupełnij (opis pól niżej). Wgraj rysunek od MG ze znacznikami.
-3. Dopisz kampanię do [`kampanie.json`](../kampanie.json):
+   i uzupełnij (opis pól niżej). Wgraj rysunek od MG ze znacznikami. Pełny, działający
+   przykład (manifest z trzema mapami i 39 miejscami, rysunki, opis) jest w
+   [`Template/`](Template/README.md) — można też skopiować cały ten folder i go przerobić.
+3. Dopisz kampanię do [`kampanie.json`](../kampanie.json) — w miejscu, w którym ma
+   stać na liście kampanii (kolejność wpisów = kolejność na liście):
    `{ "id": "nazwa", "nazwa": "Nazwa", "folder": "kampanie/NazwaKampanii" }`.
    `id` — małe litery bez polskich znaków, cyfry i myślniki, najwyżej 40 znaków
    (tego pilnują reguły bazy); pod nim zapiszą się dane w bazie (`kampanie/{id}`) i
@@ -96,10 +115,10 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 |---|---|
 | `id`, `nazwa`, `naglowek` | identyfikator (jak w rejestrze), nazwa, napis w nagłówku ekranu |
 | `wersjaMapy` | data wersji map (widoczna na dole ekranu) |
-| `kolor` | kolor ekranu poza mapami: `zielony`, `bursztynowy` albo `czerwony` (admin może zmienić w aplikacji) |
+| `kolor` | kolor interface (ekranu poza mapami): `zielony`, `bursztynowy` albo `czerwony`; brak pola = `zielony` (admin może zmienić w aplikacji) |
 | `mapy[]` | zakładki z mapami, w kolejności wyświetlania |
 | `mapy[].id`, `nazwa`, `plik` | identyfikator mapy, nazwa zakładki, plik mapy dla graczy |
-| `mapy[].kolor` | kolor ekranu na tej mapie: `zielony`, `bursztynowy`, `czerwony` albo `oryginalny` (mapa w kolorach rysunku, interfejs zielony) |
+| `mapy[].kolor` | kolor ekranu na tej mapie: `oryginalny` (mapa w kolorach rysunku, interfejs zielony), `zielony`, `bursztynowy` albo `czerwony`; brak pola = `oryginalny` (admin może zmienić w aplikacji) |
 | `mapy[].widocznaDomyslnie` | czy gracze widzą zakładkę, dopóki admin tego nie zmieni |
 | `mapy[].start` | punkt `{x, y}` rysunku, na którym mapa otwiera się na małym ekranie |
 | `mapy[].zrodlo` | dla skryptu: `plik` (rysunek MG) i `obszar` (`"x y szerokość wysokość"` — fragment rysunku z tą mapą). Aplikacja z tego nie korzysta. |

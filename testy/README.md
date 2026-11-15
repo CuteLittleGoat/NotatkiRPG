@@ -4,8 +4,8 @@ Polecenia uruchamiaj z katalogu głównego repozytorium.
 
 | Test | Polecenie | Wymaga |
 |---|---|---|
-| jednostkowe — format kopii CSV, kodowanie typów, wyszukiwanie, profile kont, widoczność kampanii | `node testy/jednostkowe.mjs` | Node 22+ |
-| skrypt map i mapy graczy (bez śladów materiału MG) | `python3 -m unittest discover -s testy -p "test_*.py" -v` | Python 3.9+ |
+| jednostkowe — format kopii CSV, kodowanie typów, wyszukiwanie, profile kont, widoczność kampanii, domyślne kolory map i interfejsu | `node testy/jednostkowe.mjs` | Node 22+ |
+| skrypt map i mapy graczy wszystkich kampanii z rejestru (bez śladów materiału MG, zgodne z manifestem, aktualne względem rysunków) | `python3 -m unittest discover -s testy -p "test_*.py" -v` | Python 3.9+ |
 | cała aplikacja w przeglądarce (komputer, telefony, tablet) | `node testy/e2e/uruchom.cjs` | pakiet `playwright` + Chromium |
 | reguły bazy (`firebase/firestore.rules`) w emulatorze Firestore | `cd testy/reguly && npm install && npm test` | Node 20+, Java 11+ (pakiety instaluje `npm install` w tym folderze) |
 
@@ -18,8 +18,12 @@ Pierwsze dwa uruchamia też GitHub Actions po każdej zmianie na `main` (zakład
   (w tym konta `test-admin` / `test-edytor` / `test-gracz`) są wymyślone. Ich
   `DisplayName` są celowo mylące (np. konto do przeglądania nazywa się „Skryba”) —
   test sprawdza, że uprawnienia wynikają tylko z pola `rola` w `admins`.
-* Rejestr kampanii w teście ma dodatkowo „Kampanię próbną” (domyślnie ukrytą) —
-  do sprawdzenia, że gracze widzą tylko kampanie udostępnione przez admina.
+* Rejestr kampanii w teście to prawdziwy `kampanie.json` (Wzór, Kopiec Iliac) i
+  dodatkowo „Kampania próbna” (domyślnie ukryta) — do sprawdzenia, że gracze widzą tylko
+  kampanie udostępnione przez admina, w kolejności z rejestru.
+* Kampania Wzór: trzy mapy w kolorach oryginału, miejsca dostępne i ukryte, przejście do
+  mapy szczegółowej, brak materiału MG; na telefonach i tablecie — pole bitwy bez
+  przewijania w bok i stuknięcie w czołg.
 * Serwer plików: `e2e/serwer.cjs` (można go uruchomić osobno: `node testy/e2e/serwer.cjs 8000`).
 * Zrzuty ekranu i pobrane w teście pliki kopii: `e2e/wyniki/` (nie trafiają do repozytorium).
 * `CZCIONKI=1 node testy/e2e/uruchom.cjs` — z prawdziwymi czcionkami z Google Fonts

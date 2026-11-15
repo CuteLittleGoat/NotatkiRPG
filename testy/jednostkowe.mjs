@@ -1,7 +1,7 @@
 // Testy jednostkowe (Node 18+, bez dodatkowych pakietów):
 //   node testy/jednostkowe.mjs
 // Sprawdzają format kopii zapasowej (CSV, kodowanie typów), wyszukiwanie tekstu
-// oraz profile kont i widoczność kampanii.
+// oraz profile kont, widoczność kampanii i domyślne kolory map i interfejsu.
 import assert from "node:assert/strict";
 import {
   BladKopii,
@@ -26,6 +26,8 @@ import {
   nazwaKonta,
   rolaKonta
 } from "../aplikacja/js/sesja.js";
+import { MOTYWY, MOTYWY_EKRANU } from "../aplikacja/js/konfiguracja.js";
+import { Stan } from "../aplikacja/js/stan.js";
 
 // Udawane klasy SDK (te same nazwy pól co w Firestore).
 class Timestamp {
@@ -233,6 +235,25 @@ test("kampania: admin widzi wszystkie, gracze — udostępnione, bez logowania �
   assert.ok(!kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, ukryta, null));
   assert.ok(kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, widoczna, null));
   assert.ok(!kampaniaDlaUzytkownika(null, widoczna, null));
+});
+
+test("kolory: mapy domyślnie w kolorach oryginału (pierwsze na liście), interfejs — zielony", () => {
+  assert.equal(Object.keys(MOTYWY)[0], "oryginalny", "„kolory oryginału” nie są pierwsze na liście kolorów map");
+  assert.deepEqual(Object.keys(MOTYWY_EKRANU), ["zielony", "bursztynowy", "czerwony"]);
+  const manifest = { mapy: [{ id: "bez-koloru" }, { id: "zielona", kolor: "zielony" }, { id: "zly", kolor: "constructor" }] };
+  const stan = new Stan({ kampania: { id: "proba" }, manifest, folder: "" });
+  const [bez, zielona, zly] = manifest.mapy;
+  assert.equal(stan.kolorKampanii(), "zielony", "interfejs domyślnie nie jest zielony");
+  assert.equal(stan.kolorMapy(bez), "oryginalny", "mapa bez koloru w manifeście nie jest w kolorach oryginału");
+  assert.equal(stan.kolorMapy(zielona), "zielony", "kolor mapy z manifestu nie działa");
+  assert.equal(stan.kolorMapy(zly), "oryginalny");
+  // Ustawienia admina mają pierwszeństwo; interfejs nie przyjmuje „kolorów oryginału”.
+  stan.ustawienia = { kolor: "oryginalny", mapy: { "bez-koloru": { kolor: "czerwony" } } };
+  assert.equal(stan.kolorKampanii(), "zielony");
+  assert.equal(stan.kolorMapy(bez), "czerwony");
+  stan.ustawienia = { kolor: "bursztynowy" };
+  assert.equal(stan.kolorKampanii(), "bursztynowy");
+  assert.equal(stan.kolorMapy(bez), "oryginalny", "kolor interfejsu zmienił kolor mapy");
 });
 
 console.log(`\nWynik: ${ok}/${ok + zle} testów OK.`);

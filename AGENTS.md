@@ -115,8 +115,10 @@ wzoru (`dokumentacja/Kod_Wzoru.txt`). Każde naprawia błąd widziany na tableta
 | Zadanie | Miejsce |
 |---|---|
 | nowa wersja rysunku MG, nowe miejsca, zmiana nazw | `kampanie/README.md` (krok po kroku) |
-| przygotowanie rysunku mapy (format SVG, znaczniki, kolory, zakazy) | `Specyfikacja_rysunku_mapy.md` |
-| nowa kampania | `kampanie/README.md`, szablon `narzedzia/szablon_kampanii/` |
+| przygotowanie rysunku mapy (format SVG, znaczniki, kolory, zakazy) | `Specyfikacja_rysunku_mapy.md` (rozdział 17 — praktyczne wskazówki); podgląd mapy we wszystkich kolorach: `node narzedzia/podglad_mapy.cjs …` |
+| nowa kampania | `kampanie/README.md`, szablon `narzedzia/szablon_kampanii/`; pełny przykład: `kampanie/Template/` (kampania „Wzór”, z generatorami rysunków) |
+| kolejność kampanii na liście | kolejność wpisów w `kampanie.json` (zmiana z aplikacji — analiza: `Analizy/Kolejnosc.md`) |
+| kolory map i interfejsu (domyślne, lista) | `MOTYWY`, `MOTYW_DOMYSLNY` (interfejs), `MOTYW_MAPY_DOMYSLNY` (mapy) w `aplikacja/js/konfiguracja.js`; wybór w `aplikacja/js/stan.js` |
 | wygląd | `aplikacja/css/slate.css` |
 | zachowanie mapy | `aplikacja/js/mapa.js` |
 | logowanie, lista kampanii (widoczność kampanii) | `aplikacja/js/start.js`, `logowanie.js`; profile i dostęp do kampanii: `sesja.js` |

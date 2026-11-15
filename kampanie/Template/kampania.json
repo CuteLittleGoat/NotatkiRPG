@@ -1,0 +1,424 @@
+{
+  "id": "wzor",
+  "nazwa": "Wzór",
+  "naglowek": "WZÓR",
+  "system": "dowolny — kampania przykładowa (szablon i prezentacja aplikacji)",
+  "wersjaMapy": "2026-11-15",
+  "kolor": "zielony",
+  "mapy": [
+    {
+      "id": "kraina",
+      "nazwa": "Kraina",
+      "plik": "mapa_kraina.svg",
+      "kolor": "oryginalny",
+      "widocznaDomyslnie": true,
+      "start": {
+        "x": 860,
+        "y": 660
+      },
+      "zrodlo": {
+        "plik": "Rysunek_kraina.svg",
+        "obszar": "0 0 1600 1100"
+      }
+    },
+    {
+      "id": "palac",
+      "nazwa": "Pałac",
+      "plik": "mapa_palac.svg",
+      "kolor": "oryginalny",
+      "widocznaDomyslnie": true,
+      "start": {
+        "x": 700,
+        "y": 640
+      },
+      "zrodlo": {
+        "plik": "Rysunek_palac.svg",
+        "obszar": "0 0 1400 1000"
+      }
+    },
+    {
+      "id": "pole-bitwy",
+      "nazwa": "Pole bitwy",
+      "plik": "mapa_pole-bitwy.svg",
+      "kolor": "oryginalny",
+      "widocznaDomyslnie": true,
+      "start": {
+        "x": 600,
+        "y": 700
+      },
+      "zrodlo": {
+        "plik": "Rysunek_pole_bitwy.svg",
+        "obszar": "0 0 1500 1000"
+      }
+    }
+  ],
+  "kategorie": {
+    "osada": "Miasta i osady",
+    "budowla": "Budowle",
+    "pomieszczenie": "Pomieszczenia",
+    "przejscie": "Schody i przejścia",
+    "pozycja": "Okopy i umocnienia",
+    "pojazd": "Pojazdy",
+    "obiekt": "Obiekty",
+    "szlak": "Trakty i przełęcze",
+    "teren": "Teren i wody"
+  },
+  "elementy": [
+    {
+      "id": "wysogrod",
+      "nazwa": "Wysogród",
+      "aliasy": [],
+      "kategoria": "osada",
+      "opis": "Miasto królewskie otoczone murami z basztami, w miejscu, gdzie dopływ z gór wpada do Srebrnicy. Zamek, rynek, świątynia i dwa mosty.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "wilcza-wolka",
+      "nazwa": "Wilcza Wólka",
+      "aliasy": [],
+      "kategoria": "osada",
+      "opis": "Osada drwali na polanie w Puszczy Mglistej, otoczona palisadą. Leży przy Trakcie Królewskim.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "brzezina",
+      "nazwa": "Brzezina",
+      "aliasy": [],
+      "kategoria": "osada",
+      "opis": "Wieś z wiatrakiem na południowym skraju puszczy. Ścieżka przez las prowadzi stąd do Wilczej Wólki.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "rybaki",
+      "nazwa": "Rybaki",
+      "aliasy": [],
+      "kategoria": "osada",
+      "opis": "Wioska rybacka nad Jeziorem Cichym, przy odnodze Traktu Wschodniego.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "kamieniec",
+      "nazwa": "Kamieniec",
+      "aliasy": [],
+      "kategoria": "osada",
+      "opis": "Osada górnicza u stóp Gór Sinych, przy Trakcie Królewskim.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "palac-krukow",
+      "nazwa": "Pałac Kruków",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Stary pałac na wschodnim brzegu Jeziora Cichego, wśród martwych drzew.",
+      "mapa": "kraina",
+      "mapaSzczegolowa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "ruiny-straznicy",
+      "nazwa": "Ruiny Strażnicy",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Ruiny starej strażnicy w głębi Puszczy Mglistej.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "trakt-krolewski",
+      "nazwa": "Trakt Królewski",
+      "aliasy": [],
+      "kategoria": "szlak",
+      "opis": "Główny trakt krainy: z zachodu przez Puszczę Mglistą do Wysogrodu, dalej przez Kamieniec i Przełęcz Wiatrów na północ.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "trakt-wschodni",
+      "nazwa": "Trakt Wschodni",
+      "aliasy": [],
+      "kategoria": "szlak",
+      "opis": "Trakt z Wysogrodu na wschód, na południe od Jeziora Cichego, do Marchii Wschodniej.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "przelecz-wiatrow",
+      "nazwa": "Przełęcz Wiatrów",
+      "aliasy": [],
+      "kategoria": "szlak",
+      "opis": "Przejście przez Góry Sine na Trakcie Królewskim.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "puszcza-mglista",
+      "nazwa": "Puszcza Mglista",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Stara, gęsta puszcza na zachodzie krainy.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "gory-sine",
+      "nazwa": "Góry Sine",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Łańcuch górski na północy krainy, ze śniegiem na najwyższych szczytach.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "srebrnica",
+      "nazwa": "Srebrnica",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Rzeka spływająca z Gór Sinych przez Jezioro Ciche i Wysogród ku morzu.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "jezioro-ciche",
+      "nazwa": "Jezioro Ciche",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Jezioro u stóp Gór Sinych, z wioską Rybaki na zachodnim brzegu.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "smocza-jama",
+      "nazwa": "Smocza Jama",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Jaskinia we wschodniej części Gór Sinych.",
+      "mapa": "kraina",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "hol-wejsciowy",
+      "nazwa": "Hol wejściowy",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Wejście główne od południa, przez portyk z kolumnami. Posadzka w czarno-białą szachownicę, dwie kolumny i okrągły stół.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "sala-balowa",
+      "nazwa": "Sala balowa",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Największa sala parteru: parkiet, trzy żyrandole, krzesła pod ścianami, lustra na ścianie wschodniej.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "salon-muzyczny",
+      "nazwa": "Salon muzyczny",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Fortepian i harfa; przejścia do holu i jadalni.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "jadalnia",
+      "nazwa": "Jadalnia",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Długi stół na czternaście osób, kominek i kredens; szklane drzwi do oranżerii.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "kuchnia",
+      "nazwa": "Kuchnia",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Palenisko, duży stół i zlew; obok pomywalnia, spiżarnia i wejście dla służby od wschodu.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "biblioteka",
+      "nazwa": "Biblioteka",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Regały pod ścianami, dwa stoły do czytania, globus i kominek. Jedyne wejście do gabinetu.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "gabinet",
+      "nazwa": "Gabinet",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Mały pokój z biurkiem i sejfem; wejście tylko z biblioteki.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "galeria-portretow",
+      "nazwa": "Galeria portretów",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Długa sala z czerwonym chodnikiem i rzędem portretów na ścianie północnej.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "kaplica",
+      "nazwa": "Kaplica",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Ołtarz, ławki i dwa witraże; wejście z galerii portretów.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "oranzeria",
+      "nazwa": "Oranżeria",
+      "aliasy": [],
+      "kategoria": "pomieszczenie",
+      "opis": "Przeszklona szklarnia przy jadalni, z sadzawką i zeschniętymi roślinami.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "dziedziniec",
+      "nazwa": "Dziedziniec",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Wewnętrzny dziedziniec z fontanną i martwym drzewem, otoczony korytarzem.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "zejscie-do-piwnic",
+      "nazwa": "Zejście do piwnic",
+      "aliasy": [],
+      "kategoria": "przejscie",
+      "opis": "Schody w dół w spiżarni, w północno-wschodnim narożniku pałacu.",
+      "mapa": "palac",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "okopy-obrony",
+      "nazwa": "Okopy — pierwsza linia",
+      "aliasy": [
+        "pierwsza linia"
+      ],
+      "kategoria": "pozycja",
+      "opis": "Własna linia okopów z workami z piaskiem i zasiekami. Rowy łącznikowe prowadzą na tyły.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "okopy-wroga",
+      "nazwa": "Okopy wroga",
+      "aliasy": [],
+      "kategoria": "pozycja",
+      "opis": "Linia okopów wroga po północnej stronie ziemi niczyjej.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "barykada-drogowa",
+      "nazwa": "Barykada drogowa",
+      "aliasy": [],
+      "kategoria": "pozycja",
+      "opis": "Bloki betonowe, worki z piaskiem i zapory przeciwczołgowe na drodze 7G-Nord, tuż przed pierwszą linią.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "bunkier-dowodzenia",
+      "nazwa": "Bunkier dowodzenia",
+      "aliasy": [],
+      "kategoria": "pozycja",
+      "opis": "Betonowy bunkier z łącznością za lewym skrzydłem pierwszej linii.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "stanowisko-artylerii",
+      "nazwa": "Stanowisko artylerii",
+      "aliasy": [],
+      "kategoria": "pozycja",
+      "opis": "Dwa działa w okopanych stanowiskach na tyłach.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "czolg",
+      "nazwa": "Czołg „Młot”",
+      "aliasy": [
+        "Młot"
+      ],
+      "kategoria": "pojazd",
+      "opis": "Czołg ciężki 7. kompanii (oznaczenie VII-3) na drodze 7G-Nord.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "wrak-transportera",
+      "nazwa": "Wrak transportera",
+      "aliasy": [],
+      "kategoria": "pojazd",
+      "opis": "Płonący wrak transportera na ziemi niczyjej, na wschód od drogi.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "sklad-amunicji",
+      "nazwa": "Skład amunicji",
+      "aliasy": [],
+      "kategoria": "obiekt",
+      "opis": "Skrzynie z amunicją i beczki z paliwem pod siatką maskującą.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "ladowisko",
+      "nazwa": "Lądowisko",
+      "aliasy": [],
+      "kategoria": "obiekt",
+      "opis": "Lądowisko na prawym skrzydle tyłów, obok zbiornika paliwa.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "ziemia-niczyja",
+      "nazwa": "Ziemia niczyja",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Pas lejów po pociskach między liniami okopów.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "ruiny-manufaktury",
+      "nazwa": "Ruiny manufaktury",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Zrujnowana hala fabryczna na wschodzie ziemi niczyjej.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": true
+    },
+    {
+      "id": "pole-minowe",
+      "nazwa": "Pole minowe",
+      "aliasy": [],
+      "kategoria": "teren",
+      "opis": "Oznakowane pole minowe na zachodzie ziemi niczyjej.",
+      "mapa": "pole-bitwy",
+      "dostepnyDomyslnie": false
+    }
+  ]
+}

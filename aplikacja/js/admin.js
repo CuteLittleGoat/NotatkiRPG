@@ -35,7 +35,7 @@ export class WidokAdmina {
       });
   }
 
-  /** Lista kolorów: dla mapy wszystkie motywy (z „kolory oryginału”), dla ekranu poza mapami — bez niego. */
+  /** Lista kolorów: dla mapy wszystkie motywy („kolory oryginału” pierwsze), dla interfejsu — bez niego. */
   listaKolorow(wartosc, motywy = MOTYWY) {
     const s = el("select.pole");
     for (const [k, nazwa] of Object.entries(motywy)) s.append(el("option", { tekst: nazwa, atrybuty: { value: k, selected: k === wartosc } }));
@@ -100,12 +100,13 @@ export class WidokAdmina {
       el("h3.sekcja-tytul", { tekst: "MAPY I MIEJSCA" }),
       el("p.przygaszony", { tekst: "Dostępność miejsc zmienisz też w indeksie obok mapy (pola wyboru) albo w karcie miejsca." })
     ]);
+    // Kolor interfejsu — ekranu poza mapami (zakładki Notatki i Admin); domyślnie zielony.
     this.kolorKampanii = this.listaKolorow(stan.kolorKampanii(), MOTYWY_EKRANU);
-    this.kolorKampanii.setAttribute("aria-label", "Kolor ekranu poza mapami");
+    this.kolorKampanii.setAttribute("aria-label", "Kolor interface");
     this.kolorKampanii.addEventListener("change", () =>
-      this.zapisz({ kolor: this.kolorKampanii.value }, `Kolor ekranu poza mapami: ${NAZWY_KOLOROW[this.kolorKampanii.value] || this.kolorKampanii.value}.`)
+      this.zapisz({ kolor: this.kolorKampanii.value }, `Kolor interface: ${NAZWY_KOLOROW[this.kolorKampanii.value] || this.kolorKampanii.value}.`)
     );
-    sekcjaMap.append(el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor ekranu poza mapami:" }), this.kolorKampanii]));
+    sekcjaMap.append(el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor interface:" }), this.kolorKampanii]));
 
     for (const mapa of stan.manifest.mapy || []) {
       const kolor = this.listaKolorow(stan.kolorMapy(mapa));
@@ -141,7 +142,7 @@ export class WidokAdmina {
       sekcjaMap.append(
         el("div.admin-mapa", [
           el("h4.podsekcja", { tekst: `◈ ${mapa.nazwa.toUpperCase()}` }),
-          el("div.admin-wiersz", [el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor mapy:" }), kolor])]),
+          el("div.admin-wiersz", [el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor map:" }), kolor])]),
           el("p.przygaszony", { tekst: "Zaznaczone miejsca są dla graczy klikalne i można przy nich robić notatki. Odznaczone wyglądają jak zwykłe tło mapy." }),
           el("div.admin-wiersz", [
             el("button.przycisk.przycisk-maly", { tekst: "ZAZNACZ WSZYSTKIE", atrybuty: { type: "button" }, zdarzenia: { click: () => ustawWszystkie(true) } }),

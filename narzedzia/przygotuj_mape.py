@@ -13,7 +13,8 @@ Konwencja rysunku od MG (szczegóły: kampanie/README.md):
 
 Skrypt:
 
-1. usuwa wszystkie grupy „tylko-mg”, komentarze i opisy rysunku,
+1. usuwa wszystkie grupy „tylko-mg”, komentarze, opisy rysunku i jego arkusze
+   stylów <style> (każdy, w dowolnym miejscu rysunku),
 2. sprawdza, czy nie zostało nic podejrzanego (dopisek „dla MG”, czerwone linie
    przerywane) — jeśli tak, przerywa pracę,
 3. wycina obszar każdej mapy z manifestu (mapy[].zrodlo.obszar),
@@ -507,6 +508,18 @@ def wytnij_obszar(korzen, obszar):
     return kopia
 
 
+def usun_znaczniki(korzen, nazwy) -> int:
+    """Usuwa z całego drzewa (na każdej głębokości) elementy o podanych nazwach,
+    bez względu na przestrzeń nazw (np. <style> z XHTML też). Zwraca ich liczbę."""
+    usuniete = 0
+    for rodzic in list(korzen.iter()):
+        for dziecko in list(rodzic):
+            if lokalna(dziecko.tag) in nazwy:
+                rodzic.remove(dziecko)
+                usuniete += 1
+    return usuniete
+
+
 def odwolania(el) -> set[str]:
     wynik = set()
     for k, v in el.attrib.items():
@@ -704,17 +717,11 @@ def przygotuj_mape(korzen_mg, mapa: dict, wersja: str) -> tuple[ET.Element, dict
 
     # Tytuły elementów usuwamy: podpowiedź przeglądarki przy najechaniu
     # wyróżniałaby elementy, których gracze jeszcze nie odkryli.
-    for el in svg.iter():
-        for dziecko in list(el):
-            if lokalna(dziecko.tag) in ("title", "desc", "metadata"):
-                el.remove(dziecko)
-    for defs in svg.iter(f"{{{SVG_NS}}}defs"):
-        for dziecko in list(defs):
-            if lokalna(dziecko.tag) == "style":
-                defs.remove(dziecko)
-    for dziecko in list(svg):
-        if lokalna(dziecko.tag) == "style":
-            svg.remove(dziecko)
+    # Arkusze stylów rysunku usuwamy wszystkie, w dowolnym miejscu (także schowane
+    # w grupie, deseniu czy napisie): w aplikacji mapa staje się częścią strony, więc
+    # arkusz z rysunku działałby na całą stronę (mógłby ją np. ukryć). Z arkusza
+    # rysunku bierzemy tylko kolor obwódki napisów „h” (kolor_obwodki, wyżej).
+    usun_znaczniki(svg, ("title", "desc", "metadata", "style"))
 
     usun_nieuzywane_definicje(svg)
     malarz = Przemalowanie()
