@@ -83,8 +83,12 @@ Przeczytaj ten plik w całości, zanim cokolwiek zmienisz. Potem: `README.md`
 * Styl Data-Slate: własny, ogólny — **bez logotypów, grafik i cytatów Games Workshop**.
 * Motywy kolorów są w trzech miejscach, które muszą się zgadzać:
   `aplikacja/css/slate.css` (`.motyw-…`), `MOTYWY` w `narzedzia/przygotuj_mape.py`,
-  `MOTYWY` w `aplikacja/js/konfiguracja.js`. Po zmianie kolorów uruchom ponownie
-  skrypt map dla każdej kampanii.
+  `MOTYWY` w `aplikacja/js/konfiguracja.js` (pilnuje tego test w
+  `testy/test_przygotuj_mape.py`). Po zmianie kolorów uruchom ponownie skrypt map dla
+  każdej kampanii. Motyw `oryginalny` (tylko dla map) nie przemalowuje mapy: skrypt
+  zostawia oryginalne kolory rysunku w atrybutach `fill`/`stroke`/`stop-color`, a kolory
+  fosforu dodaje klasami `ds-…`, których reguły nie działają pod `.motyw-oryginalny` —
+  **nie usuwaj** oryginalnych kolorów z map i nie przenoś ich do `style` (wygrałyby z motywami).
 * Strona musi działać na **telefonach, tabletach i komputerach**, bez przewijania
   strony na boki. Sprawdzaj to testem e2e (zawiera iPhone, Pixel, iPad).
 
@@ -111,6 +115,7 @@ wzoru (`dokumentacja/Kod_Wzoru.txt`). Każde naprawia błąd widziany na tableta
 | Zadanie | Miejsce |
 |---|---|
 | nowa wersja rysunku MG, nowe miejsca, zmiana nazw | `kampanie/README.md` (krok po kroku) |
+| przygotowanie rysunku mapy (format SVG, znaczniki, kolory, zakazy) | `Specyfikacja_rysunku_mapy.md` |
 | nowa kampania | `kampanie/README.md`, szablon `narzedzia/szablon_kampanii/` |
 | wygląd | `aplikacja/css/slate.css` |
 | zachowanie mapy | `aplikacja/js/mapa.js` |

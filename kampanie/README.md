@@ -17,6 +17,9 @@ leżą w repozytorium (to w porządku — gracze korzystają tylko ze stron apli
 
 ## Konwencja rysunku od MG
 
+Pełna specyfikacja rysunku (format pliku, znaczniki, kolory, zakazy, lista kontrolna,
+przykład): [`Specyfikacja_rysunku_mapy.md`](../Specyfikacja_rysunku_mapy.md).
+
 Żeby skrypt sam zrobił z rysunku mapę dla graczy, rysunek SVG musi mieć znaczniki:
 
 * **miejsce klikalne** — grupa z identyfikatorem:
@@ -93,10 +96,10 @@ uruchamiająca skrypt nie zobaczyła spoilera).
 |---|---|
 | `id`, `nazwa`, `naglowek` | identyfikator (jak w rejestrze), nazwa, napis w nagłówku ekranu |
 | `wersjaMapy` | data wersji map (widoczna na dole ekranu) |
-| `kolor` | kolor ekranu poza mapami: `zielony` albo `bursztynowy` (admin może zmienić w aplikacji) |
+| `kolor` | kolor ekranu poza mapami: `zielony`, `bursztynowy` albo `czerwony` (admin może zmienić w aplikacji) |
 | `mapy[]` | zakładki z mapami, w kolejności wyświetlania |
 | `mapy[].id`, `nazwa`, `plik` | identyfikator mapy, nazwa zakładki, plik mapy dla graczy |
-| `mapy[].kolor` | kolor ekranu na tej mapie |
+| `mapy[].kolor` | kolor ekranu na tej mapie: `zielony`, `bursztynowy`, `czerwony` albo `oryginalny` (mapa w kolorach rysunku, interfejs zielony) |
 | `mapy[].widocznaDomyslnie` | czy gracze widzą zakładkę, dopóki admin tego nie zmieni |
 | `mapy[].start` | punkt `{x, y}` rysunku, na którym mapa otwiera się na małym ekranie |
 | `mapy[].zrodlo` | dla skryptu: `plik` (rysunek MG) i `obszar` (`"x y szerokość wysokość"` — fragment rysunku z tą mapą). Aplikacja z tego nie korzysta. |

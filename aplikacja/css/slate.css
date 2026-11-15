@@ -2,9 +2,10 @@
    NotatkiRPG — styl „Data-Slate”: monochromatyczny fosfor na ciemnym tle.
    Własny, ogólny styl — bez logotypów i grafik Games Workshop.
 
-   Motywy: klasa na <body> — .motyw-zielony / .motyw-bursztynowy.
+   Motywy: klasa na <body> — .motyw-zielony / .motyw-bursztynowy / .motyw-czerwony
+   oraz .motyw-oryginalny (mapa w kolorach rysunku, interfejs zielony).
    Kolory --tlo i --fosfor muszą być zgodne z MOTYWY w narzedzia/przygotuj_mape.py
-   (z nich skrypt liczy kolory map).
+   (z nich skrypt liczy kolory map) i z MOTYWY w aplikacja/js/konfiguracja.js.
    ========================================================================== */
 
 :root,
@@ -41,6 +42,35 @@
   --cien-tekstu: 0 0 6px rgba(255, 179, 71, 0.5);
   --klik: #7fe0ff;
   --zebra: rgba(255, 179, 71, 0.05);
+}
+
+/* Czerwony: klikalność — błękit, błędy i kropka „są notatki” — żółte (czerwone
+   zlałyby się z ekranem). */
+.motyw-czerwony {
+  --tlo: #0d0303;
+  --tlo-pole: #180505;
+  --fosfor: #ff5c4d;
+  --tekst: #ffbab2;
+  --przygaszony: #b45a50;
+  --akcent: #ff3d2e;
+  --linia: rgba(255, 92, 77, 0.22);
+  --linia-mocna: rgba(255, 92, 77, 0.55);
+  --poswiata: 0 0 18px rgba(255, 92, 77, 0.32);
+  --cien-tekstu: 0 0 6px rgba(255, 92, 77, 0.5);
+  --klik: #7fe0ff;
+  --blad: #ffd24a;
+  --kropka: #ffe14d;
+  --zebra: rgba(255, 92, 77, 0.05);
+}
+
+/* Kolory oryginału: interfejs zielony (zmienne z :root), mapa w kolorach rysunku.
+   Na mapie klikalność wyróżnia malinowy — widoczny i na jasnym papierze, i na
+   ciemnym tle; bez linii skanowania, żeby nie zmieniały kolorów rysunku. */
+.motyw-oryginalny .plansza {
+  --klik: #e6007e;
+}
+.motyw-oryginalny .obszar-map > .skan {
+  display: none;
 }
 
 /* ---------------------------------------------------------------- podstawy */
@@ -748,23 +778,6 @@ dialog.okno-male > .okno-przyciski {
   z-index: 3;
   display: flex;
   gap: 6px;
-}
-.pasek-ukrycia {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  z-index: 3;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  max-width: min(560px, calc(100% - 16px));
-  padding: 6px 10px;
-  font-size: 14px;
-  color: var(--klik);
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px dashed var(--klik);
-  border-radius: 8px;
 }
 .indeks-zakladka {
   margin: 0 8px 4px;

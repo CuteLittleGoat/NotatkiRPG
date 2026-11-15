@@ -1,7 +1,12 @@
 // Wspólny stan strony kampanii: manifest, ustawienia admina, wpisy z bazy, sesja.
 // Moduły widoków subskrybują zmiany i odświeżają się same.
-import { MOTYW_DOMYSLNY, MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
+import { MOTYW_DOMYSLNY, MOTYWY, MOTYWY_EKRANU, ZAKLADKI_STALE } from "./konfiguracja.js";
 import { jestAdminem, kampaniaWidocznaDlaGraczy } from "./sesja.js";
+
+/** Czy wartość (np. z bazy) to nazwa motywu z listy — bez pól dziedziczonych typu „constructor”. */
+function jestMotywem(lista, nazwa) {
+  return typeof nazwa === "string" && Object.prototype.hasOwnProperty.call(lista, nazwa);
+}
 
 export class Stan {
   constructor({ kampania, manifest, folder }) {
@@ -96,16 +101,18 @@ export class Stan {
     return (this.manifest.elementy || []).filter((e) => this.elementDlaUzytkownika(e));
   }
 
+  /** Motyw ekranu poza mapami (bez „oryginalny”). */
   kolorKampanii() {
     const k = this.ustawienia?.kolor;
-    if (k && MOTYWY[k]) return k;
-    return MOTYWY[this.manifest.kolor] ? this.manifest.kolor : MOTYW_DOMYSLNY;
+    if (jestMotywem(MOTYWY_EKRANU, k)) return k;
+    return jestMotywem(MOTYWY_EKRANU, this.manifest.kolor) ? this.manifest.kolor : MOTYW_DOMYSLNY;
   }
 
+  /** Motyw mapy — także „oryginalny” (kolory rysunku, interfejs zielony). */
   kolorMapy(mapa) {
     const k = this.ustawienia?.mapy?.[mapa.id]?.kolor;
-    if (k && MOTYWY[k]) return k;
-    return MOTYWY[mapa.kolor] ? mapa.kolor : this.kolorKampanii();
+    if (jestMotywem(MOTYWY, k)) return k;
+    return jestMotywem(MOTYWY, mapa.kolor) ? mapa.kolor : this.kolorKampanii();
   }
 
   // ---- notatki a miejsca ----

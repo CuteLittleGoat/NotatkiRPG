@@ -10,13 +10,19 @@ export const DOKUMENT_USTAWIEN = "mapy"; // kampanie/{id}/ustawienia/mapy
 export const KOLEKCJA_ADMINOW = "admins";
 export const KOLEKCJA_SEKRETOW = "secrets";
 
-/** Motywy ekranu. Kolory muszą być zgodne z aplikacja/css/slate.css
- *  i z MOTYWY w narzedzia/przygotuj_mape.py. */
+/** Motywy ekranu: identyfikator → nazwa na liście admina. Kolory motywów fosforu
+ *  muszą być zgodne z aplikacja/css/slate.css i z MOTYWY w narzedzia/przygotuj_mape.py.
+ *  „oryginalny” — mapa w kolorach rysunku, interfejs zielony (tylko dla map). */
 export const MOTYWY = {
   zielony: "zielony",
-  bursztynowy: "bursztynowy"
+  bursztynowy: "bursztynowy",
+  czerwony: "czerwony",
+  oryginalny: "kolory oryginału"
 };
 export const MOTYW_DOMYSLNY = "zielony";
+export const MOTYW_ORYGINALNY = "oryginalny";
+/** Motywy ekranu poza mapami (bez „oryginalny” — tam nie ma czego pokazać w oryginale). */
+export const MOTYWY_EKRANU = Object.fromEntries(Object.entries(MOTYWY).filter(([k]) => k !== MOTYW_ORYGINALNY));
 
 /** Zakładki inne niż mapy. Każdą admin może ukryć albo odsłonić graczom
  *  (ustawienia: kampanie/{id}/ustawienia/mapy → pole „zakladki”). Kolejność = kolejność

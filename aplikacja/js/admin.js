@@ -1,14 +1,14 @@
 // Zakładka „Admin”: widoczność kampanii i zakładek, dostępność miejsc dla graczy,
 // kolory ekranu, kopia zapasowa i przywracanie bazy, LOG komunikatów.
 // Admin NIE edytuje wpisów graczy — tylko je przegląda (rozdz. 3 polecenia).
-import { MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
+import { MOTYWY, MOTYWY_EKRANU, ZAKLADKI_STALE } from "./konfiguracja.js";
 import { el, komunikat, naZmianeLogu, opisBledu, potwierdz, wpisyLogu, wyczysc, wyczyscLog } from "./narzedzia.js";
 import { zapiszWidocznoscKampanii } from "./dane.js";
 import { pobierzKopie, przeanalizujPlik, przywroc } from "./kopia.js";
 import { sprawdzAppCheck } from "./firebase.js";
 import { BladKopii } from "./kopia-format.js";
 
-const NAZWY_KOLOROW = { zielony: "zielony", bursztynowy: "bursztynowy" };
+const NAZWY_KOLOROW = MOTYWY;
 const FORMAT_CZASU = new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 export class WidokAdmina {
@@ -35,9 +35,10 @@ export class WidokAdmina {
       });
   }
 
-  listaKolorow(wartosc) {
+  /** Lista kolorów: dla mapy wszystkie motywy (z „kolory oryginału”), dla ekranu poza mapami — bez niego. */
+  listaKolorow(wartosc, motywy = MOTYWY) {
     const s = el("select.pole");
-    for (const k of Object.keys(MOTYWY)) s.append(el("option", { tekst: NAZWY_KOLOROW[k] || k, atrybuty: { value: k, selected: k === wartosc } }));
+    for (const [k, nazwa] of Object.entries(motywy)) s.append(el("option", { tekst: nazwa, atrybuty: { value: k, selected: k === wartosc } }));
     return s;
   }
 
@@ -99,7 +100,8 @@ export class WidokAdmina {
       el("h3.sekcja-tytul", { tekst: "MAPY I MIEJSCA" }),
       el("p.przygaszony", { tekst: "Dostępność miejsc zmienisz też w indeksie obok mapy (pola wyboru) albo w karcie miejsca." })
     ]);
-    this.kolorKampanii = this.listaKolorow(stan.kolorKampanii());
+    this.kolorKampanii = this.listaKolorow(stan.kolorKampanii(), MOTYWY_EKRANU);
+    this.kolorKampanii.setAttribute("aria-label", "Kolor ekranu poza mapami");
     this.kolorKampanii.addEventListener("change", () =>
       this.zapisz({ kolor: this.kolorKampanii.value }, `Kolor ekranu poza mapami: ${NAZWY_KOLOROW[this.kolorKampanii.value] || this.kolorKampanii.value}.`)
     );

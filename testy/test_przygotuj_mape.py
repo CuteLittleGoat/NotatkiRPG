@@ -30,6 +30,7 @@ RYSUNEK = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" fon
 </defs>
 <rect x="0" y="0" width="1000" height="1000" fill="#efe3c4"/>
 <rect x="10" y="10" width="480" height="480" fill="url(#kropki)" stroke="#4d4030"/>
+<rect x="300" y="50" width="20" height="20" style="fill:#123456;opacity:0.5"/>
 <g data-element="wieza-testowa"><title>Wieża testowa</title>
   <circle cx="100" cy="100" r="10" fill="#8f8170" stroke="#2b2116"/>
   <text x="115" y="105" font-size="12">Wieża testowa</text>
@@ -90,6 +91,27 @@ class TestPrzygotujMape(unittest.TestCase):
             self.assertNotIn("<title>", mapa, "tytuły elementów wyróżniałyby nieodkryte miejsca")
             self.assertIn('id="plan-kropki"', mapa, "identyfikatory definicji bez przedrostka mapy")
             self.assertNotIn("SEKRET-MG-123", wyjscie, "skrypt wypisał treść materiału MG")
+
+    def test_motywy_i_kolory_oryginalu(self):
+        with tempfile.TemporaryDirectory() as t:
+            folder = przygotuj_folder(Path(t))
+            kod, wyjscie = uruchom(str(folder))
+            self.assertEqual(kod, 0, wyjscie)
+            mapa = (folder / "mapa_plan.svg").read_text(encoding="utf-8")
+            # Reguły każdego motywu fosforu; domyślny nie działa w trybie oryginalnym.
+            for nazwa in pm.MOTYWY:
+                if nazwa != pm.MOTYW_DOMYSLNY:
+                    self.assertIn(f".motyw-{nazwa} svg.mapa-slate", mapa)
+            self.assertIn(':not(.motyw-oryginalny *) .ds-f', mapa)
+            # Oryginalne kolory zostają w atrybutach (kolor ze style też — przeniesiony do atrybutu,
+            # bo w style wygrywałby z regułami motywów).
+            self.assertIn('fill="#efe3c4"', mapa)
+            self.assertIn('stroke="#4d4030"', mapa)
+            self.assertIn('fill="#123456"', mapa)
+            self.assertIn('style="opacity:0.5"', mapa)
+            self.assertNotIn("fill:#123456", mapa)
+            # Obwódka napisów „h” w trybie oryginalnym — kolor z reguły .h rysunku.
+            self.assertRegex(mapa, r"\.motyw-oryginalny svg\.mapa-slate\[data-mapa=\"plan\"\] \.h\{[^}]*stroke:#ffffff")
 
     def test_raport_nowych_i_brakujacych_elementow(self):
         with tempfile.TemporaryDirectory() as t:
@@ -157,6 +179,37 @@ class TestMapGraczy(unittest.TestCase):
                 for element in manifest.get("elementy", []):
                     if element.get("mapa") == mapa["id"]:
                         self.assertIn(f'data-element="{element["id"]}"', tresc, f"brak miejsca {element['id']} na mapie {mapa['id']}")
+
+
+class TestMotywow(unittest.TestCase):
+    """Motywy są w trzech miejscach, które muszą się zgadzać (AGENTS.md, rozdział 4)."""
+
+    def test_motywy_zgodne_w_css_konfiguracji_i_skrypcie(self):
+        import re
+
+        css = (KORZEN / "aplikacja" / "css" / "slate.css").read_text(encoding="utf-8")
+        for nazwa, kolory in pm.MOTYWY.items():
+            blok = re.search(r"\.motyw-" + nazwa + r"\s*\{([^}]*)\}", css)
+            self.assertIsNotNone(blok, f"brak .motyw-{nazwa} w slate.css")
+            for zmienna, klucz in (("--tlo", "tlo"), ("--fosfor", "fosfor")):
+                wartosc = re.search(zmienna + r"\s*:\s*(#[0-9a-fA-F]{6})", blok.group(1))
+                self.assertIsNotNone(wartosc, f"brak {zmienna} w .motyw-{nazwa}")
+                self.assertEqual(wartosc.group(1).lower(), kolory[klucz], f"{zmienna} motywu {nazwa}: CSS ≠ skrypt")
+        js = (KORZEN / "aplikacja" / "js" / "konfiguracja.js").read_text(encoding="utf-8")
+        blok = re.search(r"export const MOTYWY = \{([^}]*)\}", js)
+        klucze = set(re.findall(r"^\s*(\w+)\s*:", blok.group(1), re.MULTILINE))
+        self.assertEqual(klucze, set(pm.MOTYWY) | {pm.MOTYW_ORYGINALNY}, "MOTYWY w konfiguracja.js ≠ skrypt")
+
+    def test_kolor_obwodki(self):
+        import xml.etree.ElementTree as ET
+
+        def obwodka(styl):
+            return pm.kolor_obwodki(ET.fromstring(f'<svg xmlns="http://www.w3.org/2000/svg"><style>{styl}</style></svg>'))
+
+        self.assertEqual(obwodka(".h{stroke:#f3ead2;stroke-width:3px}"), "#f3ead2")
+        self.assertEqual(obwodka("text.h, .x { stroke-width: 2; stroke: rgb(1,2,3) }"), "#010203")
+        self.assertEqual(obwodka(".hh{stroke:#000}"), pm.OBWODKA_DOMYSLNA)
+        self.assertEqual(obwodka(".h{stroke:url(#x)}"), pm.OBWODKA_DOMYSLNA)
 
 
 class TestGeometrii(unittest.TestCase):

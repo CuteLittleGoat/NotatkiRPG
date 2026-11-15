@@ -487,6 +487,53 @@ async function bezPrzewijaniaWBok(strona) {
     await s.screenshot({ path: path.join(WYNIKI, "07_gracz_kopiec.png") });
   });
 
+  await krok("admin → gracz na żywo: kolor czerwony i kolory oryginału mapy Kopiec", async () => {
+    const listaEkranu = await sa.$$eval('#widok-admin select[aria-label="Kolor ekranu poza mapami"] option', (o) => o.map((x) => x.value));
+    zalozenie(listaEkranu.includes("czerwony") && !listaEkranu.includes("oryginalny"), `lista kolorów ekranu: ${listaEkranu}`);
+    const listaMapy = await sa.$$eval('#widok-admin select[aria-label="Kolor mapy Kopiec"] option', (o) => o.map((x) => x.value));
+    zalozenie(["zielony", "bursztynowy", "czerwony", "oryginalny"].every((k) => listaMapy.includes(k)), `lista kolorów mapy: ${listaMapy}`);
+
+    // Kolor fosforu i kolor z atrybutu rysunku pierwszego wypełnionego kształtu mapy.
+    const kolory = () =>
+      s.evaluate(() => {
+        const svg = document.querySelector('.plansza:not([hidden]) svg[data-mapa="kopiec"]');
+        const k = [...svg.querySelectorAll("[fill^='#']")].find((x) => [...x.classList].some((c) => /^ds-f\d+$/.test(c)));
+        const hex = k.getAttribute("fill");
+        const rgb = `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
+        const styl = getComputedStyle(document.body);
+        return {
+          wypelnienie: getComputedStyle(k).fill,
+          oryginal: rgb,
+          tlo: styl.getPropertyValue("--tlo").trim(),
+          fosfor: styl.getPropertyValue("--fosfor").trim(),
+          skan: getComputedStyle(document.querySelector(".obszar-map > .skan")).display
+        };
+      });
+
+    await sa.selectOption('#widok-admin select[aria-label="Kolor mapy Kopiec"]', "czerwony");
+    await s.waitForFunction(() => document.body.classList.contains("motyw-czerwony"), null, { timeout: 4000 });
+    let k = await kolory();
+    zalozenie(k.tlo === "#0d0303" && k.fosfor === "#ff5c4d", `zmienne motywu czerwonego: ${JSON.stringify(k)}`);
+    zalozenie(k.wypelnienie !== k.oryginal && /^rgb\(\d+, \d+, \d+\)$/.test(k.wypelnienie), `mapa nie jest w kolorach fosforu: ${JSON.stringify(k)}`);
+    const czerwony = k.wypelnienie;
+    await s.waitForTimeout(300);
+    await s.screenshot({ path: path.join(WYNIKI, "07a_gracz_kopiec_czerwony.png") });
+
+    await sa.selectOption('#widok-admin select[aria-label="Kolor mapy Kopiec"]', "oryginalny");
+    await s.waitForFunction(() => document.body.classList.contains("motyw-oryginalny"), null, { timeout: 4000 });
+    k = await kolory();
+    zalozenie(k.wypelnienie === k.oryginal, `mapa nie jest w kolorach oryginału: ${JSON.stringify(k)}`);
+    zalozenie(k.fosfor === "#6cf58c", `interfejs w trybie oryginalnym nie jest zielony: ${JSON.stringify(k)}`);
+    zalozenie(k.skan === "none", "linie skanowania na mapie w kolorach oryginału");
+    await s.waitForTimeout(300);
+    await s.screenshot({ path: path.join(WYNIKI, "07b_gracz_kopiec_oryginal.png") });
+
+    await sa.selectOption('#widok-admin select[aria-label="Kolor mapy Kopiec"]', "zielony");
+    await s.waitForFunction(() => document.body.classList.contains("motyw-zielony"), null, { timeout: 4000 });
+    k = await kolory();
+    zalozenie(k.wypelnienie !== k.oryginal && k.wypelnienie !== czerwony, `po powrocie do zielonego: ${JSON.stringify(k)}`);
+  });
+
   await krok("admin: przełącznik przy zakładce Notatki ukrywa ją i odsłania graczom (na żywo)", async () => {
     const pole = '#zakladki input[aria-label="Widoczna dla graczy: Notatki"]';
     await sa.uncheck(pole);
@@ -497,20 +544,21 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector("#zakladki .zakladka:has-text('NOTATKI')", { timeout: 4000 });
   });
 
-  await krok("admin: ukrycie zakładki w indeksie i odsłonięcie paskiem na mapie (na żywo u gracza)", async () => {
+  await krok("admin: ukrycie zakładki w indeksie i odsłonięcie przełącznikiem przy zakładce (na żywo u gracza)", async () => {
     await sa.click("#zakladki .zakladka:has-text('KOPIEC')");
     await sa.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kopiec"]');
     if (!(await sa.$eval("#indeks", (x) => !x.hidden))) await sa.click("#przycisk-indeks");
     const pole = '#indeks input[aria-label="Zakładka Kopiec widoczna dla graczy"]';
     await sa.waitForSelector(pole);
     zalozenie(await sa.$eval(pole, (x) => x.checked), "pole w indeksie nie pokazuje, że zakładka jest widoczna");
-    zalozenie(await sa.$eval("#pasek-ukrycia", (x) => x.hidden), "pasek ukrycia widoczny na widocznej zakładce");
     await sa.uncheck(pole);
     await s.waitForFunction(() => ![...document.querySelectorAll("#zakladki .zakladka")].some((z) => z.textContent.includes("KOPIEC")), null, { timeout: 4000 });
-    await sa.waitForSelector("#pasek-ukrycia:not([hidden])");
+    // Ukrytą zakładkę wyróżnia tylko przerywana ramka i przełącznik — bez paska na mapie.
+    await sa.waitForSelector("#zakladki .zakladka-grupa-ukryta:has-text('KOPIEC')", { timeout: 4000 });
+    zalozenie((await sa.$$("#pasek-ukrycia, #przycisk-odslon")).length === 0, "na mapie jest jeszcze pasek „ODSŁOŃ GRACZOM”");
     await sa.screenshot({ path: path.join(WYNIKI, "08a_admin_ukryta_zakladka.png") });
-    await sa.click("#przycisk-odslon");
-    await sa.waitForSelector("#pasek-ukrycia", { state: "hidden" });
+    await sa.check('#zakladki input[aria-label="Widoczna dla graczy: Kopiec"]');
+    await sa.waitForSelector("#zakladki .zakladka-grupa:not(.zakladka-grupa-ukryta):has-text('KOPIEC')", { timeout: 4000 });
     await s.waitForSelector("#zakladki .zakladka:has-text('KOPIEC')", { timeout: 4000 });
   });
 

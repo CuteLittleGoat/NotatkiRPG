@@ -5,7 +5,7 @@ Skrypty uruchamiane z katalogu głównego repozytorium. Wymagają tylko Pythona 
 
 | Plik | Do czego służy |
 |---|---|
-| `przygotuj_mape.py` | Z rysunku od MG robi mapy dla graczy w stylu Data-Slate: usuwa grupy `tylko-mg`, sprawdza, czy nie zostały ślady materiału MG, wycina obszary map z manifestu, nadaje kolory motywów i porównuje miejsca z manifestem. Szczegóły: `kampanie/README.md`. |
+| `przygotuj_mape.py` | Z rysunku od MG robi mapy dla graczy w stylu Data-Slate: usuwa grupy `tylko-mg`, sprawdza, czy nie zostały ślady materiału MG, wycina obszary map z manifestu, nadaje kolory motywów (zostawiając oryginalne kolory rysunku dla trybu „kolory oryginału”) i porównuje miejsca z manifestem. Szczegóły: `kampanie/README.md`, wymagania wobec rysunku: `Specyfikacja_rysunku_mapy.md`. |
 | `szablon_kampanii/` | Szablon manifestu `kampania.json` dla nowej kampanii. |
 
 ```bash

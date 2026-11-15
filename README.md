@@ -34,8 +34,9 @@ w Firebase. Pierwsza kampania: **Kopiec Iliac** (Warhammer 40,000 / Wrath & Glor
   udostępnione (admin może więc spokojnie przygotowywać kilka kampanii naraz).
 * **Zakładki** — pierwsza jest **Notatki**, potem mapy (każda mapa to osobna
   zakładka). **Każdą zakładkę admin może ukryć albo odsłonić graczom** polem wyboru
-  przy jej nazwie (widzi je tylko admin). Kolor ekranu (zielony albo bursztynowy)
-  admin ustawia osobno dla każdej mapy.
+  przy jej nazwie (widzi je tylko admin); ukryta zakładka ma przerywaną ramkę. Kolor
+  ekranu (zielony, bursztynowy, czerwony albo **kolory oryginału** — mapa w kolorach
+  rysunku, interfejs zielony) admin ustawia osobno dla każdej mapy.
 * **Miejsca na mapie** — admin zaznacza przy miejscu pole „dostępne dla graczy”.
   Zaznaczone miejsce dostaje złote narożniki: można je kliknąć i robić przy nim
   notatki. Odznaczone wygląda jak zwykłe tło mapy (żeby nie zdradzać, że jest ważne).
@@ -140,7 +141,7 @@ NotatkiRPG/
 ├── kampania.html              strona kampanii (?k=iliac): notatki, mapy, admin
 ├── kampanie.json              rejestr kampanii (id, nazwa, folder, widocznaDomyslnie)
 ├── aplikacja/                 wspólny kod aplikacji
-│   ├── css/slate.css          wygląd Data-Slate (motywy zielony / bursztynowy)
+│   ├── css/slate.css          wygląd Data-Slate (motywy zielony / bursztynowy / czerwony / kolory oryginału)
 │   ├── grafika/ikona.svg      ikona karty przeglądarki
 │   └── js/                    moduły ES (opis niżej)
 ├── firebase/                  firebase-config.js, firestore.rules, README.md (reguły, App Check)
@@ -151,6 +152,7 @@ NotatkiRPG/
 ├── testy/                     testy automatyczne (jednostkowe, skryptów, reguł bazy, całej aplikacji)
 ├── dokumentacja/              materiały pomocnicze (Kod_Wzoru.txt — wzór klikalnej mapy)
 ├── Analizy/                   analizy pomysłów do decyzji (np. Blokada_kont.md) — nie są częścią aplikacji
+├── Specyfikacja_rysunku_mapy.md  jak przygotować rysunek SVG, z którego powstają mapy (dla agentów AI i ludzi)
 ├── .github/workflows/         testy uruchamiane po każdej zmianie na main
 ├── AGENTS.md                  zasady pracy dla agentów AI
 └── README.md                  ten plik
@@ -305,8 +307,13 @@ Przyjęte na tym etapie — każdą można zmienić:
    podświetlenia, podpowiedzi i bez reakcji na kliknięcie. Podpisy narysowane na
    mapie dla graczy zostają (to część zatwierdzonej mapy dla graczy).
 6. **Kolory:** domyślnie zielony; admin ustawia kolor osobno dla każdej mapy i dla
-   ekranu poza mapami. W motywie bursztynowym klikalność oznacza błękit (złoto
-   byłoby nieodróżnialne od bursztynu).
+   ekranu poza mapami. Motywy: zielony, bursztynowy, czerwony oraz — tylko dla map —
+   **kolory oryginału** (mapa w kolorach rysunku od MG, interfejs zielony; pod
+   kolorowe mapy). W motywach bursztynowym i czerwonym klikalność oznacza błękit
+   (złoto byłoby nieodróżnialne od bursztynu), w czerwonym kropka „są notatki” i
+   błędy są żółte, a w kolorach oryginału klikalne miejsca na mapie mają malinowe
+   narożniki (widoczne i na jasnym, i na ciemnym rysunku). Pliki map zawierają
+   oba zestawy kolorów naraz, więc zmiana nie wymaga nowych plików.
 7. **Opisy miejsc w manifeście są minimalne** — tylko to, co wynika z nazw i z mapy
    dla graczy. Do uzupełnienia przez Ciebie albo MG.
 8. **Czcionki:** Ubuntu Mono (tekst) i VT323 (nagłówki) z Google Fonts — Share Tech
@@ -376,7 +383,8 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   jako pierwsza zakładka, notatki (dodanie z kursorem w „Treści”, etykieta z nazwą
   miejsca, edycja, usunięcie z potwierdzeniem, notatka ogólna), czerwona kropka,
   zmiany na żywo w drugiej karcie, checkboxy admina działające na żywo u gracza,
-  ukrywanie i odsłanianie każdej zakładki i kolor bursztynowy, „podgląd gracza”,
+  ukrywanie i odsłanianie każdej zakładki (bez paska na mapie), kolory bursztynowy,
+  czerwony i kolory oryginału (mapa w kolorach rysunku, interfejs zielony), „podgląd gracza”,
   LOG admina (wpisy z godziną, najnowsze na górze, bez wyskakujących potwierdzeń,
   przetrwa odświeżenie, czyści się przyciskiem i przy wylogowaniu; przy błędach
   najwyżej dwa komunikaty na ekranie), status App Check, kopia CSV (z `secrets` i

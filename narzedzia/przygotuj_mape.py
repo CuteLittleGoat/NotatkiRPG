@@ -17,8 +17,10 @@ Skrypt:
 2. sprawdza, czy nie zostało nic podejrzanego (dopisek „dla MG”, czerwone linie
    przerywane) — jeśli tak, przerywa pracę,
 3. wycina obszar każdej mapy z manifestu (mapy[].zrodlo.obszar),
-4. przemalowuje rysunek na styl Data-Slate (fosfor na ciemnym tle; osobne kolory
-   dla każdego motywu — aplikacja przełącza je klasą „motyw-…”),
+4. dodaje kolory stylu Data-Slate (fosfor na ciemnym tle; osobne kolory dla
+   każdego motywu — aplikacja przełącza je klasą „motyw-…”); oryginalne kolory
+   rysunku zostają w atrybutach i widać je w trybie „oryginalny” (klasa
+   „motyw-oryginalny” — wtedy reguły fosforu nie działają),
 5. zapisuje pliki map (mapy[].plik) i porównuje elementy z manifestem.
 
 Skrypt NIGDY nie wypisuje treści usuniętych ani podejrzanych fragmentów —
@@ -46,14 +48,20 @@ ET.register_namespace("xlink", XLINK_NS)
 
 # ---------------------------------------------------------------------------
 # Motywy ekranu. Te same nazwy i kolory są w aplikacja/css/slate.css
-# (zmienne --tlo i --fosfor). Dodanie motywu = wpis tutaj + w CSS
+# (zmienne --tlo i --fosfor) i w MOTYWY w aplikacja/js/konfiguracja.js.
+# Dodanie motywu = wpis tutaj + w CSS + w konfiguracja.js
 # + ponowne uruchomienie skryptu dla każdej kampanii.
 # ---------------------------------------------------------------------------
 MOTYWY = {
     "zielony": {"tlo": "#020b05", "fosfor": "#6cf58c"},
     "bursztynowy": {"tlo": "#0d0702", "fosfor": "#ffb347"},
+    "czerwony": {"tlo": "#0d0303", "fosfor": "#ff5c4d"},
 }
 MOTYW_DOMYSLNY = "zielony"
+# Tryb bez fosforu: mapa w kolorach rysunku (interfejs aplikacji zostaje zielony).
+MOTYW_ORYGINALNY = "oryginalny"
+# Obwódka napisów z klasą „h” w trybie oryginalnym, gdy rysunek nie podaje własnej.
+OBWODKA_DOMYSLNA = "#ffffff"
 
 # Jasność wypełnień: małe kształty (ikony, „tusz”) świecą pełną mocą,
 # duże plamy (morze, teren) są przygaszone, żeby nie oślepiały.
@@ -116,6 +124,22 @@ def wlasciwosc(el, nazwa: str) -> str | None:
     if nazwa in styl:
         return styl[nazwa]
     return el.get(nazwa)
+
+
+def do_atrybutu(el, nazwa: str) -> None:
+    """Przenosi właściwość z atrybutu style do zwykłego atrybutu (np. fill).
+
+    Zwykły atrybut przegrywa z regułami CSS motywów (klasy ds-…), więc w motywach
+    fosforu działa kolor z reguł, a w trybie oryginalnym — kolor z atrybutu.
+    Ta sama wartość w style wygrałaby z regułami i zepsuła motywy."""
+    styl = styl_na_slownik(el.get("style"))
+    if nazwa not in styl:
+        return
+    el.set(nazwa, styl.pop(nazwa))
+    if styl:
+        el.set("style", slownik_na_styl(styl))
+    else:
+        del el.attrib["style"]
 
 
 def usun_wlasciwosc(el, nazwa: str) -> None:
@@ -529,7 +553,10 @@ def dodaj_przedrostek_id(korzen, przedrostek: str) -> None:
 
 
 class Przemalowanie:
-    """Zamienia kolory rysunku na klasy Data-Slate i zbiera użyte poziomy jasności."""
+    """Dodaje do kształtów klasy Data-Slate (poziomy jasności fosforu) i zbiera użyte poziomy.
+
+    Oryginalne kolory zostają w atrybutach fill/stroke/stop-color — reguły klas
+    motywów mają pierwszeństwo, a w trybie oryginalnym (bez reguł) widać kolory rysunku."""
 
     def __init__(self):
         self.poziomy = {"f": set(), "s": set(), "c": set()}
@@ -557,7 +584,7 @@ class Przemalowanie:
 
         if tag == "stop":
             kolor = parsuj_kolor(wlasciwosc(el, "stop-color"))
-            usun_wlasciwosc(el, "stop-color")
+            do_atrybutu(el, "stop-color")
             if kolor is not None:
                 dodaj_klase(el, self.klasa("c", intensywnosc(kolor) * WYPELNIENIE_MAX_DUZE * (TEKSTURA if w_teksturze else 1)))
             return
@@ -574,15 +601,14 @@ class Przemalowanie:
                     p = prostokat_otaczajacy(el)
                     pole = (p[2] - p[0]) * (p[3] - p[1]) if p else None
                     skala = skala_wypelnienia(pole)
-                usun_wlasciwosc(el, "fill")
+                do_atrybutu(el, "fill")
                 dodaj_klase(el, self.klasa("f", intensywnosc(kolor_w) * skala * mnoznik))
             elif wlasne_w is None and wypelnienie is not None:
-                # wartość „none” albo url(...) odziedziczona — przepisz jawnie,
-                # bo rodzic może stracić atrybut przy przemalowaniu
+                # wartość „none” albo url(...) odziedziczona — przepisz jawnie
                 el.set("fill", wypelnienie)
             kolor_k = parsuj_kolor(kontur)
             if kolor_k is not None:
-                usun_wlasciwosc(el, "stroke")
+                do_atrybutu(el, "stroke")
                 dodaj_klase(el, self.klasa("s", intensywnosc(kolor_k) * mnoznik))
             elif wlasne_k is None and kontur is not None:
                 el.set("stroke", kontur)
@@ -593,42 +619,70 @@ class Przemalowanie:
                 usun_wlasciwosc(potomek, "font-family")
                 kolor = parsuj_kolor(wlasciwosc(potomek, "fill"))
                 if kolor is not None:
-                    usun_wlasciwosc(potomek, "fill")
+                    do_atrybutu(potomek, "fill")
                     dodaj_klase(potomek, self.klasa("f", intensywnosc(kolor) * mnoznik))
                 kolor = parsuj_kolor(wlasciwosc(potomek, "stroke"))
                 if kolor is not None:
-                    usun_wlasciwosc(potomek, "stroke")
+                    do_atrybutu(potomek, "stroke")
                     dodaj_klase(potomek, self.klasa("s", intensywnosc(kolor) * mnoznik))
             return
 
-        # Grupy i pojemniki: kolory przekazujemy dzieciom, z siebie usuwamy.
+        # Grupy i pojemniki: kolory przekazujemy dzieciom (one dostają klasy motywów);
+        # sama grupa zachowuje oryginalny kolor dla trybu oryginalnego.
         if parsuj_kolor(wlasne_w) is not None:
-            usun_wlasciwosc(el, "fill")
+            do_atrybutu(el, "fill")
         if parsuj_kolor(wlasne_k) is not None:
-            usun_wlasciwosc(el, "stroke")
+            do_atrybutu(el, "stroke")
         for dziecko in el:
             self.przemaluj(dziecko, wypelnienie, kontur, w_teksturze, czcionka)
 
-    def arkusz(self, id_mapy: str) -> str:
-        """Arkusz stylów osadzany w pliku mapy. Działa też przy otwarciu pliku wprost."""
+    def arkusz(self, id_mapy: str, obwodka: str = OBWODKA_DOMYSLNA) -> str:
+        """Arkusz stylów osadzany w pliku mapy. Działa też przy otwarciu pliku wprost
+        (wtedy motyw domyślny).
+
+        Motyw domyślny działa wszędzie poza elementem z klasą „motyw-oryginalny”;
+        pozostałe motywy — wewnątrz elementu z klasą „motyw-{nazwa}” (aplikacja
+        ustawia ją na <body>). Reguły motywów są zapisane po regułach domyślnych
+        i mają tę samą szczegółowość, więc wygrywają z nimi. W trybie oryginalnym
+        nie działa żadna reguła ds-…, więc widać kolory z atrybutów rysunku."""
         zakres = f'svg.mapa-slate[data-mapa="{id_mapy}"]'
-        tlo = MOTYWY[MOTYW_DOMYSLNY]["tlo"]
-        linie = [
-            f'{zakres}{{font-family:"Ubuntu Mono","DejaVu Sans Mono",Consolas,monospace;background:{tlo}}}',
-        ]
-        for nazwa, motyw in MOTYWY.items():
+        linie = [f'{zakres}{{font-family:"Ubuntu Mono","DejaVu Sans Mono",Consolas,monospace}}']
+        kolejnosc = [MOTYW_DOMYSLNY] + [n for n in MOTYWY if n != MOTYW_DOMYSLNY]
+        for nazwa in kolejnosc:
+            motyw = MOTYWY[nazwa]
             if nazwa == MOTYW_DOMYSLNY:
-                przed = ""
+                przed = f"{zakres}:not(.motyw-{MOTYW_ORYGINALNY} *)"
             else:
-                przed = f".motyw-{nazwa} "
+                przed = f".motyw-{nazwa} {zakres}"
+            linie.append(f"{przed}{{background:{motyw['tlo']}}}")
             linie.append(
-                f"{przed}{zakres} .h{{paint-order:stroke;stroke:{motyw['tlo']};stroke-width:3px;stroke-linejoin:round}}"
+                f"{przed} .h{{paint-order:stroke;stroke:{motyw['tlo']};stroke-width:3px;stroke-linejoin:round}}"
             )
             for rodzaj, wlasc in (("f", "fill"), ("s", "stroke"), ("c", "stop-color")):
                 for poziom in sorted(self.poziomy[rodzaj]):
                     kolor = mieszaj(motyw["tlo"], motyw["fosfor"], poziom / 100)
-                    linie.append(f"{przed}{zakres} .ds-{rodzaj}{poziom}{{{wlasc}:{kolor}}}")
+                    linie.append(f"{przed} .ds-{rodzaj}{poziom}{{{wlasc}:{kolor}}}")
+        linie.append(
+            f".motyw-{MOTYW_ORYGINALNY} {zakres} .h{{paint-order:stroke;stroke:{obwodka};stroke-width:3px;stroke-linejoin:round}}"
+        )
         return "\n".join(linie)
+
+
+def kolor_obwodki(korzen) -> str:
+    """Kolor obwódki napisów „h” (stroke z reguły .h w <style> rysunku) dla trybu
+    oryginalnego. Zwraca tylko poprawny kolor #rrggbb — nic innego z arkusza
+    rysunku nie trafia do mapy."""
+    for el in korzen.iter():
+        if lokalna(el.tag) != "style":
+            continue
+        for selektory, deklaracje in re.findall(r"([^{}]+)\{([^{}]*)\}", el.text or ""):
+            if not any(re.search(r"\.h(?![\w-])", s) for s in selektory.split(",")):
+                continue
+            m = re.search(r"(?<![\w-])stroke\s*:\s*([^;]+)", deklaracje)
+            rgb = parsuj_kolor(m.group(1)) if m else None
+            if rgb is not None:
+                return "#" + "".join(f"{c:02x}" for c in rgb)
+    return OBWODKA_DOMYSLNA
 
 
 def przygotuj_mape(korzen_mg, mapa: dict, wersja: str) -> tuple[ET.Element, dict]:
@@ -646,6 +700,7 @@ def przygotuj_mape(korzen_mg, mapa: dict, wersja: str) -> tuple[ET.Element, dict
             + "\nPopraw rysunek (owiń je w <g class=\"tylko-mg\">) i uruchom skrypt ponownie."
         )
     elementy = odczytaj_elementy(svg)
+    obwodka = kolor_obwodki(svg)
 
     # Tytuły elementów usuwamy: podpowiedź przeglądarki przy najechaniu
     # wyróżniałaby elementy, których gracze jeszcze nie odkryli.
@@ -683,7 +738,7 @@ def przygotuj_mape(korzen_mg, mapa: dict, wersja: str) -> tuple[ET.Element, dict
     svg.append(warstwa)
 
     styl = ET.Element(f"{{{SVG_NS}}}style")
-    styl.text = "\n" + malarz.arkusz(mapa["id"]) + "\n"
+    styl.text = "\n" + malarz.arkusz(mapa["id"], obwodka) + "\n"
     defs.insert(0, styl)
 
     # Atrybuty korzenia.
