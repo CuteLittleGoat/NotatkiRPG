@@ -281,4 +281,4 @@ odnośnika). Sprawdzone skryptem Playwright na udawanym Firebase: F5 w tej samej
   — dopisać sesję w wersji 3. Okienek menedżera haseł nie da się sprawdzić automatycznie
   (przeglądarka testowa ich nie pokazuje) — test ręczny z rozdziału 7.
 * Dokumentacja: README („Role i uprawnienia” — zdanie o logowaniu do zamknięcia karty;
-  „Decyzje”), `AGENTS.md` (rozdział 4: sesja — gdzie przechowywana i jak długo).
+  „Decyzje”), `AGENTS.md` (rozdział „Technologia”: sesja — gdzie przechowywana i jak długo).

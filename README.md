@@ -19,13 +19,14 @@ opis: [`kampanie/Template/README.md`](kampanie/Template/README.md).
 3. [Role i uprawnienia](#role-i-uprawnienia)
 4. [Jak tego używać](#jak-tego-używać)
 5. [Struktura repozytorium](#struktura-repozytorium)
-6. [Uruchomienie na własnym komputerze](#uruchomienie-na-własnym-komputerze)
-7. [Dane w Firestore](#dane-w-firestore)
-8. [Kopia zapasowa i przywracanie](#kopia-zapasowa-i-przywracanie)
-9. [Bezpieczeństwo](#bezpieczeństwo)
-10. [Decyzje do potwierdzenia](#decyzje-do-potwierdzenia)
-11. [Testy — co sprawdzono, a czego nie](#testy--co-sprawdzono-a-czego-nie)
-12. [Ograniczenia](#ograniczenia)
+6. [Gdzie co zmieniać](#gdzie-co-zmieniać)
+7. [Uruchomienie na własnym komputerze](#uruchomienie-na-własnym-komputerze)
+8. [Dane w Firestore](#dane-w-firestore)
+9. [Kopia zapasowa i przywracanie](#kopia-zapasowa-i-przywracanie)
+10. [Bezpieczeństwo](#bezpieczeństwo)
+11. [Decyzje do potwierdzenia](#decyzje-do-potwierdzenia)
+12. [Testy — co sprawdzono, a czego nie](#testy--co-sprawdzono-a-czego-nie)
+13. [Ograniczenia](#ograniczenia)
 
 ## Co potrafi
 
@@ -46,16 +47,20 @@ opis: [`kampanie/Template/README.md`](kampanie/Template/README.md).
   map (**kolory oryginału** — mapa w kolorach rysunku, domyślnie — albo zielony,
   bursztynowy, czerwony) admin ustawia osobno dla każdej mapy, a **kolor interface**
   (ekranu poza mapami; domyślnie zielony) — osobno dla kampanii.
-* **Miejsca na mapie** — admin zaznacza przy miejscu pole „dostępne dla graczy”.
-  Zaznaczone miejsce dostaje złote narożniki: można je kliknąć i robić przy nim
-  notatki. Odznaczone wygląda jak zwykłe tło mapy (żeby nie zdradzać, że jest ważne).
-  Pomysł na zasłanianie i odkrywanie miejsc w trakcie gry (pole „widoczne” obok
-  „klikalne”) — analiza: [`Analizy/Spoilery.md`](Analizy/Spoilery.md) (niewdrożone).
+* **Miejsca na mapie** — admin ma przy każdym miejscu dwa pola: **◈ klikalne** —
+  miejsce dostaje złote narożniki, można je kliknąć i robić przy nim notatki
+  (odznaczone wygląda jak zwykłe tło mapy, żeby nie zdradzać, że jest ważne) — oraz
+  **👁 widoczne**.
+* **Miejsca do odkrycia** — miejsce z odznaczonym 👁 jest **zasłonięte**: gracze w
+  ogóle go nie widzą (ani na mapie, ani w indeksie). Gdy gracze je znajdą (np. jaskinię
+  smoka, ukryte przejście), admin zaznacza 👁 (z potwierdzeniem) i miejsce pojawia się
+  u graczy od razu, z napisem „Nowe odkrycie…”. Klikalne może być tylko miejsce
+  widoczne. Analiza i decyzje: [`Analizy/Spoilery.md`](Analizy/Spoilery.md).
 * **Czerwona kropka** w prawym górnym rogu złotej ramki — przy tym miejscu są
-  notatki. Widać ją tylko przy miejscach odsłoniętych przez admina.
+  notatki. Widać ją tylko przy miejscach widocznych i klikalnych dla graczy.
 * **Indeks** z wyszukiwarką — na zakładce mapy pokazuje miejsca tej mapy, na
   zakładce Notatki — miejsca ze wszystkich map. Gracze widzą tylko to, co mają
-  dostępne; admin widzi wszystko i ma przy każdym miejscu pole wyboru.
+  dostępne; admin widzi wszystko i ma przy każdym miejscu pola 👁 i ◈.
 * **Notatki** przy miejscach i ogólne. Etykieta notatki pokazuje miejsce, podpis,
   datę i godzinę. Zmiany widać u wszystkich od razu, bez odświeżania strony.
 * **Kopia zapasowa bazy** do pliku CSV i **przywracanie** (tryb „Scal” albo „Zastąp”) — tylko admin.
@@ -162,11 +167,17 @@ NIEDOSTĘPNA”. To samo pole jest w zakładce ADMIN kampanii → „KAMPANIA”
 **Admin — zakładki i miejsca:** przy każdej zakładce (w pasku na górze) jest pole wyboru —
 zaznaczone = zakładka widoczna dla graczy, odznaczone = ukryta (ukryte zakładki
 mają przerywaną ramkę i znak ⊘). To samo jest w zakładce ADMIN → „ZAKŁADKI”.
-Pola wyboru przy miejscach są w indeksie, w karcie miejsca i w zakładce ADMIN.
-Tam też: kolory („Kolor interface” — ekran poza mapami, „Kolor map” — przy każdej
-mapie), „ZAZNACZ/ODZNACZ WSZYSTKIE”, „PRZYWRÓĆ DOMYŚLNE” (ustawienia z
-manifestu), kopia i przywracanie. Pole **PODGLĄD GRACZA** w nagłówku pokazuje
-zakładki, mapy i indeks tak, jak widzą je gracze.
+Przy każdym miejscu są dwa pola (w indeksie, w karcie miejsca i w zakładce ADMIN):
+**👁 widoczne** — odznaczone = miejsce zasłonięte przed graczami (admin widzi je
+przygaszone, kursywą, ze znakiem ⊘); zaznaczenie pyta „Odkryć graczom…?” — po ODKRYJ
+gracze widzą miejsce od razu; odznaczenie zasłania je bez pytania i odznacza też ◈.
+**◈ klikalne** — gracze mogą kliknąć miejsce i robić przy nim notatki; pole jest szare,
+dopóki 👁 jest odznaczone. W zakładce ADMIN są też: kolory („Kolor interface” — ekran
+poza mapami, „Kolor map” — przy każdej mapie), „ZAZNACZ/ODZNACZ WSZYSTKIE” (zmieniają
+tylko ◈ miejsc widocznych — nigdy niczego nie odkrywają), „PRZYWRÓĆ DOMYŚLNE”
+(ustawienia z manifestu — zasłania z powrotem miejsca do odkrycia), kopia i
+przywracanie. Pole **PODGLĄD GRACZA** w nagłówku pokazuje zakładki, mapy i indeks tak,
+jak widzą je gracze (bez zasłoniętych miejsc).
 
 **Admin — LOG:** w zakładce ADMIN pole „LOG” zbiera potwierdzenia wszystkich zmian
 (najnowsze na górze, z godziną) — także tych zrobionych w pasku zakładek, w indeksie
@@ -188,13 +199,18 @@ NotatkiRPG/
 │   ├── README.md              konwencja rysunków MG, nowa wersja mapy, nowa kampania
 │   ├── Template/              kampania przykładowa „Wzór” (3 mapy: fantasy, plan pałacu, pole bitwy; generatory rysunków)
 │   └── Iliac/                 kampania „Kopiec Iliac” (manifest, mapy, rysunki MG)
+├── Template/                  wzór do pracy nad mapami (dla agentów AI i ludzi):
+│   ├── Specyfikacja_rysunku_mapy.md  jak przygotować rysunek SVG, z którego powstają mapy
+│   ├── Przyklady/             kopie rysunków kampanii „Wzór” (przykładowe pliki dla innego agenta)
+│   ├── Problemy/              zgłoszenia problemów z mechanizmem map (RRRR-MM-DD_Opis.md)
+│   ├── Changelog.md           dziennik zmian wzoru
+│   └── README.md              co jest w folderze, polecenie do wklejenia innemu agentowi
 ├── narzedzia/                 skrypt przygotowania map, podgląd map w kolorach motywów, szablon kampanii
 ├── testy/                     testy automatyczne (jednostkowe, skryptów, reguł bazy, całej aplikacji)
 ├── dokumentacja/              materiały pomocnicze (Kod_Wzoru.txt — wzór klikalnej mapy)
 ├── Analizy/                   analizy pomysłów do decyzji (np. Blokada_kont.md) — nie są częścią aplikacji
-├── Specyfikacja_rysunku_mapy.md  jak przygotować rysunek SVG, z którego powstają mapy (dla agentów AI i ludzi)
 ├── .github/workflows/         testy uruchamiane po każdej zmianie na main
-├── AGENTS.md                  zasady pracy dla agentów AI
+├── AGENTS.md                  zasady pracy dla agentów AI (zmienia go tylko użytkownik)
 └── README.md                  ten plik
 ```
 
@@ -208,10 +224,43 @@ Moduły w `aplikacja/js/`:
 | `dane.js`, `stan.js` | odczyt/zapis w Firestore na żywo; wspólny stan strony i ustawienia domyślne |
 | `mapa.js` | wczytanie mapy SVG, przesuwanie i przybliżanie (mysz, dotyk, klawiatura) |
 | `indeks.js`, `panel.js` | indeks z wyszukiwarką; karta miejsca |
+| `odkrycia.js` | pola admina przy miejscu: 👁 widoczne (odkrycie z potwierdzeniem, zasłonięcie) i ◈ klikalne — wspólne dla indeksu, karty miejsca i zakładki Admin |
 | `notatki.js`, `karty.js`, `formularze.js` | zakładka „Notatki”, karta notatki, okno formularza notatki |
 | `admin.js`, `kopia.js`, `kopia-format.js` | panel admina; kopia i przywracanie; format pliku CSV |
 | `kampania.js`, `uruchom-kampanie.js`, `start.js` | złożenie strony kampanii (bez logowania — przekierowanie do logowania); strona startowa (logowanie, lista kampanii) |
 | `narzedzia.js` | drobne narzędzia (tworzenie elementów przez `textContent`, daty, komunikaty i log admina) |
+
+## Gdzie co zmieniać
+
+Mapa projektu dla programisty i agenta AI. Zasady pracy agentów są w `AGENTS.md`
+(agenci go nie zmieniają); **tę tabelę agent aktualizuje** przy każdej zmianie, która
+ją dezaktualizuje (nowy plik, przeniesiona funkcja, nowa ścieżka).
+
+| Zadanie | Miejsce |
+|---|---|
+| nowa wersja rysunku MG, nowe miejsca, zmiana nazw, miejsce do odkrycia (krok po kroku) | `kampanie/README.md` |
+| przygotowanie rysunku mapy (format SVG, znaczniki, kolory, zakazy, miejsca do odkrycia) | `Template/Specyfikacja_rysunku_mapy.md` (rozdział 17 — praktyczne wskazówki); przykłady: `Template/Przyklady/`; podgląd: `node narzedzia/podglad_mapy.cjs … [--na-start]` |
+| przekazanie rysowania mapy innemu agentowi (pliki i polecenie do wklejenia) | `Template/README.md` |
+| problemy i zmiany mechanizmu map | zgłoszenia: `Template/Problemy/`; dziennik: `Template/Changelog.md` |
+| nowa kampania | `kampanie/README.md`, szablon `narzedzia/szablon_kampanii/`; pełny przykład: `kampanie/Template/` (kampania „Wzór”; generatory rysunków zapisują też kopie do `Template/Przyklady/`) |
+| kolejność kampanii na liście | kolejność wpisów w `kampanie.json` (zmiana z aplikacji — analiza: `Analizy/Kolejnosc.md`) |
+| kolory map i interfejsu (domyślne, lista) | `MOTYWY`, `MOTYW_DOMYSLNY` (interfejs), `MOTYW_MAPY_DOMYSLNY` (mapy) w `aplikacja/js/konfiguracja.js`; wybór w `aplikacja/js/stan.js`; motywy także w `slate.css` i w skrypcie map (muszą się zgadzać — pilnuje test) |
+| wygląd | `aplikacja/css/slate.css` |
+| zachowanie mapy (przesuwanie, dotyk, strefy kliknięcia) | `aplikacja/js/mapa.js` |
+| logowanie, lista kampanii (widoczność kampanii) | `aplikacja/js/start.js`, `logowanie.js`; profile i dostęp do kampanii: `sesja.js` |
+| zakładki, przepływ strony kampanii | `aplikacja/js/kampania.js` |
+| indeks miejsc (na mapie — jej miejsca, na Notatkach — wszystkich map) | `aplikacja/js/indeks.js` (`ustawZakres`); otwieranie i zakres — `ustawIndeks()` w `kampania.js` |
+| pola admina przy miejscach: 👁 widoczne, ◈ klikalne | `aplikacja/js/odkrycia.js`; logika: `stan.js` (`elementWidoczny`, `elementDostepnyDlaGraczy`); zasłanianie na mapie: `mapa.js` (`ustawStany`, `data-nalezy-do`); napis „Nowe odkrycie” u graczy: `sprawdzOdkrycia()` w `kampania.js` |
+| nowa zakładka (inna niż mapa) | wpis w `ZAKLADKI_STALE` (`konfiguracja.js`), sekcja `widok-{id}` w `kampania.html`, obsługa w `przelacz()` w `kampania.js`; widoczność dla graczy zapisuje się sama w `ustawienia/mapy` → `zakladki.{id}` |
+| widoczność (domyślne z manifestu + ustawienia admina) | `aplikacja/js/stan.js` |
+| zapis/odczyt bazy | `aplikacja/js/dane.js` |
+| kopia i przywracanie | `aplikacja/js/kopia.js`, format: `kopia-format.js` |
+| komunikaty i LOG admina | `komunikat()` w `aplikacja/js/narzedzia.js`; pole LOG w `admin.js` |
+| analizy pomysłów do decyzji użytkownika | `Analizy/` (zasady: `AGENTS.md`) |
+| publikacja strony | GitHub Pages: Settings → Pages → Deploy from a branch (`main`, `/`); testy po zmianach: `.github/workflows/testy.yml` |
+| reguły bazy i ich test | `firebase/firestore.rules`, `testy/reguly/`, opis i wklejanie: `firebase/README.md` |
+| App Check | `aplikacja/js/firebase.js`, klucz witryny w `firebase/firebase-config.js` |
+| testy | `testy/README.md` (polecenia i co sprawdzają) |
 
 ## Uruchomienie na własnym komputerze
 
@@ -235,10 +284,12 @@ Dane każdej kampanii są osobno, pod jej identyfikatorem (dla Iliac: `iliac`):
 |---|---|
 | `kampanie/{kampaniaId}` | `nazwa`, `utworzono`, `widoczna` (czy gracze widzą kampanię: true/false), `zmieniono`, `kontoIdZmiany` — tworzy go aplikacja przy pierwszym zapisie |
 | `…/notatki/{id}` | `elementId` (id miejsca albo `null` = notatka ogólna), `tytul`, `tresc`, `podpis`, `kontoId`, `utworzono`, `zmieniono`, `kontoIdZmiany` (starsze notatki mogą mieć jeszcze pole `kategoria` — aplikacja go już nie używa) |
-| `…/ustawienia/mapy` | ustawienia admina: `zakladki.{id}` (widoczność zakładek innych niż mapy, np. `notatki`), `mapy.{mapaId}.widoczna`, `mapy.{mapaId}.kolor`, `elementy.{elementId}` (true/false), `kolor` (kolor interface — ekran poza mapami) |
+| `…/ustawienia/mapy` | ustawienia admina: `zakladki.{id}` (widoczność zakładek innych niż mapy, np. `notatki`), `mapy.{mapaId}.widoczna`, `mapy.{mapaId}.kolor`, `elementy.{elementId}` (◈ klikalne: true/false), `elementyWidoczne.{elementId}` (👁 widoczne na mapie: true/false; false = zasłonięte), `kolor` (kolor interface — ekran poza mapami) |
 
 Brak wpisu w `ustawienia/mapy` = ustawienie domyślne (z manifestu kampanii:
-`widocznaDomyslnie`, `dostepnyDomyslnie`, `kolor`; zakładka Notatki — widoczna).
+`widocznaDomyslnie`, `dostepnyDomyslnie`, `widocznyDomyslnie`, `kolor`; zakładka
+Notatki — widoczna; miejsce bez `widocznyDomyslnie` — widoczne). Klikalne jest tylko
+miejsce widoczne (także gdy w bazie zapisano inaczej).
 Brak pola `widoczna` w `kampanie/{id}` = wartość `widocznaDomyslnie` z rejestru
 `kampanie.json` (Iliac i Wzór: widoczne; nowa kampania bez tego pola — ukryta).
 Kampania Wzór zapisuje dane tak samo jak każda inna: `kampanie/wzor/…`.
@@ -288,7 +339,7 @@ nikomu i nie wrzucaj do repozytorium; `.gitignore` blokuje takie pliki).
 
 **Co chroni bazę teraz:**
 
-1. **Reguły bazy** (`firebase/firestore.rules`, wersja 4): dostępne są tylko kolekcje
+1. **Reguły bazy** (`firebase/firestore.rules`, wersja 5): dostępne są tylko kolekcje
    aplikacji, zapisy muszą mieć właściwe pola i długość tekstów, a **konta (`admins`,
    `secrets`) są tylko do odczytu** — nikt nie zmieni haseł ani ról przez aplikację
    ani poza nią. Reguły sprawdzono testami w emulatorze bazy (`testy/reguly/`).
@@ -310,8 +361,11 @@ logowania Firebase — Twoja decyzja):
 3. **Ukrywanie kampanii, miejsc i zakładek działa tylko w wyglądzie aplikacji.**
    Rejestr kampanii (`kampanie.json`), manifesty (`kampania.json`) i pliki map są
    publiczne — ciekawski gracz może w nich przeczytać nazwy wszystkich kampanii oraz
-   nazwy i opisy wszystkich miejsc z manifestu. W tych plikach trzymaj tylko rzeczy,
-   których odkrycie nie zepsuje gry.
+   nazwy i opisy wszystkich miejsc z manifestu. **Miejsca do odkrycia** (zasłonięte)
+   też są w pliku mapy — kto celowo zajrzy do plików strony, znajdzie je. W tych
+   plikach trzymaj tylko rzeczy, których odkrycie nie zepsuje gry; najważniejsze
+   tajemnice fabuły — w grupach `tylko-mg` rysunków MG (analiza:
+   [`Analizy/Spoilery.md`](Analizy/Spoilery.md)).
 4. **Repozytorium jest publiczne**, a strona publikuje się wprost z niego — rysunki
    od MG (`Rysunki_*.svg`) może otworzyć każdy, kto zna ich adres. Aplikacja ich nie
    pokazuje; gracze korzystają tylko z jej stron (Twoja decyzja).
@@ -338,10 +392,11 @@ Przyjęte na tym etapie — każdą można zmienić:
 
 1. **Publikacja:** GitHub Pages wprost z gałęzi `main` (Deploy from a branch).
    Repozytorium publiczne, rysunki MG w repozytorium — aplikacja z nich nie korzysta.
-2. **Reguły bazy (wersja 4):** zapis tylko tam i tylko w takim kształcie, jakiego
+2. **Reguły bazy (wersja 5):** zapis tylko tam i tylko w takim kształcie, jakiego
    używa aplikacja; konta tylko do odczytu, więc **przywracanie kopii pomija konta**.
    Wersja 3 dodała widoczność zakładek (`zakladki`) i zablokowała usunięte zakładki
-   Postęp i Powiązania; wersja 4 — widoczność kampanii (`widoczna` w `kampanie/{id}`).
+   Postęp i Powiązania; wersja 4 — widoczność kampanii (`widoczna` w `kampanie/{id}`);
+   wersja 5 — zasłanianie i odkrywanie miejsc (`elementyWidoczne` w ustawieniach).
 3. **Mapy:** dwie zakładki — **Okolice** (panel A rysunku; domyślnie widoczna) i
    **Kopiec** (panel B; domyślnie ukryta). Przekrój (panel C) pominięty — to materiał MG.
    Każda mapa to osobny plik SVG (zamiast jednego pliku z widokami), bo admin może
@@ -408,9 +463,11 @@ Przyjęte na tym etapie — każdą można zmienić:
     początku **widoczna dla graczy** — do prezentacji aplikacji; admin ukrywa ją jednym
     kliknięciem. Trzy mapy (fantasy z miastem i osadami połączonymi traktami, plan
     pałacu w stylu szkicu grozy, pole bitwy sci-fi), wszystkie widoczne, w kolorach
-    oryginału; 39 miejsc, z czego 8 czeka na odsłonięcie przez admina (pokazuje
-    ukrywanie). Miejsce „Pałac Kruków” otwiera mapę „Pałac” (przykład mapy szczegółowej).
-    Rysunki zrobiono skryptami z `kampanie/Template/generator/` (pomoc dla kolejnych map).
+    oryginału; 45 miejsc: 31 klikalnych od początku, 6 widocznych, ale nieklikalnych,
+    i 8 do odkrycia (po 2–3 na każdej mapie). Miejsce „Pałac Kruków” otwiera mapę
+    „Pałac” (przykład mapy szczegółowej). Rysunki zrobiono skryptami z
+    `kampanie/Template/generator/` (pomoc dla kolejnych map); ich kopie są w
+    `Template/Przyklady/`.
 22. **Kolor map domyślnie „kolory oryginału”** (Twoja prośba) — pierwsza pozycja na
     liście kolorów mapy; dotyczy też map Iliac (manifest: `oryginalny`). Kolor
     interfejsu domyślnie zielony. Pola w zakładce Admin: „Kolor interface” (dawniej
@@ -427,30 +484,45 @@ Przyjęte na tym etapie — każdą można zmienić:
     menedżera haseł); w Chrome i Edge prośba o zapis hasła i automatyczne logowanie;
     wylogowanie wszystkich urządzeń przez zmianę loginu w konsoli Firebase. Sesja w
     wersji 4 — wcześniejsze zalogowania wymagają jednorazowo ponownego logowania.
+25. **Miejsca do odkrycia** (Twoja decyzja — wariant A z
+    [`Analizy/Spoilery.md`](Analizy/Spoilery.md), wszystkie proponowane odpowiedzi): przy
+    każdym miejscu pola 👁 „widoczne” i ◈ „klikalne” (◈ nieaktywne bez 👁); odkrycie z
+    potwierdzeniem, zasłonięcie odznacza ◈; przyciski zbiorcze nigdy nie odkrywają;
+    gracze dostają napis „Nowe odkrycie…”, a miejsce mruga kilka sekund; znacznik
+    rysunku `data-nalezy-do`. Mapy Iliac bez zmian (będą rysowane od nowa według
+    nowych zasad). Zasady rysowania i przykłady: folder `Template/`.
+26. **Folder `Template/`** (Twoja prośba): specyfikacja rysunku map (przeniesiona z
+    katalogu głównego), kopie przykładowych rysunków, zgłoszenia problemów
+    (`Template/Problemy/`) i dziennik zmian (`Template/Changelog.md`) — do przekazania
+    innemu agentowi razem z gotowym poleceniem (`Template/README.md`).
 
 ## Testy — co sprawdzono, a czego nie
 
 Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/README.md)):
 
-* **Testy jednostkowe** (Node, 28): format CSV (cudzysłowy, przecinki, nowe linie,
+* **Testy jednostkowe** (Node, 29): format CSV (cudzysłowy, przecinki, nowe linie,
   BOM), kodowanie typów Firestore, odczyt błędnych plików, partie po 500,
   wyszukiwanie bez polskich znaków, profile kont (Admin / Edytor / Gracz — tylko z pola `rola`),
   sesja (zapamiętanie na 30 dni bez hasła, tylko karta, wygasanie, stare wersje,
   odświeżenie profilu z bazy, wylogowanie, brak dostępu do pamięci przeglądarki),
-  widoczność kampanii (z bazy albo domyślna z rejestru) i domyślne kolory (mapy —
-  kolory oryginału, pierwsze na liście; interfejs — zielony).
-* **Skrypty** (Python, 14): przygotowanie map — usuwanie materiału MG, przerwanie
+  widoczność kampanii (z bazy albo domyślna z rejestru), domyślne kolory (mapy —
+  kolory oryginału, pierwsze na liście; interfejs — zielony) oraz pola miejsc
+  „widoczne” i „klikalne” (domyślne z manifestu, klikalne tylko widoczne, kropka i
+  notatki przy zasłoniętym miejscu, podgląd gracza).
+* **Skrypty** (Python, 18): przygotowanie map — usuwanie materiału MG, przerwanie
   przy śladach MG poza grupami `tylko-mg` (bez wypisywania ich treści), usuwanie
   każdego arkusza `<style>` z rysunku (także schowanego w grupie), raport nowych i
-  brakujących miejsc; dla wszystkich kampanii z rejestru: raport bez uwag, mapy graczy
-  bez śladów materiału MG i **aktualne** względem rysunków.
-* **Reguły bazy w emulatorze Firestore** (27): każdy zapis i odczyt aplikacji
+  brakujących miejsc, miejsca do odkrycia i grupy `data-nalezy-do` (także błędne);
+  dla wszystkich kampanii z rejestru: raport bez uwag, mapy graczy bez śladów materiału
+  MG i **aktualne** względem rysunków; kopie przykładów w `Template/Przyklady/`
+  identyczne z rysunkami kampanii „Wzór”.
+* **Reguły bazy w emulatorze Firestore** (28): każdy zapis i odczyt aplikacji
   (logowanie, lista kampanii, widoczność kampanii, notatki — także starsze z polem
-  `kategoria`, ustawienia admina z widocznością zakładek, kopia i przywracanie)
-  przechodzi; obce pola, za długie teksty, widoczność inna niż tak/nie, nieznane
-  kolekcje (w tym usunięte `postep` i `powiazania`) i każda zmiana kont są
-  odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
-* **Cała aplikacja w przeglądarce** (Chromium, 83 kroki) na **udawanym Firebase**:
+  `kategoria`, ustawienia admina z widocznością zakładek, odkrywanie i zasłanianie
+  miejsc, kopia i przywracanie) przechodzi; obce pola, za długie teksty, widoczność
+  inna niż tak/nie, nieznane kolekcje (w tym usunięte `postep` i `powiazania`) i każda
+  zmiana kont są odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
+* **Cała aplikacja w przeglądarce** (Chromium, 89 kroków) na **udawanym Firebase**:
   bez logowania nic nie widać (strona startowa bez nazw kampanii, strona kampanii
   przenosi do logowania i po nim wraca), trzy profile (Gracz tylko czyta — nawet z
   `DisplayName` „Skryba”, Edytor pisze — z dowolnym `DisplayName`, Admin ustawia),
@@ -481,7 +553,12 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   Safari: przejście na nową stronę po zalogowaniu, bez mignięcia czerwonego napisu
   „Nie udało się wczytać listy kampanii”); **zakres indeksu** (na zakładce mapy —
   tylko jej miejsca, u admina i u gracza; na zakładce Notatki — miejsca wszystkich
-  map; wybór miejsca z indeksu otwiera jego mapę);
+  map; wybór miejsca z indeksu otwiera jego mapę); **miejsca do odkrycia** (gracz nie
+  widzi zasłoniętych miejsc — na mapie, także w chwili jej wczytania, w indeksie i w
+  filtrze notatek; admin widzi je przygaszone, ◈ nieaktywne; odkrycie z potwierdzeniem
+  i ANULUJ; gracz widzi odkrycie od razu, z napisem i mruganiem; ◈ po odkryciu,
+  zasłonięcie odznacza ◈; podgląd gracza; przyciski zbiorcze nie odkrywają;
+  „PRZYWRÓĆ DOMYŚLNE”);
   **telefony (iPhone 13, Pixel 5) i tablet (iPad Mini pionowo i poziomo)**:
   brak przewijania w bok (logowanie, listy kampanii, mapa, indeks na mapie i na
   zakładce Notatki, panel admina,
@@ -521,6 +598,12 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   6. W zakładce ADMIN pobierz kopię, usuń jedną notatkę, przywróć kopię trybem
      „Scal” — notatka powinna wrócić.
   7. Po włączeniu wymuszania App Check powtórz punkt 2.
+  8. **Miejsca do odkrycia** (wymaga reguł bazy w wersji 5): jako admin otwórz kampanię
+     Wzór → KRAINA; Smocza Jama jest przygaszona, a w indeksie pole 👁 odznaczone, ◈
+     szare. U Gracza jaskini nie ma ani na mapie, ani w indeksie. Zaznacz 👁 i potwierdź
+     „ODKRYJ” — u Gracza jaskinia pojawia się od razu z napisem „Nowe odkrycie…”.
+     Zaznacz ◈ — Gracz może ją kliknąć. Odznacz 👁 — znika u Gracza, a ◈ odznacza się
+     samo. Na koniec „PRZYWRÓĆ DOMYŚLNE” przy mapie Kraina w zakładce ADMIN.
 * **Prawdziwych telefonów i tabletów** — testy używały emulacji w Chromium. Warto
   sprawdzić przesuwanie i szczypanie na telefonie i tablecie przy stole.
 

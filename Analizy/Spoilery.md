@@ -1,6 +1,15 @@
 # Odkrywanie miejsc na mapach — admin zasłania i odsłania je graczom
 
-Analiza z 2026-11-16. **Nic z tego nie jest wdrożone** — to materiał do decyzji.
+Analiza z 2026-11-16.
+
+> **Wdrożone 2026-11-16:** wariant **A** ze wszystkimi proponowanymi odpowiedziami z
+> rozdziału 9 (decyzja użytkownika; mapy kampanii Iliac bez zmian — będą rysowane od
+> nowa według nowych zasad). Przykłady: po 2–3 miejsca do odkrycia na każdej mapie
+> kampanii „Wzór”. Opis działania: README („Jak tego używać”), zasady rysowania:
+> `Template/Specyfikacja_rysunku_mapy.md` (rozdziały 5.7 i 5.8); kod:
+> `aplikacja/js/odkrycia.js`, `stan.js`, `mapa.js`, `kampania.js`; reguły bazy — wersja 5.
+> Pole w bazie nazywa się `elementyWidoczne` (jak proponował dodatek). Rozdziały 1–8
+> opisują stan **sprzed** wdrożenia.
 
 Pytanie: czy admin może w aplikacji **odkrywać i zasłaniać miejsca na mapach** — nie
 tylko decydować, czy miejsce jest klikalne, ale też, **czy gracze w ogóle je widzą**.
@@ -208,7 +217,7 @@ Dochodzi kilka zasad rysowania (nowy podrozdział specyfikacji „Miejsca do odk
    nimi), można ją oznaczyć nowym znacznikiem `<g data-nalezy-do="id-miejsca">`.
    Aplikacja zasłania i odkrywa ją razem z miejscem; taka grafika nie jest klikalna.
 
-**Specyfikacja rysunku** (`Specyfikacja_rysunku_mapy.md`) — do uzupełnienia przy
+**Specyfikacja rysunku** (`Template/Specyfikacja_rysunku_mapy.md`) — do uzupełnienia przy
 wdrożeniu: rozdział 2 (co robi aplikacja z zasłoniętymi miejscami), 5.6 i nowy 5.7
 (zasady powyżej), 6.2 (tajne miejsca: `tylko-mg` albo „do odkrycia” — kiedy co), 11
 (pole `widocznyDomyslnie` w manifeście), 12 (nowe komunikaty skryptu), 15 (lista

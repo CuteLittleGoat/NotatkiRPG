@@ -299,7 +299,7 @@ class TestMapGraczy(unittest.TestCase):
 
 
 class TestMotywow(unittest.TestCase):
-    """Motywy są w trzech miejscach, które muszą się zgadzać (AGENTS.md, rozdział 4)."""
+    """Motywy są w trzech miejscach, które muszą się zgadzać (AGENTS.md, rozdział 8 „Technologia”)."""
 
     def test_motywy_zgodne_w_css_konfiguracji_i_skrypcie(self):
         import re

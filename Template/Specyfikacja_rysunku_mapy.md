@@ -4,9 +4,15 @@ Plik pomocniczy dla agenta AI (albo człowieka), który **przygotowuje rysunek m
 dla aplikacji NotatkiRPG. Opisuje, jaki plik ma powstać, jakie musi mieć znaczniki,
 czego w nim nie wolno używać i jak sprawdzić, czy jest gotowy.
 
+Plik leży w folderze **`Template/`** (wzór do pracy nad mapami — opis folderu:
+[`README.md`](README.md)): obok są przykładowe rysunki (`Template/Przyklady/`), zgłoszenia
+problemów (`Template/Problemy/`) i dziennik zmian (`Template/Changelog.md`). Ścieżki
+w tym pliku (np. `narzedzia/…`, `kampanie/…`) liczą się od **katalogu głównego
+repozytorium**.
+
 Wszystko poniżej sprawdzono na kodzie skryptu `narzedzia/przygotuj_mape.py` i
-przeglądarki map `aplikacja/js/mapa.js` (stan z 2026-11-15). Gdy kod się zmieni,
-pierwszeństwo ma kod — popraw wtedy ten plik.
+przeglądarki map `aplikacja/js/mapa.js` (stan z 2026-11-16). Gdy kod się zmieni,
+pierwszeństwo ma kod — popraw wtedy ten plik i dopisz zmianę do `Template/Changelog.md`.
 
 > **Najkrócej:** jeden plik **SVG** (nie HTML); kolory wpisane w atrybuty
 > `fill`/`stroke` jako `#rrggbb`; rysunek ma dobrze wyglądać **w swoich kolorach**
@@ -14,10 +20,15 @@ pierwszeństwo ma kod — popraw wtedy ten plik.
 > zielony, bursztynowy, czerwony); każde klikalne miejsce w osobnej grupie
 > `<g data-element="id-miejsca">` z podpisem `<text>`, wszystko tajne w
 > `<g class="tylko-mg">`, każda mapa w osobnym, nienachodzącym prostokącie rysunku.
+> Miejsce, które admin ma **odkryć graczom w trakcie gry** (np. kryjówkę, ukryte
+> przejście), rysuje się jak zwykłe miejsce — z pełnym tłem pod spodem — a w
+> manifeście dostaje `"widocznyDomyslnie": false` ([rozdział 5.7](#57-miejsca-do-odkrycia-na-start-zasłonięte)).
 > Na koniec: `python3 narzedzia/przygotuj_mape.py kampanie/NazwaKampanii --sprawdz`,
-> a potem obejrzyj mapę: `node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_….svg`.
-> Gotowe, duże przykłady: rysunki kampanii **Wzór** (`kampanie/Template/Rysunek_*.svg`),
-> praktyczne wskazówki z ich rysowania: [rozdział 17](#17-praktyczne-wskazówki-z-rysowania-map-kampanii-wzór).
+> a potem obejrzyj mapę: `node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_….svg`
+> (z `--na-start` — tak, jak gracze widzą ją na początku).
+> Gotowe, duże przykłady: rysunki kampanii **Wzór** — kopie w `Template/Przyklady/`
+> (oryginały: `kampanie/Template/Rysunek_*.svg`); praktyczne wskazówki z ich rysowania:
+> [rozdział 17](#17-praktyczne-wskazówki-z-rysowania-map-kampanii-wzór).
 
 ## Spis treści
 
@@ -26,6 +37,8 @@ pierwszeństwo ma kod — popraw wtedy ten plik.
 3. [Wymagania dotyczące pliku](#3-wymagania-dotyczące-pliku)
 4. [Układ rysunku: panele i obszary map](#4-układ-rysunku-panele-i-obszary-map)
 5. [Znacznik 1: miejsce klikalne `data-element`](#5-znacznik-1-miejsce-klikalne-data-element)
+   (w tym [5.7 Miejsca do odkrycia](#57-miejsca-do-odkrycia-na-start-zasłonięte) i
+   [5.8 `data-nalezy-do`](#58-grafika-miejsca-poza-jego-grupą-data-nalezy-do))
 6. [Znacznik 2: treść tylko dla MG `tylko-mg`](#6-znacznik-2-treść-tylko-dla-mg-tylko-mg)
 7. [Znacznik 3: napis z obwódką `h`](#7-znacznik-3-napis-z-obwódką-h)
 8. [Kolory i sposób rysowania](#8-kolory-i-sposób-rysowania)
@@ -88,7 +101,8 @@ interaktywna mapa w przeglądarce: przesuwanie, przybliżanie, klikalne miejsca,
    otaczający **przecina** obszar. Reszta znika z pliku tej mapy.
 4. **Kontrola bezpieczeństwa** — jeśli w wyciętym fragmencie zostały ślady materiału
    MG (rozdział 6.3), przerywa pracę i **nie zapisuje żadnego pliku**.
-5. Odczytuje miejsca klikalne (`data-element`) i sprawdza ich identyfikatory.
+5. Odczytuje miejsca klikalne (`data-element`) i sprawdza ich identyfikatory oraz
+   grupy `data-nalezy-do` (czy wskazują miejsce z tej samej mapy — rozdział 5.8).
 6. Usuwa wszystkie `<title>`, `<desc>`, `<metadata>`, atrybuty `font-family`,
    nieużywane definicje (`<defs>`) i **wszystkie arkusze `<style>`** — w dowolnym
    miejscu rysunku, także schowane w grupie albo w deseniu (rozdział 7).
@@ -101,7 +115,8 @@ interaktywna mapa w przeglądarce: przesuwanie, przybliżanie, klikalne miejsca,
    `okolice-piasek`) i poprawia odwołania `url(#…)` oraz `href="#…"`.
 9. Przycina rysunek do obszaru (zaokrąglone rogi), ustawia `viewBox` = obszar i
    zapisuje `mapa_{id}.svg`.
-10. Porównuje miejsca z rysunku z manifestem i wypisuje raport (rozdział 12).
+10. Porównuje miejsca z rysunku z manifestem i wypisuje raport (rozdział 12) — także
+    listę miejsc do odkrycia (zasłoniętych na start).
 
 **Aplikacja** (`aplikacja/js/mapa.js`) przy wczytaniu mapy:
 
@@ -114,8 +129,13 @@ interaktywna mapa w przeglądarce: przesuwanie, przybliżanie, klikalne miejsca,
   wokół głównego podpisu, podświetlenie napisów po najechaniu i **czerwoną kropkę**
   „są notatki”;
 * tło rysunku nie reaguje na kliknięcia — klikalne są tylko miejsca dostępne dla
-  bieżącego użytkownika. Miejsca niedostępne wyglądają **dokładnie jak tło**, ale
+  bieżącego użytkownika. Miejsca nieklikalne wyglądają **dokładnie jak tło**, ale
   **są widoczne** (rysunek i podpis zostają na mapie);
+* miejsca **zasłonięte** przez admina (miejsca do odkrycia, rozdział 5.7) gracz w
+  ogóle nie widzi — znika cała grupa `data-element` razem z jej grupami
+  `data-nalezy-do`, zanim mapa pojawi się na ekranie. Admin widzi je przygaszone; gdy
+  zaznaczy przy nim „widoczne”, gracze zobaczą je od razu (z krótkim napisem
+  „Nowe odkrycie…” i mruganiem miejsca);
 * pokazuje mapę w kolorze wybranym przez admina osobno dla każdej mapy (domyślnie
   `mapy[].kolor` z manifestu, a bez tego pola — kolory oryginału): **kolory
   oryginału** (mapa w kolorach rysunku, interfejs aplikacji zielony) albo
@@ -201,7 +221,8 @@ w manifeście, zapisany jako `"x y szerokość wysokość"` w jednostkach `viewB
 * Atrybut `data-element` stawiamy **tylko na `<g>`** (aplikacja dokleja do grupy
   strefy kliknięcia i narożniki — na `<path>` czy `<text>` to nie zadziała).
 * Grupa jest **bezpośrednim dzieckiem `<svg>`** albo dzieckiem grupy panelu.
-* **Bez zagnieżdżania**: grupa `data-element` nie może zawierać innej grupy `data-element`.
+* **Bez zagnieżdżania**: grupa `data-element` nie może zawierać innej grupy
+  `data-element` ani grupy `data-nalezy-do`.
 * **Nie** wkładaj jej do `tylko-mg` — zniknie razem z nią (patrz 6.2).
 * W grupie umieść **wszystko, co tworzy miejsce**: kształt (budynek, znacznik,
   obrys dzielnicy, linia drogi) **i** jego podpis.
@@ -256,11 +277,125 @@ w manifeście, zapisany jako `"x y szerokość wysokość"` w jednostkach `viewB
 * Na rysunku może być więcej grup `data-element`, niż jest w manifeście. Miejsca spoza
   manifestu są zwykłym tłem (widać je, ale nie da się ich kliknąć). **To użytkownik
   decyduje**, które miejsca trafią do manifestu.
-* Miejsce nieudostępnione graczom (`dostepnyDomyslnie: false`) **dalej widać** na
-  mapie — tylko nie da się go kliknąć. Jeśli już samo istnienie miejsca jest
-  tajemnicą, ono całe należy do `tylko-mg`, a nie do `data-element`. (Pomysł na
-  miejsca „do odkrycia”, które admin odsłania w aplikacji, i zasady ich rysowania:
-  [`Analizy/Spoilery.md`](Analizy/Spoilery.md) — **niewdrożone**.)
+* Miejsce **nieklikalne** (`dostepnyDomyslnie: false`) **dalej widać** na mapie —
+  tylko nie da się go kliknąć.
+* Jeśli samo istnienie miejsca jest tajemnicą, są dwie drogi:
+  * gracze mają je **odkryć w trakcie gry** (admin odsłoni je jednym kliknięciem) —
+    **miejsce do odkrycia** (rozdział 5.7);
+  * ma zostać tajemnicą **na stałe** albo jest tak ważne, że nie może trafić do pliku
+    mapy, który pobiera przeglądarka gracza — całe należy do `tylko-mg` (rozdział 6).
+
+### 5.7 Miejsca do odkrycia (na start zasłonięte)
+
+Miejsce, którego gracze na początku **w ogóle nie widzą**, a admin odsłania je, gdy
+gracze je znajdą (np. jaskinię smoka, ukryte przejście, pole minowe).
+
+**Jak działa:** w manifeście miejsce ma `"widocznyDomyslnie": false`. Aplikacja
+zasłania je przed graczami (cała grupa `data-element` i jej grupy `data-nalezy-do`
+znikają z mapy, z indeksu i z wyszukiwarki, zanim mapa pojawi się na ekranie). Admin
+widzi je przygaszone i ma przy każdym miejscu dwa pola: **👁 widoczne** i
+**◈ klikalne** (◈ jest nieaktywne, dopóki 👁 jest odznaczone). Po zaznaczeniu 👁
+(z potwierdzeniem) gracze widzą miejsce od razu, z krótkim napisem „Nowe odkrycie na
+mapie…”. Zmiana `widocznyDomyslnie` w manifeście **nie wymaga** ponownego uruchamiania
+skryptu map — plik mapy od niej nie zależy.
+
+**Zasady rysowania:**
+
+1. **Rysuj miejsce tak, jak gracze mają je zobaczyć po odkryciu** — zwykła grupa
+   `data-element` z `<title>` i podpisem `<text>`, **poza** `tylko-mg`. To nie jest
+   materiał MG: trafia do pliku mapy dla graczy. Dopiski dla MG o tym miejscu — osobno,
+   w `tylko-mg`.
+2. **Pod miejscem pełne tło** — tak, jakby miejsca nie było (zbocze góry pod jaskinią,
+   cała ściana pod drzwiami ukrytego przejścia, zryta pociskami ziemia pod polem
+   minowym). Po zasłonięciu widać właśnie to tło, a nie „dziurę” albo podejrzanie
+   pusty prostokąt. Miejsce rysuj **po** tle (wyżej w kolejności rysowania).
+3. **Wszystko, co zdradza miejsce, w jego grupie**: znak, podpis, ścieżka prowadząca
+   do niego, otwór w ścianie. To, co zostanie poza grupą, gracze zobaczą od początku.
+   Gdy część musi leżeć w innej warstwie rysunku (np. ścieżka pod górami) — grupa
+   `data-nalezy-do` (rozdział 5.8).
+4. **Bez czerwonych linii przerywanych** — kontrola bezpieczeństwa (rozdział 6.3)
+   obejmuje też miejsca do odkrycia. Ukryte przejście w wersji dla graczy — np. linia
+   przerywana brązowa albo czarna.
+5. **Identyfikator, nazwa i opis są jawne już przed odkryciem** — leżą w publicznych
+   plikach (mapa, manifest), jak nazwy miejsc nieklikalnych. Dobieraj je tak, żeby
+   przypadkowe zobaczenie nie popsuło gry; identyfikator najlepiej obojętny
+   (`jaskinia-wschodnia`, `stanowisko-w-ruinach` zamiast `kryjowka-smoka`).
+6. **Napis miejsca nie może nachodzić na inne napisy** — po odkryciu pojawi się na
+   gotowej mapie; sprawdź to w podglądzie z odkrytymi i z zasłoniętymi miejscami.
+7. **Legenda** nie powinna zdradzać zasłoniętych miejsc — nie dodawaj do niej
+   oznaczenia, które występuje wyłącznie przy miejscach do odkrycia.
+
+**Poziom tajemnicy:** zasłonięcie działa w wyglądzie aplikacji. Gracz, który korzysta
+z aplikacji normalnie, nie zobaczy miejsca; gracz, który celowo zajrzy do plików
+strony (np. narzędziami przeglądarki), mógłby je znaleźć — tak samo jak dziś może
+przeczytać nazwy miejsc w manifeście. Najważniejsze tajemnice fabuły — w `tylko-mg`.
+Szczegóły i decyzje: [`Analizy/Spoilery.md`](../Analizy/Spoilery.md).
+
+**Sprawdzenie:** `python3 narzedzia/przygotuj_mape.py kampanie/… --sprawdz` wypisze
+„Do odkrycia (na start zasłonięte przed graczami): …” dla każdego takiego miejsca, a
+`node narzedzia/podglad_mapy.cjs kampanie/…/mapa_….svg --na-start` pokaże mapę tak,
+jak gracze widzą ją na początku (bez miejsc do odkrycia) — porównaj ją z podglądem bez
+tej opcji.
+
+```xml
+<!-- Jaskinia na zboczu góry: góra narysowana wcześniej (w tle) jest cała. -->
+<g data-element="jaskinia-wschodnia">
+  <title>Smocza Jama</title>
+  <path d="M1364 372 q0 -16 14 -16 q14 0 14 16 Z" fill="#2a2420" stroke="#2b1d10" stroke-width="1.4"/>
+  <text class="h" x="1378" y="398" font-size="13" text-anchor="middle" fill="#2b1d10">Smocza Jama</text>
+</g>
+```
+
+```json
+{ "id": "jaskinia-wschodnia", "nazwa": "Smocza Jama", "aliasy": [], "kategoria": "teren",
+  "opis": "Jaskinia we wschodniej części gór.", "mapa": "kraina",
+  "widocznyDomyslnie": false, "dostepnyDomyslnie": false }
+```
+
+**Przykłady w kampanii Wzór** (rysunki w `Template/Przyklady/`, szukaj sekcji
+„MIEJSCA DO ODKRYCIA” w generatorach `kampanie/Template/generator/`):
+
+| Mapa | Miejsce | Co pokazuje |
+|---|---|---|
+| Kraina | Smocza Jama | punkt na zboczu gór + ścieżka do niej **pod** górami (`data-nalezy-do`) |
+| Kraina | Chata Zielarki | budynek z kładką i dymem na mokradłach (tło: sitowie) |
+| Kraina | Stara sztolnia | wejście do kopalni na łące, napis pod spodem |
+| Pałac | Ukryte przejście | otwór w ścianie narysowany **na** całej ścianie (zasłonięty — zwykła ściana) |
+| Pałac | Skrytka za kominkiem | klapa w podłodze (podpis krótszy niż nazwa w manifeście) |
+| Pole bitwy | Pole minowe | duży obszar — pod spodem dorysowane leje, żeby po zasłonięciu nie został czysty prostokąt |
+| Pole bitwy | Tunel | linia przerywana w kolorze ziemi (nie czerwona) z dwoma włazami |
+| Pole bitwy | Gniazdo snajpera | stanowisko w ruinach, napis w ciemnej czerwieni (ciągły kolor — dozwolony) |
+
+### 5.8 Grafika miejsca poza jego grupą: `data-nalezy-do`
+
+Czasem część miejsca musi leżeć **w innej warstwie** rysunku niż reszta — np. ścieżka
+do jaskini wije się **pod** górami (góry rysowane później ją przykrywają), a sama
+jaskinia z napisem leży **nad** górami. Wtedy tę część rysuje się w osobnej grupie:
+
+```xml
+<!-- przed górami: ścieżka (należy do miejsca „jaskinia-wschodnia”) -->
+<g data-nalezy-do="jaskinia-wschodnia">
+  <path d="M1290 472 C 1300 440, 1320 400, 1364 372" fill="none" stroke="#7a5232"
+        stroke-width="1.6" stroke-dasharray="1.5 4.5" stroke-linecap="round"/>
+</g>
+<!-- … góry … -->
+<!-- po górach: samo miejsce -->
+<g data-element="jaskinia-wschodnia"> … </g>
+```
+
+Zasady:
+
+* `data-nalezy-do` stawiamy **tylko na `<g>`**; wartość = identyfikator miejsca
+  (`data-element`) **z tej samej mapy**.
+* Grupa **nie może leżeć w grupie `data-element`** (grafika w grupie miejsca i tak
+  znika razem z nim) i **nie może zawierać** miejsc `data-element`.
+* Aplikacja zasłania i odkrywa ją razem z miejscem, a u admina przygasza; **nie jest
+  klikalna** (bez stref kliknięcia i narożników).
+* Jednemu miejscu może odpowiadać kilka takich grup. Działa przy każdym miejscu, ale
+  ma sens głównie przy miejscach do odkrycia.
+* Skrypt przerywa pracę, gdy grupa wskazuje miejsce, którego nie ma na tej mapie, leży
+  w grupie miejsca, zawiera miejsce albo stoi na innym elemencie niż `<g>`
+  (rozdział 12); w raporcie przy miejscu do odkrycia podaje liczbę jego grup.
 
 ---
 
@@ -285,7 +420,9 @@ w manifeście, zapisany jako `"x y szerokość wysokość"` w jednostkach `viewB
 ### 6.2 Co musi trafić do `tylko-mg`
 
 * notatki, dopiski i podpisy dla MG (np. z dopiskiem „(dla MG)”);
-* ukryte przejścia, tajne miejsca, prawdziwe nazwy, „to, o czym postacie nie wiedzą”;
+* ukryte przejścia, tajne miejsca, prawdziwe nazwy, „to, o czym postacie nie wiedzą” —
+  chyba że admin ma je **odkryć graczom w trakcie gry**: wtedy wersję „po odkryciu”
+  rysuje się jako miejsce do odkrycia (rozdział 5.7), a dopiski MG o nim — dalej tutaj;
 * **czerwone linie przerywane** (w konwencji rysunków MG oznaczają wiedzę ukrytą);
 * legenda MG, objaśnienia oznaczeń MG;
 * całe miejsca, których istnienia gracze nie znają (kształt **i** podpis);
@@ -296,7 +433,8 @@ w manifeście, zapisany jako `"x y szerokość wysokość"` w jednostkach `viewB
 
 Jeśli **poza** grupami `tylko-mg` (w obszarze którejś mapy) skrypt znajdzie poniższe
 ślady, **przerywa pracę i nie zapisuje żadnego pliku**. Podaje tylko numer i rodzaj
-elementu, nigdy jego treść.
+elementu, nigdy jego treść. Kontrola obejmuje także miejsca do odkrycia (rozdział
+5.7) — są w pliku mapy dla graczy, tylko zasłonięte.
 
 | Ślad | Gdzie szuka |
 |---|---|
@@ -336,9 +474,12 @@ czytelny na liniach i deseniach. W rysunku zdefiniuj ją w `<defs>`:
   Regułę `.h` trzymaj dla porządku w `<defs>`. Nie definiuj w arkuszu kolorów innych
   elementów (rozdział 8) — i tak przepadną.
 
-**Nazwy klas zarezerwowane** — nie nadawaj ich elementom rysunku: `el`, `el-…`,
-`ds-…`, `wybrany`, `mapa-slate`, `motyw-…`, `plansza` (używa ich aplikacja) oraz
-`mg`, `mg-…`, `…-mg` (kontrola bezpieczeństwa). `tylko-mg` — wyłącznie dla treści MG.
+**Nazwy klas zarezerwowane** — nie nadawaj ich elementom rysunku: `el`, `el-…`
+(m.in. `el-dostepny`, `el-niewidoczny`, `el-zasloniety`, `el-odkryte`), `ds-…`,
+`wybrany`, `mapa-slate`, `motyw-…`, `plansza` (używa ich aplikacja) oraz `mg`, `mg-…`,
+`…-mg` (kontrola bezpieczeństwa). `tylko-mg` — wyłącznie dla treści MG.
+**Atrybuty zarezerwowane:** `data-element` (rozdział 5), `data-nalezy-do` (5.8),
+`data-mapa`, `data-wersja` (nadaje skrypt) — tylko w tych znaczeniach.
 
 ---
 
@@ -490,16 +631,22 @@ Z rysunkiem wiążą się:
 | `mapy[].start` | `{ "x": …, "y": … }` — punkt **wewnątrz obszaru**, na który mapa otwiera się na telefonie |
 | `elementy[].id` | dokładnie taki sam jak `data-element` na rysunku |
 | `elementy[].mapa` | `id` mapy, na której obszarze leży miejsce |
+| `elementy[].widocznyDomyslnie` | `false` = **miejsce do odkrycia** — na start zasłonięte przed graczami (rozdział 5.7); brak pola albo `true` = widoczne |
+| `elementy[].dostepnyDomyslnie` | `true` = na start **klikalne** dla graczy (karta i notatki); przy miejscu do odkrycia — klikalne od razu po odkryciu (zwykle `false`: klikalność admin zaznacza osobno) |
 | `elementy[].mapaSzczegolowa` | (opcjonalnie) `id` innej mapy z planem tego miejsca — np. miasto na mapie okolic otwiera mapę miasta |
 
 Zasady:
 
 * **Nie dopisuj miejsc do `elementy` z własnej inicjatywy.** Skrypt wypisze nowe
-  miejsca z rysunku jako gotowe wpisy JSON — o tym, które trafią do manifestu (i co
-  będzie klikalne), decyduje użytkownik.
+  miejsca z rysunku jako gotowe wpisy JSON — o tym, które trafią do manifestu (co
+  będzie klikalne i co ma być do odkrycia), decyduje użytkownik. Rysując miejsca do
+  odkrycia, **wypisz je w odpowiedzi** (identyfikator i proponowane
+  `"widocznyDomyslnie": false`), żeby użytkownik mógł o nich zdecydować.
 * Manifest jest **publiczny**: nazwy (`nazwa`, `aliasy`) i opisy (`opis`) muszą
-  być jawne.
-* Po nowej wersji map zmień `wersjaMapy` (data, np. `"2026-11-15"`).
+  być jawne — także przy miejscach do odkrycia.
+* Wartości domyślne (`widocznyDomyslnie`, `dostepnyDomyslnie`) obowiązują, dopóki
+  admin nie zmieni ich w aplikacji; plik mapy od nich nie zależy.
+* Po nowej wersji map zmień `wersjaMapy` (data, np. `"2026-11-16"`).
 
 ---
 
@@ -523,9 +670,13 @@ wszystkich map naraz) można wskazać opcją `--zrodlo ścieżka/do/pliku.svg`.
 | `UWAGA: … trafił na kilka map naraz` | element dotyka kilku obszarów | przesuń go albo popraw obszary (rozdział 4) |
 | `UWAGA: … jest w manifeście na mapie „…”, a na rysunku na „…”` | miejsce leży w innym panelu niż wpis w manifeście | popraw rysunek albo pole `mapa` |
 | `BŁĄD: … podejrzane elementy` | ślady MG poza `tylko-mg` | owiń wskazane elementy w `<g class="tylko-mg">` (rozdział 6.3) |
-| `BŁĄD: Nieprawidłowy identyfikator` | zły `data-element` | popraw zgodnie z 5.2 |
+| `BŁĄD: Nieprawidłowy identyfikator` | zły `data-element` albo `data-nalezy-do` | popraw zgodnie z 5.2 |
 | `BŁĄD: Identyfikator „…” występuje na rysunku więcej niż raz` | duplikat | nadaj unikalne identyfikatory |
 | `BŁĄD: Nie da się odczytać pliku` | plik nie jest poprawnym XML | rozdział 3 (najczęściej `&nbsp;` albo niezamknięty znacznik) |
+| `Do odkrycia (na start zasłonięte przed graczami): „…”` | informacja: miejsce ma w manifeście `"widocznyDomyslnie": false` (dopiski: liczba grup `data-nalezy-do`, „po odkryciu od razu klikalne”) | sprawdź, czy lista się zgadza (rozdział 5.7) |
+| `BŁĄD: … data-nalezy-do="…" wskazuje miejsce, którego nie ma na tej mapie` | literówka albo grupa w innym panelu niż miejsce | popraw identyfikator albo przenieś grupę (5.8) |
+| `BŁĄD: … data-nalezy-do … leży wewnątrz miejsca` / `… zawiera miejsce` / `… tylko na <g>` | zła budowa grupy | rozdział 5.8 |
+| `UWAGA: „…”: pole widocznyDomyslnie (dostepnyDomyslnie) w manifeście musi mieć wartość true albo false` | np. `"nie"` zamiast `false` | popraw manifest |
 
 Gdy raport jest czysty, zapis map (bez `--sprawdz`):
 
@@ -539,12 +690,15 @@ Potem **obejrzyj wynik** we wszystkich trybach kolorów — narzędzie robi obra
 ```bash
 node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_okolice.svg
 node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_okolice.svg --szerokosc=3000 --wycinek=900,600,1000,600
+node narzedzia/podglad_mapy.cjs kampanie/NazwaKampanii/mapa_okolice.svg --na-start
 ```
 
 Sprawdź, czy wszystko jest czytelne, czy napisy mieszczą się w kadrze i nie nachodzą
 na siebie (czcionka mapy jest szersza niż w rysunku) i czy nic nie zdradza tajemnic.
+Opcja `--na-start` pokazuje mapę bez miejsc do odkrycia (tak, jak gracze widzą ją na
+początku): w miejscu zasłoniętym nie może być „dziury” ani niczego, co je zdradza.
 Bez tego narzędzia: otwórz `mapa_*.svg` w przeglądarce (motyw zielony).
-Na koniec testy z `AGENTS.md` (rozdział 6) — test
+Na koniec testy z `AGENTS.md` (rozdział 10, „Testy”) — test
 `testy/test_przygotuj_mape.py` sprawdza m.in., czy w mapach dla graczy nie ma śladów MG,
 czy każde miejsce z manifestu jest na swojej mapie i czy pliki `mapa_*.svg` są
 **aktualne** (takie, jakie zrobiłby teraz skrypt z rysunku i manifestu).
@@ -568,6 +722,9 @@ czy każde miejsce z manifestu jest na swojej mapie i czy pliki `mapa_*.svg` są
 | narożniki obejmują dopisek zamiast nazwy | dopisek ma większy `font-size` niż nazwa | nazwa = największa czcionka w grupie |
 | napisy nachodzą na siebie na mapie | czcionka o stałej szerokości jest szersza | więcej miejsca wokół podpisów |
 | skrypt przerywa: „czerwona linia przerywana” | przerywana linia w czerwonym odcieniu poza `tylko-mg` | jeśli to MG — do `tylko-mg`; jeśli dla graczy — zmień kolor na nieczerwony |
+| po zasłonięciu miejsca na mapie gracza jest dziura albo podejrzanie pusty obszar | pod miejscem do odkrycia nie ma pełnego tła | dorysuj tło pod miejscem (rozdział 5.7, zasada 2); sprawdź `--na-start` |
+| po zasłonięciu dalej widać część miejsca (ścieżkę, napis, otwór w ścianie) | ta część leży poza grupą `data-element` | przenieś ją do grupy albo do grupy `data-nalezy-do` (5.8) |
+| miejsce do odkrycia widać u graczy od początku | brak `"widocznyDomyslnie": false` w manifeście albo admin już je odkrył | popraw manifest; stan w aplikacji — pole 👁 w zakładce ADMIN |
 
 ---
 
@@ -579,6 +736,9 @@ czy każde miejsce z manifestu jest na swojej mapie i czy pliki `mapa_*.svg` są
   `nazwa` (starą nazwę dopisuje się do `aliasy`). Identyfikator zostaje.
 * Usunięcie miejsca z rysunku nie kasuje notatek — trafią do listy „Notatki bez
   miejsca na mapie”. Raport pokaże to jako `BRAK NA RYSUNKU`.
+* Stan miejsc w aplikacji (odkryte, klikalne) jest zapisany w bazie przy
+  **identyfikatorze** — nowa wersja rysunku go nie zmienia (miejsce odkryte zostaje
+  odkryte).
 * Nie przesuwaj paneli bez potrzeby — zmiana położenia panelu wymaga zmiany
   `obszar` i `start` w manifeście.
 * Procedura krok po kroku: `kampanie/README.md`, rozdział „Nowa wersja rysunku”.
@@ -612,6 +772,13 @@ Tajemnice:
 - [ ] poza `tylko-mg` brak słów „dla MG”, „(MG)”, „MG:”, „spoiler”; brak klas `mg`/`mg-…`/`…-mg`
 - [ ] identyfikatory, `<title>` i podpisy poza `tylko-mg` niczego nie zdradzają
 
+Miejsca do odkrycia (jeśli są):
+
+- [ ] narysowane jak zwykłe miejsca (wersja „po odkryciu”), poza `tylko-mg`; identyfikatory obojętne
+- [ ] pod każdym pełne tło; wszystko, co je zdradza, w jego grupie albo w `data-nalezy-do`
+- [ ] podgląd `--na-start` bez dziur i bez śladów zasłoniętych miejsc; legenda ich nie zdradza
+- [ ] lista miejsc do odkrycia przekazana użytkownikowi (do manifestu: `"widocznyDomyslnie": false`)
+
 Kolory i napisy:
 
 - [ ] mapa dobrze wygląda w swoich kolorach (tryb „kolory oryginału”), każdy panel ma pełne tło
@@ -628,21 +795,22 @@ Na koniec:
 - [ ] lista „NOWE ELEMENTY” przekazana użytkownikowi do decyzji (manifestu nie uzupełniać samemu)
 - [ ] mapy zapisane skryptem i obejrzane w `narzedzia/podglad_mapy.cjs` we wszystkich trybach
   (napisy w kadrze, bez nachodzenia; nic nie zdradza tajemnic)
-- [ ] testy z `AGENTS.md` (rozdział 6) przechodzą
+- [ ] testy z `AGENTS.md` (rozdział 10, „Testy”) przechodzą
 
 ---
 
 ## 16. Pełny przykład
 
 Wymyślony rysunek (nie pochodzi z żadnej kampanii) z dwoma panelami: **A — Okolice**
-i **B — Miasto**. Sprawdzony skryptem: 2 grupy `tylko-mg` usunięte, 3 miejsca na
-mapie „okolice”, 2 na mapie „miasto”, bez błędów.
+i **B — Miasto**. W panelu A jest miejsce do odkrycia (**Stara Kopalnia**) z grupą
+`data-nalezy-do` (ścieżka do kopalni). Sprawdzony skryptem: 2 grupy `tylko-mg`
+usunięte, 4 miejsca na mapie „okolice”, 2 na mapie „miasto”, bez błędów.
 
 Większe, kompletne przykłady (osobny plik na każdą mapę, dziesiątki miejsc, desenie,
-napisy z obwódką, przykładowa grupa `tylko-mg`): rysunki kampanii **Wzór** —
-`kampanie/Template/Rysunek_kraina.svg` (mapa fantasy), `Rysunek_palac.svg` (plan
-budynku, szkic) i `Rysunek_pole_bitwy.svg` (mapa taktyczna), razem z manifestem
-`kampanie/Template/kampania.json`.
+napisy z obwódką, przykładowa grupa `tylko-mg`, miejsca do odkrycia i grupa
+`data-nalezy-do`): rysunki kampanii **Wzór** — `Template/Przyklady/Rysunek_kraina.svg`
+(mapa fantasy), `Rysunek_palac.svg` (plan budynku, szkic) i `Rysunek_pole_bitwy.svg`
+(mapa taktyczna); manifest do nich: `kampanie/Template/kampania.json`.
 
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1700" width="1200" height="1700"
@@ -684,6 +852,19 @@ budynku, szkic) i `Rysunek_pole_bitwy.svg` (mapa taktyczna), razem z manifestem
     <text class="h" x="876" y="205" font-size="14" fill="#2b2116">Osada Brzeg</text>
   </g>
 
+  <!-- Miejsce do odkrycia: w manifeście "widocznyDomyslnie": false. Pod nim jest tylko
+       tło panelu (piasek), więc po zasłonięciu nie zostaje dziura. Ścieżka do kopalni
+       leży poza grupą miejsca, ale znika i pojawia się razem z nim (data-nalezy-do). -->
+  <g data-nalezy-do="kopalnia-polnocna">
+    <path d="M900 360 C 950 400, 1000 520, 1040 600" fill="none" stroke="#6e3f22" stroke-width="2"
+          stroke-dasharray="2 5" stroke-linecap="round"/>
+  </g>
+  <g data-element="kopalnia-polnocna">
+    <title>Stara Kopalnia</title>
+    <path d="M1026 620 q0 -22 18 -22 q18 0 18 22 Z" fill="#2a2420" stroke="#2b1d10" stroke-width="1.5"/>
+    <text class="h" x="1044" y="645" font-size="14" text-anchor="middle" fill="#2b2116">Stara Kopalnia</text>
+  </g>
+
   <g class="tylko-mg">
     <text x="300" y="700" font-size="12" fill="#9b2f1c">notatka MG</text>
     <polyline points="860,200 440,300" fill="none" stroke="#9b2f1c" stroke-width="2" stroke-dasharray="5 3"/>
@@ -717,9 +898,16 @@ budynku, szkic) i `Rysunek_pole_bitwy.svg` (mapa taktyczna), razem z manifestem
 ```
 
 Pasujący fragment manifestu (`elementy` uzupełnia się po raporcie skryptu i decyzji
-użytkownika):
+użytkownika — tu dwa wpisy z sześciu):
 
 ```json
+"elementy": [
+  { "id": "przelecz-wiatru", "nazwa": "Przełęcz Wiatru", "aliasy": [], "kategoria": "szlak",
+    "opis": "Przełęcz w górach na północy.", "mapa": "okolice", "dostepnyDomyslnie": true },
+  { "id": "kopalnia-polnocna", "nazwa": "Stara Kopalnia", "aliasy": [], "kategoria": "budowla",
+    "opis": "Zapomniane wejście do kopalni.", "mapa": "okolice",
+    "widocznyDomyslnie": false, "dostepnyDomyslnie": false }
+],
 "mapy": [
   {
     "id": "okolice", "nazwa": "Okolice", "plik": "mapa_okolice.svg",
@@ -744,6 +932,9 @@ Co dzieje się z przykładem:
 * obie grupy `tylko-mg` (z czerwoną przerywaną linią i dopiskami) znikają;
 * `Stary Trakt` to przerywana linia w kolorze brązowym (`#6e3f22`) — przechodzi
   kontrolę bezpieczeństwa; czerwona przerywana poza `tylko-mg` zatrzymałaby skrypt;
+* `Stara Kopalnia` trafia do mapy „okolice” razem ze ścieżką (`data-nalezy-do`), a
+  skrypt wypisuje ją jako „Do odkrycia… — grup data-nalezy-do: 1”; gracze nie widzą
+  ani kopalni, ani ścieżki, dopóki admin jej nie odkryje;
 * deseń `piasek` dostaje w pliku mapy nazwę `okolice-piasek`; czcionka Georgia
   i wszystkie `<title>` znikają;
 * w motywach fosforu jasne tło `#efe3c4` staje się ciemnym ekranem, a ciemne linie i
@@ -767,8 +958,10 @@ i sprawdzone rozwiązania. Liczby (rozmiary, liczba elementów) pochodzą z tych
   daje za każdym razem ten sam plik, więc poprawka = zmiana w skrypcie i ponowne
   uruchomienie, a historia zmian w repozytorium zostaje czytelna. Wzory:
   `kampanie/Template/generator/` (tylko biblioteka standardowa; `wspolne.py` ma
-  gładkie krzywe, losowanie punktów w obszarze i linie „odręczne”). Rysunek z
-  Inkscape też jest w porządku — specyfikacja dotyczy pliku, nie narzędzia.
+  gładkie krzywe, losowanie punktów w obszarze i linie „odręczne”). Generatory zapisują
+  rysunek w folderze kampanii i kopię w `Template/Przyklady/` (kopie muszą być
+  identyczne — pilnuje tego test). Rysunek z Inkscape też jest w porządku —
+  specyfikacja dotyczy pliku, nie narzędzia.
 * **Cykl pracy:** generator → `przygotuj_mape.py --sprawdz` → `przygotuj_mape.py` →
   `node narzedzia/podglad_mapy.cjs …` → poprawki. Oglądaj **mapę dla graczy**
   (`mapa_*.svg`), nie tylko rysunek — dopiero w niej widać czcionkę aplikacji i motywy
@@ -845,7 +1038,7 @@ i sprawdzone rozwiązania. Liczby (rozmiary, liczba elementów) pochodzą z tych
 * **Wiele drobnych kresek w jednym kolorze** (kępki trawy, pagórki, szwy worków z
   piaskiem, deski w okopach, gruz, pnie drzew) → **jedna** ścieżka `<path>` z wieloma
   odcinkami `M…`. Mapy „Wzoru”: Kraina ok. 1800 elementów (ok. 520 drzew po 2
-  elementy), Pole bitwy ok. 760, Pałac ok. 530 — wszystkie płynnie przesuwają się w
+  elementy), Pole bitwy ok. 800, Pałac ok. 550 — wszystkie płynnie przesuwają się w
   teście na telefonach i tablecie.
 * **Drzewa:** pnie wszystkich drzew w jednej ścieżce narysowanej **przed** koronami,
   a korony posortowane od góry mapy do dołu — bliższe drzewa przykrywają dalsze.
@@ -875,3 +1068,30 @@ i sprawdzone rozwiązania. Liczby (rozmiary, liczba elementów) pochodzą z tych
   „Przykład: notatka dla MG…”, czerwona przerywana obwódka). Raport skryptu pokazuje
   dla każdego rysunku „usunięto 1 grup(y)”, a test map graczy potwierdza, że nic z niej
   nie zostało — dobry sposób, żeby sprawdzić kontrolę bezpieczeństwa na własnym rysunku.
+
+### 17.8 Miejsca do odkrycia (z rysowania przykładów)
+
+Na każdej mapie „Wzoru” są 2–3 miejsca do odkrycia (tabela w rozdziale 5.7). Przy ich
+rysowaniu wyszło:
+
+* **Najprościej, gdy miejsce leży na tle, nie w tle.** Jaskinia nad zboczem gór, chata
+  na sitowiu, sztolnia na łące, skrytka na podłodze — wystarczyło narysować je **po**
+  tle. Smocza Jama była tak narysowana od początku, więc stała się miejscem do odkrycia
+  bez zmiany rysunku (tylko `widocznyDomyslnie: false` w manifeście).
+* **Otwór w ścianie** (ukryte przejście): ściana zostaje cała, a miejsce do odkrycia
+  rysuje na niej prostokąt w kolorze podłogi (otwór), ościeża i drzwi. Zasłonięte —
+  widać zwykłą ścianę. Grupę miejsca zapisz **po** ścianach.
+* **Duży obszar** (pole minowe): pod nim było puste pole (bez lejów, żeby nie zasłaniały
+  min) — po zasłonięciu zostałby podejrzanie czysty prostokąt w zrytej ziemi. Pomogło
+  kilka lejów narysowanych **pod** polem minowym; prześwitują przez jego
+  półprzezroczyste wypełnienie i wyglądają naturalnie w obu stanach.
+* **Generator z ziarnem losowania:** nowe elementy dorysowuj **bez** zmiany kolejności
+  losowania — osobnym obiektem `random.Random(…)` albo bez losowania. Inaczej
+  przesunie się cała reszta mapy (drzewa, leje) i napisy zaczną na siebie nachodzić.
+* **Ścieżka pod górami** (`data-nalezy-do`): grupa zapisana przed górami — szczyty
+  przykrywają jej fragmenty i ścieżka „wije się” między nimi. Prowadź ją tak, żeby nie
+  przechodziła pod napisem miejsca.
+* **Legenda:** oznaczenie „jaskinia” zostało, bo jaskinię ma też jawna osada
+  (Kamieniec). Gdyby występowało tylko przy miejscu do odkrycia, zdradzałoby je.
+* Sprawdzaj oba stany: podgląd z odkrytymi miejscami (napisy nie nachodzą na inne) i
+  `--na-start` (bez dziur, bez śladów).

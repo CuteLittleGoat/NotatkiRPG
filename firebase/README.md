@@ -5,7 +5,14 @@ W tym folderze:
 | Plik | Co to jest |
 |---|---|
 | `firebase-config.js` | Adres projektu Firebase (`notatkirpg-b601c`) i klucz witryny reCAPTCHA dla App Check. **Oba klucze są publiczne** — z założenia trafiają do przeglądarki każdego gościa strony. |
-| `firestore.rules` | Reguły bazy danych (wersja 4 — z widocznością kampanii i zakładek; bez usuniętych zakładek Postęp i Powiązania). **Trzeba je ręcznie wkleić w konsoli Firebase** — instrukcja niżej. Aplikacja sama ich nie publikuje. |
+| `firestore.rules` | Reguły bazy danych (wersja 5 — z widocznością kampanii i zakładek oraz zasłanianiem i odkrywaniem miejsc na mapach; bez usuniętych zakładek Postęp i Powiązania). **Trzeba je ręcznie wkleić w konsoli Firebase** — instrukcja niżej. Aplikacja sama ich nie publikuje. |
+
+**Wersja 5 (2026-11-16)** dodaje jedno pole w ustawieniach admina:
+`elementyWidoczne` (przy każdym miejscu tak/nie — czy gracze widzą je na mapie).
+Bez nowych reguł zaznaczanie pola 👁 „widoczne” kończy się komunikatem „Baza danych
+odmówiła dostępu…” (nic się nie psuje; reszta aplikacji działa). Wklej je przed
+pierwszym odkrywaniem miejsc. Nie wracaj potem do wersji 4 — gdy pole raz trafi do
+bazy, stare reguły odrzucałyby każdą zmianę ustawień.
 
 ## Reguły bazy — co robią (wyjaśnienie bez żargonu)
 
@@ -17,8 +24,9 @@ tego, **co** wolno zrobić:
 * **Odczyt** — wszystko, czego potrzebuje aplikacja (lista kampanii, notatki,
   ustawienia map i zakładek, a także konta — bez tego nie działałoby logowanie).
 * **Zapis** — tylko w miejscach, których używa aplikacja (widoczność kampanii,
-  notatki, ustawienia map i zakładek), i tylko we właściwym kształcie: znane pola,
-  rozsądna długość tekstów (np. tytuł do 200 znaków, treść do 20 000).
+  notatki, ustawienia map, zakładek i miejsc — klikalne i widoczne), i tylko we
+  właściwym kształcie: znane pola, rozsądna długość tekstów (np. tytuł do 200 znaków,
+  treść do 20 000).
 * **Wszystko inne jest zablokowane** — nikt nie dopisze do bazy własnych kolekcji
   ani dziwnych pól.
 * **Konta (`admins`, `secrets`) są tylko do odczytu.** Nikt — także przez
@@ -47,7 +55,9 @@ polami. Nowe konto edytora = to samo plus dokument `admins/Player4` z `rola: "ed
 2. W menu po lewej wybierz **Firestore Database** → zakładka **Reguły** („Rules”).
 3. Usuń wszystko, co jest w okienku, i wklej **całą** zawartość pliku `firebase/firestore.rules`.
 4. Kliknij **Opublikuj** („Publish”). Zmiana działa po około minucie.
-5. Odśwież stronę aplikacji i sprawdź, czy da się dodać notatkę.
+5. Odśwież stronę aplikacji i sprawdź, czy da się dodać notatkę. Po wersji 5: jako
+   admin zaznacz 👁 przy dowolnym zasłoniętym miejscu (np. Smocza Jama w kampanii
+   Wzór), potwierdź „ODKRYJ”, a potem odznacz — nie powinno być komunikatu o błędzie.
 
 Gdyby po publikacji coś przestało działać, możesz na chwilę wkleić poprzednią
 wersję reguł (zakładka „Reguły” ma historię zmian) i dać znać, co się stało.

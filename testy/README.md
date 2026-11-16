@@ -4,8 +4,8 @@ Polecenia uruchamiaj z katalogu głównego repozytorium.
 
 | Test | Polecenie | Wymaga |
 |---|---|---|
-| jednostkowe — format kopii CSV, kodowanie typów, wyszukiwanie, profile kont, sesja (zapamiętane logowanie), widoczność kampanii, domyślne kolory map i interfejsu | `node testy/jednostkowe.mjs` | Node 22+ |
-| skrypt map i mapy graczy wszystkich kampanii z rejestru (bez śladów materiału MG, zgodne z manifestem, aktualne względem rysunków) | `python3 -m unittest discover -s testy -p "test_*.py" -v` | Python 3.9+ |
+| jednostkowe — format kopii CSV, kodowanie typów, wyszukiwanie, profile kont, sesja (zapamiętane logowanie), widoczność kampanii, domyślne kolory map i interfejsu, pola miejsc „widoczne” i „klikalne” | `node testy/jednostkowe.mjs` | Node 22+ |
+| skrypt map i mapy graczy wszystkich kampanii z rejestru (bez śladów materiału MG, zgodne z manifestem, aktualne względem rysunków), miejsca do odkrycia i `data-nalezy-do`, kopie przykładów w `Template/Przyklady/` | `python3 -m unittest discover -s testy -p "test_*.py" -v` | Python 3.9+ |
 | cała aplikacja w przeglądarce (komputer, telefony, tablet) | `node testy/e2e/uruchom.cjs` | pakiet `playwright` + Chromium |
 | reguły bazy (`firebase/firestore.rules`) w emulatorze Firestore | `cd testy/reguly && npm install && npm test` | Node 20+, Java 11+ (pakiety instaluje `npm install` w tym folderze) |
 
@@ -39,6 +39,13 @@ Pierwsze dwa uruchamia też GitHub Actions po każdej zmianie na `main` (zakład
   Notatki — miejsca wszystkich map (przycisk INDEKS w nagłówku Notatek); wybór miejsca
   z indeksu otwiera jego mapę. Na telefonach i tablecie — indeks na Notatkach bez
   przewijania w bok.
+* Miejsca do odkrycia (kampania Wzór, osobna karta Gracza): gracz nie widzi zasłoniętych
+  miejsc — skrypt w karcie (`MutationObserver`) zapisuje, czy któreś choć na chwilę
+  trafiło na stronę bez zasłony; admin widzi je przygaszone, ◈ nieaktywne; odkrycie z
+  potwierdzeniem (i ANULUJ) działa na żywo, z napisem i mruganiem u gracza; zasłonięcie
+  odznacza ◈; podgląd gracza; przyciski zbiorcze nie odkrywają; „PRZYWRÓĆ DOMYŚLNE”.
+  **Uwaga przy pisaniu testów:** przyciski indeksu też mają atrybut `data-element` —
+  miejsce na mapie wskazuj selektorem `.plansza svg [data-element="…"]`.
 * Serwer plików: `e2e/serwer.cjs` (można go uruchomić osobno: `node testy/e2e/serwer.cjs 8000`).
 * Zrzuty ekranu i pobrane w teście pliki kopii: `e2e/wyniki/` (nie trafiają do repozytorium).
 * `CZCIONKI=1 node testy/e2e/uruchom.cjs` — z prawdziwymi czcionkami z Google Fonts
@@ -51,7 +58,8 @@ Pierwsze dwa uruchamia też GitHub Actions po każdej zmianie na `main` (zakład
 * Uruchamia lokalny **emulator Firestore** w trybie „demo” — nie łączy się z prawdziwym
   projektem. Przy pierwszym uruchomieniu pobiera emulator (ok. 60 MB).
 * Odtwarza dokładnie zapisy aplikacji (logowanie, lista i widoczność kampanii,
-  notatki, ustawienia admina z widocznością zakładek, kopia i przywracanie) i sprawdza, że przechodzą, a zapisy
+  notatki, ustawienia admina z widocznością zakładek, odkrywanie i zasłanianie miejsc,
+  kopia i przywracanie) i sprawdza, że przechodzą, a zapisy
   niedozwolone (obce pola, za długie teksty, nieznane kolekcje — także usunięte
   `postep` i `powiazania` — zmiany kont) — nie.
 * Po każdej zmianie reguł albo pól zapisywanych przez aplikację: popraw test, uruchom go,
