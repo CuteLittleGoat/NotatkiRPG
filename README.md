@@ -49,6 +49,8 @@ opis: [`kampanie/Template/README.md`](kampanie/Template/README.md).
 * **Miejsca na mapie** — admin zaznacza przy miejscu pole „dostępne dla graczy”.
   Zaznaczone miejsce dostaje złote narożniki: można je kliknąć i robić przy nim
   notatki. Odznaczone wygląda jak zwykłe tło mapy (żeby nie zdradzać, że jest ważne).
+  Pomysł na zasłanianie i odkrywanie miejsc w trakcie gry (pole „widoczne” obok
+  „klikalne”) — analiza: [`Analizy/Spoilery.md`](Analizy/Spoilery.md) (niewdrożone).
 * **Czerwona kropka** w prawym górnym rogu złotej ramki — przy tym miejscu są
   notatki. Widać ją tylko przy miejscach odsłoniętych przez admina.
 * **Indeks** z wyszukiwarką — na zakładce mapy pokazuje miejsca tej mapy, na

@@ -258,7 +258,9 @@ w manifeście, zapisany jako `"x y szerokość wysokość"` w jednostkach `viewB
   decyduje**, które miejsca trafią do manifestu.
 * Miejsce nieudostępnione graczom (`dostepnyDomyslnie: false`) **dalej widać** na
   mapie — tylko nie da się go kliknąć. Jeśli już samo istnienie miejsca jest
-  tajemnicą, ono całe należy do `tylko-mg`, a nie do `data-element`.
+  tajemnicą, ono całe należy do `tylko-mg`, a nie do `data-element`. (Pomysł na
+  miejsca „do odkrycia”, które admin odsłania w aplikacji, i zasady ich rysowania:
+  [`Analizy/Spoilery.md`](Analizy/Spoilery.md) — **niewdrożone**.)
 
 ---
 
