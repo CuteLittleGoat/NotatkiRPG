@@ -3,7 +3,7 @@
   "nazwa": "Wzór",
   "naglowek": "WZÓR",
   "system": "dowolny — kampania przykładowa (szablon i prezentacja aplikacji)",
-  "wersjaMapy": "2026-11-15",
+  "wersjaMapy": "2026-11-16",
   "kolor": "zielony",
   "mapy": [
     {
@@ -198,6 +198,27 @@
       "kategoria": "teren",
       "opis": "Jaskinia we wschodniej części Gór Sinych.",
       "mapa": "kraina",
+      "widocznyDomyslnie": false,
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "chata-na-mokradlach",
+      "nazwa": "Chata Zielarki",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Samotna chata na skraju Mokradeł, z kładką przez sitowie. Z komina zawsze unosi się dym.",
+      "mapa": "kraina",
+      "widocznyDomyslnie": false,
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "stara-sztolnia",
+      "nazwa": "Stara sztolnia",
+      "aliasy": [],
+      "kategoria": "budowla",
+      "opis": "Opuszczone wejście do dawnej kopalni srebra nad Kamieńcem.",
+      "mapa": "kraina",
+      "widocznyDomyslnie": false,
       "dostepnyDomyslnie": false
     },
     {
@@ -306,6 +327,26 @@
       "kategoria": "przejscie",
       "opis": "Schody w dół w spiżarni, w północno-wschodnim narożniku pałacu.",
       "mapa": "palac",
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "przejscie-w-galerii",
+      "nazwa": "Ukryte przejście",
+      "aliasy": [],
+      "kategoria": "przejscie",
+      "opis": "Obrotowy regał w ścianie Gabinetu — prowadzi wprost do Galerii portretów.",
+      "mapa": "palac",
+      "widocznyDomyslnie": false,
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "skrytka-w-bibliotece",
+      "nazwa": "Skrytka za kominkiem",
+      "aliasy": [],
+      "kategoria": "obiekt",
+      "opis": "Klapa w podłodze Biblioteki, tuż obok kominka.",
+      "mapa": "palac",
+      "widocznyDomyslnie": false,
       "dostepnyDomyslnie": false
     },
     {
@@ -418,6 +459,27 @@
       "kategoria": "teren",
       "opis": "Oznakowane pole minowe na zachodzie ziemi niczyjej.",
       "mapa": "pole-bitwy",
+      "widocznyDomyslnie": false,
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "tunel-wschodni",
+      "nazwa": "Tunel",
+      "aliasy": [],
+      "kategoria": "przejscie",
+      "opis": "Podziemny korytarz z pierwszej linii okopów pod ruiny manufaktury.",
+      "mapa": "pole-bitwy",
+      "widocznyDomyslnie": false,
+      "dostepnyDomyslnie": false
+    },
+    {
+      "id": "stanowisko-w-ruinach",
+      "nazwa": "Gniazdo snajpera",
+      "aliasy": [],
+      "kategoria": "pozycja",
+      "opis": "Zamaskowane stanowisko strzelca wyborowego wroga w ruinach manufaktury.",
+      "mapa": "pole-bitwy",
+      "widocznyDomyslnie": false,
       "dostepnyDomyslnie": false
     }
   ]

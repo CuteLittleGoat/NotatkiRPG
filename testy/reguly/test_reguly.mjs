@@ -154,9 +154,19 @@ await test("admin: ukrycie i odsłonięcie zakładki Notatki (pole zakladki)", a
   await assertSucceeds(setDoc(USTAWIENIA, { zakladki: { notatki: true }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true }));
   await assertSucceeds(setDoc(USTAWIENIA, { zakladki: { notatki: deleteField() }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true }));
 });
+await test("admin: odkrycie i zasłonięcie miejsca (pole elementyWidoczne, razem z klikalnością)", async () => {
+  // Odkrycie — sama widoczność; zasłonięcie — widoczność i klikalność jednym zapisem.
+  await assertSucceeds(setDoc(USTAWIENIA, { elementyWidoczne: { "smocza-jama": true }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true }));
+  await assertSucceeds(
+    setDoc(USTAWIENIA, { elementyWidoczne: { "smocza-jama": false }, elementy: { "smocza-jama": false }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true })
+  );
+});
 await test("admin: przywrócenie ustawień domyślnych (deleteField)", async () => {
   await assertSucceeds(
     setDoc(USTAWIENIA, { mapy: { kopiec: deleteField() }, elementy: { brassyl: deleteField(), trakt: deleteField() }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true })
+  );
+  await assertSucceeds(
+    setDoc(USTAWIENIA, { elementyWidoczne: { "smocza-jama": deleteField() }, elementy: { "smocza-jama": deleteField() }, zmieniono: serverTimestamp(), kontoIdZmiany: "Player1" }, { merge: true })
   );
 });
 await test("przywracanie kopii: partia z usunięciami i dokumentami ze starymi znacznikami czasu", async () => {
@@ -164,7 +174,14 @@ await test("przywracanie kopii: partia z usunięciami i dokumentami ze starymi z
   const partia = writeBatch(db);
   partia.set(doc(db, "kampanie", "iliac"), { nazwa: "Kopiec Iliac", utworzono: stary, widoczna: true, zmieniono: stary, kontoIdZmiany: "Player1" });
   partia.set(doc(NOTATKI, "abcDEF123_-"), { tytul: "Z kopii", tresc: "", kategoria: "inne", elementId: null, podpis: "", kontoId: "Player2", utworzono: stary, zmieniono: stary });
-  partia.set(USTAWIENIA, { mapy: { okolice: { widoczna: true, kolor: "zielony" } }, elementy: { trakt: true }, kolor: "zielony", zmieniono: stary, kontoIdZmiany: "Player1" });
+  partia.set(USTAWIENIA, {
+    mapy: { okolice: { widoczna: true, kolor: "zielony" } },
+    elementy: { trakt: true },
+    elementyWidoczne: { trakt: true, kanion: false },
+    kolor: "zielony",
+    zmieniono: stary,
+    kontoIdZmiany: "Player1"
+  });
   partia.delete(doc(NOTATKI, "nie-ma-takiej"));
   await assertSucceeds(partia.commit());
 });
@@ -184,6 +201,11 @@ await test("notatka bez tytułu / tytuł za długi / treść za długa / zły ty
 });
 await test("ustawienia: wartość inna niż tak/nie, obce pole, inny dokument", async () => {
   await assertFails(setDoc(USTAWIENIA, { elementy: { brassyl: "tak" } }, { merge: true }));
+  await assertFails(setDoc(USTAWIENIA, { elementyWidoczne: { brassyl: "tak" } }, { merge: true }));
+  await assertFails(setDoc(USTAWIENIA, { elementyWidoczne: "wszystkie" }, { merge: true }));
+  await assertFails(
+    setDoc(USTAWIENIA, { elementyWidoczne: Object.fromEntries(Array.from({ length: 1001 }, (_, i) => [`m${i}`, true])) }, { merge: true })
+  );
   await assertFails(setDoc(USTAWIENIA, { zakladki: { notatki: "nie" } }, { merge: true }));
   await assertFails(setDoc(USTAWIENIA, { obce: 1 }, { merge: true }));
   await assertFails(setDoc(doc(db, "kampanie", "iliac", "ustawienia", "inne"), { kolor: "zielony" }));

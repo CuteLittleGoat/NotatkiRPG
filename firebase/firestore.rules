@@ -1,8 +1,9 @@
 rules_version = '2';
 
 // ===========================================================================
-// NotatkiRPG — reguły Firestore, wersja 4 (2026-11-10): notatki, ustawienia
-// i widoczność kampanii dla graczy (pole „widoczna” w dokumencie kampanii).
+// NotatkiRPG — reguły Firestore, wersja 5 (2026-11-16): notatki, ustawienia,
+// widoczność kampanii dla graczy (pole „widoczna” w dokumencie kampanii) oraz
+// zasłanianie i odkrywanie miejsc na mapach (pole „elementyWidoczne” w ustawieniach).
 //
 // Bez logowania Firebase (świadoma decyzja właściciela) baza nie wie, KTO pyta,
 // więc nie odróżni Gracza od Edytora ani od admina. Te reguły pilnują za to, CO
@@ -69,10 +70,11 @@ service cloud.firestore {
         && slady(d);
     }
     // Ustawienia admina: widoczność zakładek map i ich kolory (mapy), widoczność
-    // pozostałych zakładek (zakladki: id → true/false), dostępność miejsc
-    // (elementy: id → true/false), kolor ekranu poza mapami.
+    // pozostałych zakładek (zakladki: id → true/false), klikalność miejsc
+    // (elementy: id → true/false), widoczność miejsc na mapie — zasłonięte albo
+    // odkryte (elementyWidoczne: id → true/false), kolor ekranu poza mapami.
     function poprawneUstawienia(d) {
-      return d.keys().hasOnly(['mapy', 'zakladki', 'elementy', 'kolor', 'zmieniono', 'kontoIdZmiany'])
+      return d.keys().hasOnly(['mapy', 'zakladki', 'elementy', 'elementyWidoczne', 'kolor', 'zmieniono', 'kontoIdZmiany'])
         && (!('mapy' in d) || (d.mapy is map && d.mapy.size() <= 50))
         && (!('zakladki' in d) || (d.zakladki is map
               && d.zakladki.size() <= 50
@@ -80,6 +82,9 @@ service cloud.firestore {
         && (!('elementy' in d) || (d.elementy is map
               && d.elementy.size() <= 1000
               && d.elementy.values().hasOnly([true, false])))
+        && (!('elementyWidoczne' in d) || (d.elementyWidoczne is map
+              && d.elementyWidoczne.size() <= 1000
+              && d.elementyWidoczne.values().hasOnly([true, false])))
         && tekstOpcjonalny(d, 'kolor', 30)
         && tekstOpcjonalny(d, 'kontoIdZmiany', 100)
         && czasOpcjonalny(d, 'zmieniono');

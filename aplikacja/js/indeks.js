@@ -1,9 +1,11 @@
 // Indeks: lista miejsc z wyszukiwarką, w panelu z lewej strony kampanii.
 // Zakres zależy od zakładki: na zakładce mapy — tylko miejsca tej mapy, na zakładce
 // Notatki — miejsca wszystkich map (ustawZakres, wywoływane przy zmianie zakładki).
-// Gracze (Edytor i Gracz) widzą tylko miejsca dostępne (zaznaczone przez admina, na widocznej
-// zakładce). Admin widzi wszystko i przy każdym miejscu ma pole „dostępne dla graczy”.
+// Gracze (Edytor i Gracz) widzą tylko miejsca dostępne (widoczne i klikalne, na widocznej
+// zakładce). Admin widzi wszystko i przy każdym miejscu ma dwa pola: 👁 „widoczne” i
+// ◈ „klikalne” (odkrycia.js; ◈ nieaktywne, gdy miejsce jest zasłonięte).
 import { el, komunikat, normalizuj, opisBledu, opoznij, pasuje, wyczysc } from "./narzedzia.js";
+import { IKONA_KLIKALNE, IKONA_WIDOCZNE, polaMiejsca } from "./odkrycia.js";
 
 export class Indeks {
   /**
@@ -13,7 +15,7 @@ export class Indeks {
   constructor(kontener, opcje) {
     this.kontener = kontener;
     this.opcje = opcje;
-    this.oczekujace = new Map(); // id miejsca → wartość zapisywana właśnie do bazy
+    this.oczekujace = new Map(); // pola miejsc (odkrycia.js) → wartość zapisywana właśnie do bazy
     this.oczekujaceMapy = new Map(); // id mapy → widoczność zapisywana właśnie do bazy
     this.zakres = null; // id mapy (zakładka mapy) albo null — wszystkie mapy (zakładka Notatki)
     this.zbuduj();
@@ -134,7 +136,7 @@ export class Indeks {
     else if (zapytanie.trim()) this.info.textContent = `Znalezione miejsca ${gdzie}: ${ile}`;
     else
       this.info.textContent = stan.widokAdmina()
-        ? `Widok admina: wszystkie miejsca ${gdzie}. ☑ = dostępne dla graczy.`
+        ? `Widok admina: wszystkie miejsca ${gdzie}. ${IKONA_WIDOCZNE} = widoczne dla graczy, ${IKONA_KLIKALNE} = klikalne.`
         : `Dostępne miejsca ${gdzie}: ${ile}`;
   }
 
@@ -156,18 +158,12 @@ export class Indeks {
     }, [el("span.indeks-nazwa", { tekst: e.nazwa }), liczbaNotatek ? el("span.licznik", { tekst: String(liczbaNotatek), atrybuty: { title: "Liczba notatek" } }) : null]);
     if (!admin) return el("li", [przycisk]);
 
-    const zaznaczony = this.oczekujace.has(e.id) ? this.oczekujace.get(e.id) : stan.elementZaznaczony(e);
-    const pole = el("input.przelacznik", {
-      atrybuty: {
-        type: "checkbox",
-        checked: zaznaczony,
-        title: "Dostępne dla graczy",
-        "aria-label": `Dostępne dla graczy: ${e.nazwa}`
-      }
-    });
-    pole.addEventListener("change", () => this.przelacz(e, pole.checked));
-    const li = el("li.indeks-admin", { klasa: zaznaczony ? "" : "pozycja-ukryta" }, [pole, przycisk]);
-    return li;
+    const { dane } = this.opcje;
+    const pola = polaMiejsca({ stan, dane, element: e, oczekujace: this.oczekujace, poZmianie: () => this.render() });
+    // Przygaszona nazwa: miejsce nieklikalne; kursywa i „⊘”: zasłonięte przed graczami.
+    const klasa = !pola.widoczne.checked ? "pozycja-ukryta pozycja-zaslonieta" : pola.klikalne.checked ? "" : "pozycja-ukryta";
+    if (!pola.widoczne.checked) przycisk.querySelector(".indeks-nazwa").append(el("span.znacznik-ukrycia", { tekst: " ⊘", atrybuty: { "aria-label": "(zasłonięte przed graczami)" } }));
+    return el("li.indeks-admin", { klasa }, [pola.widoczne, pola.klikalne, przycisk]);
   }
 
   /** Admin: pole „zakładka widoczna dla graczy” pod nazwą mapy. */
@@ -198,17 +194,4 @@ export class Indeks {
     }
   }
 
-  async przelacz(element, wartosc) {
-    const { dane, stan } = this.opcje;
-    this.oczekujace.set(element.id, wartosc);
-    try {
-      await dane.zapiszUstawienia({ elementy: { [element.id]: wartosc } }, stan.sesja);
-      komunikat(wartosc ? `Miejsce „${element.nazwa}” dostępne dla graczy.` : `Miejsce „${element.nazwa}” ukryte przed graczami.`, "ok");
-    } catch (e) {
-      komunikat(opisBledu(e), "blad", 8000);
-    } finally {
-      this.oczekujace.delete(element.id);
-      this.render();
-    }
-  }
 }

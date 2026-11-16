@@ -147,6 +147,50 @@ class TestPrzygotujMape(unittest.TestCase):
             self.assertIn("BRAK NA RYSUNKU: „znikniety”", wyjscie)
             self.assertFalse((folder / "mapa_plan.svg").exists(), "tryb --sprawdz zapisał plik")
 
+    def test_miejsca_do_odkrycia_i_data_nalezy_do(self):
+        # Miejsce do odkrycia trafia do mapy graczy (zasłania je aplikacja); grafika poza
+        # jego grupą — w grupie data-nalezy-do, która zostaje w mapie bez zmian.
+        dodatek = '<g data-nalezy-do="wieza-testowa"><path d="M 50 150 L 100 110" fill="none" stroke="#6e3f22"/></g>'
+        manifest = json.loads(json.dumps(MANIFEST))
+        manifest["elementy"][0].update({"widocznyDomyslnie": False, "dostepnyDomyslnie": True})
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = przygotuj_folder(Path(tmp), dodatek, manifest)
+            kod, wyjscie = uruchom(str(folder))
+            self.assertEqual(kod, 0, wyjscie)
+            mapa = (folder / "mapa_plan.svg").read_text(encoding="utf-8")
+            self.assertIn('data-element="wieza-testowa"', mapa)
+            self.assertIn('data-nalezy-do="wieza-testowa"', mapa)
+            self.assertIn("Do odkrycia (na start zasłonięte przed graczami): „wieza-testowa”", wyjscie)
+            self.assertIn("grup data-nalezy-do: 1", wyjscie)
+            self.assertIn("po odkryciu od razu klikalne", wyjscie)
+            self.assertNotIn("UWAGA", wyjscie)
+
+    def test_data_nalezy_do_bledy(self):
+        przypadki = {
+            '<g data-nalezy-do="nie-ma-takiego"><circle cx="50" cy="50" r="5" fill="#000"/></g>': "którego nie ma na tej mapie",
+            '<g data-nalezy-do="w-innym-panelu"><circle cx="50" cy="50" r="5" fill="#000"/></g>': "którego nie ma na tej mapie",
+            '<circle data-nalezy-do="wieza-testowa" cx="50" cy="50" r="5" fill="#000"/>': "tylko na <g>",
+            '<g data-nalezy-do="Wieza_Testowa"><circle cx="50" cy="50" r="5" fill="#000"/></g>': "Nieprawidłowy identyfikator",
+            '<g data-element="nowe-miejsce"><g data-nalezy-do="wieza-testowa"><circle cx="50" cy="50" r="5" fill="#000"/></g></g>': "leży wewnątrz miejsca",
+            '<g data-nalezy-do="wieza-testowa"><g data-element="nowe-miejsce"><circle cx="50" cy="50" r="5" fill="#000"/></g></g>': "zawiera miejsce",
+        }
+        for dodatek, komunikat in przypadki.items():
+            with self.subTest(komunikat=komunikat), tempfile.TemporaryDirectory() as tmp:
+                folder = przygotuj_folder(Path(tmp), dodatek)
+                kod, wyjscie = uruchom(str(folder), "--sprawdz")
+                self.assertEqual(kod, 1, wyjscie)
+                self.assertIn(komunikat, wyjscie)
+
+    def test_pola_widocznosci_w_manifescie_tylko_tak_albo_nie(self):
+        manifest = json.loads(json.dumps(MANIFEST))
+        manifest["elementy"][0]["widocznyDomyslnie"] = "nie"
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = przygotuj_folder(Path(tmp), "", manifest)
+            kod, wyjscie = uruchom(str(folder), "--sprawdz")
+            self.assertEqual(kod, 0, wyjscie)
+            self.assertIn("UWAGA: „wieza-testowa”: pole widocznyDomyslnie", wyjscie)
+            self.assertIn('"widocznyDomyslnie": true', wyjscie, "propozycja nowych miejsc bez pola widocznyDomyslnie")
+
     def test_czerwona_przerywana_poza_grupa_mg_przerywa(self):
         with tempfile.TemporaryDirectory() as t:
             folder = przygotuj_folder(Path(t), '<polyline points="60,60 300,300" fill="none" stroke="#9b2f1c" stroke-dasharray="5 3"/>')
@@ -218,6 +262,20 @@ class TestPrzygotujMape(unittest.TestCase):
 
 class TestMapGraczy(unittest.TestCase):
     """Mapy, które pokazuje aplikacja: wszystkie kampanie z rejestru kampanie.json."""
+
+    def test_przyklady_w_template_takie_same_jak_rysunki_kampanii_wzor(self):
+        # Template/Przyklady/ — kopie rysunków kampanii Wzór dla agentów rysujących mapy.
+        # Generatory (kampanie/Template/generator/) zapisują oba miejsca naraz.
+        przyklady = sorted((KORZEN / "Template" / "Przyklady").glob("Rysunek_*.svg"))
+        oryginaly = sorted((KORZEN / "kampanie" / "Template").glob("Rysunek_*.svg"))
+        self.assertEqual([p.name for p in przyklady], [p.name for p in oryginaly], "inny zestaw rysunków w Template/Przyklady/")
+        for kopia in przyklady:
+            with self.subTest(rysunek=kopia.name):
+                self.assertEqual(
+                    kopia.read_bytes(),
+                    (KORZEN / "kampanie" / "Template" / kopia.name).read_bytes(),
+                    f"Template/Przyklady/{kopia.name} różni się od kampanie/Template/{kopia.name} — uruchom generator rysunku",
+                )
 
     def test_mapy_graczy_bez_sladow_mg_i_zgodne_z_manifestem(self):
         import re

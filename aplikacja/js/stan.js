@@ -75,15 +75,35 @@ export class Stan {
     return typeof wartosc === "boolean" ? wartosc : Boolean(mapa.widocznaDomyslnie);
   }
 
+  // Miejsce ma dwa ustawienia admina (Analizy/Spoilery.md, wariant A):
+  //   👁 widoczne — gracze widzą je na mapie (elementyWidoczne.{id}; domyślnie
+  //      widocznyDomyslnie z manifestu, a bez tego pola — widoczne),
+  //   ◈ klikalne — karta i notatki (elementy.{id}; domyślnie dostepnyDomyslnie).
+  // Klikalne jest tylko miejsce widoczne — także przy niespójnych danych.
+
+  /** Pole „klikalne” (zapisane przez admina albo domyślne z manifestu). */
   elementZaznaczony(element) {
     const wartosc = this.ustawienia?.elementy?.[element.id];
     return typeof wartosc === "boolean" ? wartosc : Boolean(element.dostepnyDomyslnie);
   }
 
-  /** Element dostępny dla graczy: zaznaczony przez admina i na widocznej mapie. */
+  /** Pole „widoczne”: czy miejsce jest odkryte (narysowane na mapie graczy). */
+  elementWidoczny(element) {
+    const wartosc = this.ustawienia?.elementyWidoczne?.[element.id];
+    return typeof wartosc === "boolean" ? wartosc : element.widocznyDomyslnie !== false;
+  }
+
+  /** Czy miejsce jest narysowane na mapie bieżącego użytkownika (admin widzi wszystkie). */
+  elementWidocznyDlaUzytkownika(element) {
+    if (this.widokAdmina()) return true;
+    const mapa = this.mapyWgId.get(element.mapa);
+    return Boolean(mapa) && this.mapaWidocznaDlaGraczy(mapa) && this.elementWidoczny(element);
+  }
+
+  /** Element dostępny dla graczy: widoczny, zaznaczony jako klikalny i na widocznej mapie. */
   elementDostepnyDlaGraczy(element) {
     const mapa = this.mapyWgId.get(element.mapa);
-    return Boolean(mapa) && this.mapaWidocznaDlaGraczy(mapa) && this.elementZaznaczony(element);
+    return Boolean(mapa) && this.mapaWidocznaDlaGraczy(mapa) && this.elementWidoczny(element) && this.elementZaznaczony(element);
   }
 
   /** Mapy pokazywane bieżącemu użytkownikowi jako zakładki. */
@@ -133,8 +153,8 @@ export class Stan {
     return this.notatki.filter((n) => n.elementId === id);
   }
 
-  /** Czerwona kropka przy miejscu: są notatki, a admin zaznaczył miejsce jako dostępne. */
+  /** Czerwona kropka przy miejscu: są notatki, a miejsce jest widoczne i klikalne dla graczy. */
   elementMaKropke(element) {
-    return this.elementZaznaczony(element) && this.notatki.some((n) => n.elementId === element.id);
+    return this.elementWidoczny(element) && this.elementZaznaczony(element) && this.notatki.some((n) => n.elementId === element.id);
   }
 }

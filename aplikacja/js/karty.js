@@ -10,8 +10,8 @@ function opisMiejsca(notatka, stan) {
   if (rodzaj === "ogolna") return "notatka ogólna";
   if (rodzaj === "bez-miejsca") return "miejsce niedostępne na mapie";
   const element = stan.elementyWgId.get(notatka.elementId);
-  const ukryte = jestAdminem(stan.sesja) && !stan.elementDostepnyDlaGraczy(element);
-  return `◈ ${element.nazwa}${ukryte ? " (ukryte przed graczami)" : ""}`;
+  if (!jestAdminem(stan.sesja) || stan.elementDostepnyDlaGraczy(element)) return `◈ ${element.nazwa}`;
+  return `◈ ${element.nazwa}${stan.elementWidoczny(element) ? " (nieklikalne dla graczy)" : " (zasłonięte przed graczami)"}`;
 }
 
 async function usunNotatke(dane, notatka) {

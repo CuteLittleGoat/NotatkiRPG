@@ -9,7 +9,13 @@ Użycie (z katalogu głównego repozytorium):
 Konwencja rysunku od MG (szczegóły: kampanie/README.md):
 
 * miejsce klikalne:      <g data-element="id-miejsca"> ... </g>
+* grafika miejsca poza jego grupą (zasłaniana i odkrywana razem z nim):
+                         <g data-nalezy-do="id-miejsca"> ... </g>
 * treść tylko dla MG:    <g class="tylko-mg"> ... </g>
+
+Miejsca „do odkrycia” (w manifeście "widocznyDomyslnie": false) rysuje się jak każde
+inne miejsce — trafiają do mapy graczy, a zasłania je aplikacja, dopóki admin ich nie
+odkryje (Template/Specyfikacja_rysunku_mapy.md, rozdział 5.7).
 
 Skrypt:
 
@@ -470,14 +476,17 @@ def kontrola_bezpieczenstwa(korzen) -> list[str]:
     return problemy
 
 
+WZOR_ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+
+
 def odczytaj_elementy(korzen) -> dict[str, dict]:
-    """Elementy klikalne: id → {tytul, prostokat}."""
+    """Elementy klikalne: id → {tytul, prostokat, czesci (liczba grup data-nalezy-do)}."""
     elementy: dict[str, dict] = {}
     for el in korzen.iter():
         ident = el.get("data-element")
         if ident is None:
             continue
-        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", ident):
+        if not WZOR_ID.fullmatch(ident):
             raise BladPrzygotowania(
                 f"Nieprawidłowy identyfikator data-element=\"{ident}\" — dozwolone: małe litery bez polskich znaków, cyfry i myślniki."
             )
@@ -487,8 +496,42 @@ def odczytaj_elementy(korzen) -> dict[str, dict]:
         elementy[ident] = {
             "tytul": "".join(tytul_el.itertext()).strip() if tytul_el is not None else "",
             "prostokat": prostokat_otaczajacy(el),
+            "czesci": 0,
         }
     return elementy
+
+
+def sprawdz_czesci(korzen, elementy: dict[str, dict], id_mapy: str) -> None:
+    """Grupy <g data-nalezy-do="id"> — grafika miejsca leżąca poza jego grupą (aplikacja
+    zasłania i odkrywa ją razem z miejscem). Muszą wskazywać miejsce z tej samej mapy
+    i nie mogą leżeć w grupie miejsca ani zawierać miejsc."""
+    for el in korzen.iter():
+        if el.get("data-element") is None:
+            continue
+        for d in el.iter():
+            if d is not el and d.get("data-nalezy-do") is not None:
+                raise BladPrzygotowania(
+                    f"Mapa „{id_mapy}”: grupa data-nalezy-do=\"{d.get('data-nalezy-do')}\" leży wewnątrz miejsca "
+                    f"„{el.get('data-element')}” — grafika w grupie miejsca i tak jest zasłaniana razem z nim; usuń atrybut."
+                )
+    for el in korzen.iter():
+        ident = el.get("data-nalezy-do")
+        if ident is None:
+            continue
+        if lokalna(el.tag) != "g":
+            raise BladPrzygotowania(f"Mapa „{id_mapy}”: atrybut data-nalezy-do=\"{ident}\" stawiamy tylko na <g>, nie na <{lokalna(el.tag)}>.")
+        if not WZOR_ID.fullmatch(ident):
+            raise BladPrzygotowania(
+                f"Nieprawidłowy identyfikator data-nalezy-do=\"{ident}\" — dozwolone: małe litery bez polskich znaków, cyfry i myślniki."
+            )
+        if any(d.get("data-element") is not None for d in el.iter()):
+            raise BladPrzygotowania(f"Mapa „{id_mapy}”: grupa data-nalezy-do=\"{ident}\" zawiera miejsce data-element — tak nie wolno.")
+        if ident not in elementy:
+            raise BladPrzygotowania(
+                f"Mapa „{id_mapy}”: grupa data-nalezy-do=\"{ident}\" wskazuje miejsce, którego nie ma na tej mapie "
+                "(literówka albo grupa w innym panelu niż miejsce)."
+            )
+        elementy[ident]["czesci"] += 1
 
 
 def wytnij_obszar(korzen, obszar):
@@ -713,6 +756,7 @@ def przygotuj_mape(korzen_mg, mapa: dict, wersja: str) -> tuple[ET.Element, dict
             + "\nPopraw rysunek (owiń je w <g class=\"tylko-mg\">) i uruchom skrypt ponownie."
         )
     elementy = odczytaj_elementy(svg)
+    sprawdz_czesci(svg, elementy, mapa["id"])
     obwodka = kolor_obwodki(svg)
 
     # Tytuły elementów usuwamy: podpowiedź przeglądarki przy najechaniu
@@ -802,12 +846,16 @@ def porownaj_z_manifestem(manifest: dict, znalezione: dict[str, dict[str, dict]]
     for ident, mapy in sorted(wszystkie_na_rysunku.items()):
         if len(mapy) > 1:
             raport.append(f"UWAGA: element „{ident}” trafił na kilka map naraz: {', '.join(mapy)} (sprawdź obszary).")
+    for ident, element in w_manifescie.items():
+        for pole in ("widocznyDomyslnie", "dostepnyDomyslnie"):
+            if pole in element and not isinstance(element[pole], bool):
+                raport.append(f"UWAGA: „{ident}”: pole {pole} w manifeście musi mieć wartość true albo false.")
     nowe = []
     for id_mapy, elementy in znalezione.items():
         for ident, dane in elementy.items():
             if ident not in w_manifescie:
                 nowe.append({"id": ident, "nazwa": dane["tytul"] or ident, "aliasy": [], "kategoria": "inne",
-                             "opis": "", "mapa": id_mapy, "dostepnyDomyslnie": False})
+                             "opis": "", "mapa": id_mapy, "widocznyDomyslnie": True, "dostepnyDomyslnie": False})
             elif w_manifescie[ident].get("mapa") != id_mapy:
                 raport.append(
                     f"UWAGA: „{ident}” jest w manifeście na mapie „{w_manifescie[ident].get('mapa')}”, a na rysunku na „{id_mapy}”."
@@ -820,10 +868,30 @@ def porownaj_z_manifestem(manifest: dict, znalezione: dict[str, dict[str, dict]]
             )
     if nowe:
         raport.append(
-            "NOWE ELEMENTY na rysunku (nie ma ich w manifeście — dopisz je, jeśli mają być klikalne):\n"
+            "NOWE ELEMENTY na rysunku (nie ma ich w manifeście — dopisz je, jeśli mają być klikalne; "
+            "miejsce do odkrycia: \"widocznyDomyslnie\": false):\n"
             + json.dumps(nowe, ensure_ascii=False, indent=2)
         )
     return raport
+
+
+def opis_odkryc(manifest: dict, znalezione: dict[str, dict[str, dict]]) -> list[str]:
+    """Informacja (nie uwaga) o miejscach do odkrycia — zasłoniętych na start."""
+    linie = []
+    czesci = {ident: dane.get("czesci", 0) for elementy in znalezione.values() for ident, dane in elementy.items()}
+    for element in manifest.get("elementy", []):
+        if element.get("widocznyDomyslnie") is not False:
+            continue
+        dopiski = []
+        if czesci.get(element["id"]):
+            dopiski.append(f"grup data-nalezy-do: {czesci[element['id']]}")
+        if element.get("dostepnyDomyslnie") is True:
+            dopiski.append("po odkryciu od razu klikalne (dostepnyDomyslnie: true)")
+        linie.append(
+            f"Do odkrycia (na start zasłonięte przed graczami): „{element['id']}” na mapie „{element.get('mapa')}”"
+            + (f" — {'; '.join(dopiski)}" if dopiski else "")
+        )
+    return linie
 
 
 # ---------------------------------------------------------------------------
@@ -869,6 +937,8 @@ def main(argv=None) -> int:
         return 1
 
     for linia in porownaj_z_manifestem(manifest, znalezione):
+        print(linia)
+    for linia in opis_odkryc(manifest, znalezione):
         print(linia)
 
     if argumenty.sprawdz:

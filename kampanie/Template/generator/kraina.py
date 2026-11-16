@@ -14,7 +14,7 @@ import random
 import sys
 from pathlib import Path
 from wspolne import (atr, catmull, el, f, odl_lamana, poisson, probkuj_krzywa, pts, tekst, tekst_wiele,
-                     w_wielokacie)
+                     w_wielokacie, zapisz_rysunek)
 
 rng = random.Random(20261115)
 W, H = 1600, 1100
@@ -314,6 +314,15 @@ for rzad, (odsuniecie, rozmiar, krok) in enumerate(((-46, 50, 46), (2, 72, 52), 
         if gy - s < 36 or gx - w_pol < 470 or gx + w_pol > W - 34:
             continue
         gory.append((gx, gy, s))
+# Ścieżka do Smoczej Jamy (miejsce do odkrycia) — wije się POD górami, więc musi być
+# narysowana przed nimi, a nie w grupie Smoczej Jamy (ta leży wyżej, nad górami).
+# Znacznik data-nalezy-do: aplikacja zasłania ją i odkrywa razem ze Smoczą Jamą.
+SCIEZKA_JAMA = [(1290, 472), (1298, 446), (1306, 420), (1316, 398), (1334, 382), (1352, 374), (1364, 372)]
+o('<g data-nalezy-do="smocza-jama">')
+o(el("path", d=catmull(SCIEZKA_JAMA), fill="none", stroke="#7a5232", stroke_width="1.6", stroke_dasharray="1.5 4.5",
+     stroke_linecap="round"))
+o("</g>")
+
 o('<g data-element="gory-sine">')
 o("<title>Góry Sine</title>")
 for gx, gy, s in sorted(gory, key=lambda t: t[1]):
@@ -593,6 +602,35 @@ o(tekst(1496, 628, "Pałac Kruków", class_="h", font_size="15", font_weight="bo
 o(tekst(1496, 642, "(plan: mapa „Pałac”)", class_="h", font_size="10", font_style="italic", text_anchor="middle", fill=TUSZ))
 o("</g>")
 
+# ------------------------------------------------------------------ MIEJSCA DO ODKRYCIA (na start zasłonięte)
+# W manifeście "widocznyDomyslnie": false — aplikacja zasłania je przed graczami, dopóki admin
+# ich nie odkryje (także Smoczą Jamę wyżej). Pod każdym jest pełne tło (mokradła, łąka) —
+# po zasłonięciu nie zostaje „dziura”, a wszystko, co zdradza miejsce, jest w jego grupie.
+
+# Chata Zielarki — na mokradłach, z kładką i dymem z komina
+o('<g data-element="chata-na-mokradlach">')
+o("<title>Chata Zielarki</title>")
+o(el("path", d="M1004 938 l12 -6 M1007 941 l12 -6", fill="none", stroke="#7a5232", stroke_width="1.4", stroke_linecap="round"))
+chata, kalenica_chaty = dom(1026, 928, 14, 10, -8, dach="#6f5a3a")
+o(chata)
+o(el("path", d=f"M{f(kalenica_chaty[0][0])} {f(kalenica_chaty[0][1])} L{f(kalenica_chaty[1][0])} {f(kalenica_chaty[1][1])}",
+     fill="none", stroke="#3a2a1a", stroke_width="0.9"))
+o(el("path", d="M1030 921 q-5 -6 1 -11 q6 -5 0 -11", fill="none", stroke="#6b6458", stroke_width="1.1", stroke_linecap="round"))
+o(tekst(1042, 934, "Chata Zielarki", class_="h", font_size="13", font_style="italic", font_weight="bold", text_anchor="start",
+        fill="#2b1d10"))
+o("</g>")
+
+# Stara sztolnia — opuszczone wejście do kopalni nad Kamieńcem
+o('<g data-element="stara-sztolnia">')
+o("<title>Stara sztolnia</title>")
+o(el("path", d="M1100 410 q0 -15 12 -15 q12 0 12 15 Z", fill="#2a2420", stroke="#2b1d10", stroke_width="1.2"))
+o(el("path", d="M1098 411 v-17 h28 v17", fill="none", stroke="#7a5232", stroke_width="2.2", stroke_linejoin="round"))
+o(el("path", d="M1128 412 q9 -10 18 0 Z", fill="#a99c84", stroke="#6b5a40", stroke_width="1"))
+o(el("path", d="M1104 416 l-6 8 M1120 416 l6 8 M1100 420 h24", fill="none", stroke="#5a4a36", stroke_width="1", stroke_linecap="round"))
+o(tekst(1114, 440, "Stara sztolnia", class_="h", font_size="13", font_style="italic", font_weight="bold", text_anchor="middle",
+        fill="#2b1d10"))
+o("</g>")
+
 # ------------------------------------------------------------------ napisy kierunków (tło)
 o("<g>")
 for x, y, t, kotw, kat in ((1132, 60, "▲ ku Krainom Północnym", "start", 0), (40, 724, "◄ na zachód", "start", 0),
@@ -673,7 +711,4 @@ for x, y in ((14.5, 14.5), (W - 14.5, 14.5), (14.5, H - 14.5), (W - 14.5, H - 14
 o("</g>")
 o("</svg>")
 
-sciezka = sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "Rysunek_kraina.svg"
-with open(sciezka, "w", encoding="utf-8") as plik:
-    plik.write("\n".join(out) + "\n")
-print("elementów:", sum(s.count("<") - s.count("</") for s in out), file=sys.stderr)
+zapisz_rysunek(out, "Rysunek_kraina.svg")

@@ -34,6 +34,7 @@ export class PrzegladarkaMapy {
     this.opcje = opcje;
     this.svg = null;
     this.elementy = new Map();
+    this.czesci = new Map(); // id miejsca → grupy data-nalezy-do (zasłaniane i odkrywane razem z nim)
     this.srodki = new Map();
     this.stany = new Map();
     this.wybrany = null;
@@ -49,7 +50,12 @@ export class PrzegladarkaMapy {
 
   // ------------------------------------------------------------------ wczytanie
 
-  async wczytaj(adres) {
+  /**
+   * @param {string} adres plik mapy
+   * @param {Map|null} stany stan elementów (jak w ustawStany) — nadany PRZED wstawieniem
+   *   mapy na stronę, żeby miejsce zasłonięte przed graczem nie mignęło ani na chwilę
+   */
+  async wczytaj(adres, stany = null) {
     const odp = await fetch(adres, { cache: "no-cache" });
     if (!odp.ok) throw new Error(`Nie udało się wczytać mapy (${odp.status}).`);
     const tekst = await odp.text();
@@ -67,12 +73,19 @@ export class PrzegladarkaMapy {
     const vb = (svg.getAttribute("viewBox") || "0 0 1000 1000").split(/[\s,]+/).map(Number);
     [this.X0, this.Y0, this.SZER, this.WYS] = vb.length === 4 && vb.every(Number.isFinite) ? vb : [0, 0, 1000, 1000];
     this.vb = { x: this.X0, y: this.Y0, w: this.SZER, h: this.WYS };
-    this.kontener.append(svg);
-    this.svg = svg;
     for (const g of svg.querySelectorAll("[data-element]")) {
       g.classList.add("el");
       this.elementy.set(g.getAttribute("data-element"), g);
     }
+    // Grafika poza grupą miejsca, która należy do niego (np. droga do jaskini pod górami).
+    for (const g of svg.querySelectorAll("[data-nalezy-do]")) {
+      const id = g.getAttribute("data-nalezy-do");
+      if (!this.czesci.has(id)) this.czesci.set(id, []);
+      this.czesci.get(id).push(g);
+    }
+    if (stany) this.ustawStany(stany);
+    this.kontener.append(svg);
+    this.svg = svg;
     this.podepnijZdarzenia();
     this.domierz();
     return this;
@@ -173,27 +186,51 @@ export class PrzegladarkaMapy {
   // ------------------------------------------------------------- stan elementów
 
   /**
-   * @param {Map<string, {klikalny: boolean, ukryty: boolean, kropka: boolean, nazwa: string}>} stany
+   * @param {Map<string, {widoczny: boolean, zasloniety: boolean, klikalny: boolean,
+   *   nieklikalny: boolean, kropka: boolean, nazwa: string}>} stany
+   *   widoczny — narysowany u bieżącego użytkownika (gracz nie widzi miejsc zasłoniętych);
+   *   zasloniety — niewidoczny dla graczy (admin widzi go przygaszonego);
+   *   klikalny — bieżący użytkownik może go kliknąć; nieklikalny — gracze nie mogą.
    * Elementy bez wpisu (np. spoza manifestu) są zwykłym tłem.
    */
   ustawStany(stany) {
     this.stany = stany;
     for (const [id, g] of this.elementy) {
       const s = stany.get(id);
-      const klikalny = Boolean(s && s.klikalny);
+      const widoczny = !s || s.widoczny !== false;
+      const zasloniety = Boolean(s && widoczny && s.zasloniety);
+      const klikalny = Boolean(s && s.klikalny && widoczny);
+      for (const czesc of [g, ...(this.czesci.get(id) || [])]) {
+        czesc.classList.toggle("el-niewidoczny", !widoczny);
+        czesc.classList.toggle("el-zasloniety", zasloniety);
+      }
       g.classList.toggle("el-dostepny", klikalny);
-      g.classList.toggle("el-ukryty", Boolean(s && s.klikalny && s.ukryty));
-      g.classList.toggle("el-ma-notatki", Boolean(s && s.klikalny && s.kropka));
+      g.classList.toggle("el-nieklikalny", Boolean(klikalny && s.nieklikalny));
+      g.classList.toggle("el-ma-notatki", Boolean(klikalny && s.kropka));
       if (klikalny) {
         g.setAttribute("tabindex", "0");
         g.setAttribute("role", "button");
-        g.setAttribute("aria-label", s.ukryty ? `${s.nazwa} (ukryte przed graczami)` : s.nazwa);
+        g.setAttribute(
+          "aria-label",
+          zasloniety ? `${s.nazwa} (zasłonięte przed graczami)` : s.nieklikalny ? `${s.nazwa} (nieklikalne dla graczy)` : s.nazwa
+        );
       } else {
         g.removeAttribute("tabindex");
         g.removeAttribute("role");
         g.removeAttribute("aria-label");
         if (this.wybrany === id) this.odznacz();
       }
+    }
+  }
+
+  /** Miejsce właśnie odkryte przez admina — mruga kilka sekund, żeby gracze je zauważyli. */
+  podswietl(id) {
+    const grupy = [this.elementy.get(id), ...(this.czesci.get(id) || [])].filter(Boolean);
+    for (const g of grupy) {
+      g.classList.remove("el-odkryte");
+      g.getBoundingClientRect(); // ponowne uruchomienie animacji, gdy odkrycie przyszło drugi raz
+      g.classList.add("el-odkryte");
+      setTimeout(() => g.classList.remove("el-odkryte"), 6000);
     }
   }
 

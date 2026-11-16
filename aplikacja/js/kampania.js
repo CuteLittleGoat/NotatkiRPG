@@ -246,18 +246,54 @@ async function start() {
   }
 
   // ------------------------------------------------------------- mapy
+  // Stan każdego miejsca mapy dla bieżącego użytkownika (mapa.js → ustawStany).
   function stanyElementow(mapa) {
     const stany = new Map();
     for (const e of manifest.elementy || []) {
       if (e.mapa !== mapa.id) continue;
       stany.set(e.id, {
+        widoczny: stan.elementWidocznyDlaUzytkownika(e), // gracz nie widzi miejsc zasłoniętych
+        zasloniety: !stan.elementWidoczny(e), // admin widzi je przygaszone
         klikalny: stan.elementDlaUzytkownika(e),
-        ukryty: !stan.elementDostepnyDlaGraczy(e),
+        nieklikalny: !stan.elementDostepnyDlaGraczy(e), // admin: przerywane narożniki
         kropka: stan.elementMaKropke(e),
         nazwa: e.nazwa
       });
     }
     return stany;
+  }
+
+  // Odkrycia na żywo (gracze): admin zaznaczył „widoczne” przy miejscu — krótki napis i
+  // mruganie miejsca na mapie (od razu albo przy pierwszym otwarciu tej mapy).
+  let odkryte = null; // id miejsc z zaznaczonym „widoczne”; null — przed pierwszym wczytaniem ustawień
+  const doPodswietlenia = new Set();
+  function sprawdzOdkrycia() {
+    const teraz = new Set((manifest.elementy || []).filter((e) => stan.elementWidoczny(e)).map((e) => e.id));
+    const poprzednie = odkryte;
+    odkryte = teraz;
+    if (!poprzednie || jestAdminem(stan.sesja)) return;
+    const wgMapy = new Map();
+    for (const e of manifest.elementy || []) {
+      if (!teraz.has(e.id) || poprzednie.has(e.id) || !stan.elementWidocznyDlaUzytkownika(e)) continue;
+      if (!wgMapy.has(e.mapa)) wgMapy.set(e.mapa, []);
+      wgMapy.get(e.mapa).push(e);
+    }
+    for (const [mapaId, lista] of wgMapy) {
+      const mapa = stan.mapyWgId.get(mapaId);
+      komunikat(`${lista.length > 1 ? "Nowe odkrycia" : "Nowe odkrycie"} na mapie „${mapa?.nazwa ?? mapaId}”: ${lista.map((e) => e.nazwa).join(", ")}.`, "ok", 8000);
+      for (const e of lista) doPodswietlenia.add(e.id);
+    }
+    podswietlOdkrycia();
+  }
+  /** Mruganie odkrytych miejsc — tylko na mapie, którą gracz właśnie ogląda. */
+  function podswietlOdkrycia() {
+    const p = aktywnaPrzegladarka();
+    if (!p || !p.svg) return;
+    for (const id of [...doPodswietlenia]) {
+      if (stan.elementyWgId.get(id)?.mapa !== biezaca.id) continue;
+      doPodswietlenia.delete(id);
+      p.podswietl(id);
+    }
   }
 
   async function przygotujMape(mapa) {
@@ -281,7 +317,8 @@ async function start() {
     const ladowanie = el("p.ladowanie", { tekst: "ODCZYT MAPY…" });
     plansza.append(ladowanie);
     try {
-      await przegladarka.wczytaj(`${kampania.folder}/${mapa.plik}`);
+      // Stan miejsc nadany przed wstawieniem mapy — zasłonięte miejsce nie mignie graczowi.
+      await przegladarka.wczytaj(`${kampania.folder}/${mapa.plik}`, stanyElementow(mapa));
     } catch (e) {
       plansza.append(el("p.formularz-blad", { tekst: `Nie udało się wczytać mapy „${mapa.nazwa}”: ${e.message}` }));
     } finally {
@@ -393,7 +430,10 @@ async function start() {
       const p = await przygotujMape(mapa);
       if (biezaca.id !== mapa.id) return; // w międzyczasie przełączono gdzie indziej
       for (const [id, pl] of plansze) pl.hidden = id !== mapa.id;
-      requestAnimationFrame(() => p.pokazano());
+      requestAnimationFrame(() => {
+        p.pokazano();
+        podswietlOdkrycia(); // miejsca odkryte, gdy gracz był na innej zakładce
+      });
     } else {
       $(`widok-${wybor.id}`).hidden = false;
       ustawMotyw(stan.kolorKampanii());
@@ -540,6 +580,8 @@ async function start() {
       notatki.render();
       admin?.render();
     }
+    // Po odświeżeniu map — odkryte miejsce jest już narysowane, więc może mrugać.
+    if (co === "ustawienia") sprawdzOdkrycia();
     if (co === "notatki") {
       odswiezMapy(); // czerwone kropki przy miejscach z notatkami
       indeks.render();

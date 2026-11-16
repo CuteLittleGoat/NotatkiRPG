@@ -185,3 +185,24 @@ def drgajaca(punkty, rng, krok=10, amp=0.8, zamknieta=False):
 def sciezka_lamanej(punkty, zamknieta=False):
     d = "M" + " L".join(f"{f(x)} {f(y)}" for x, y in punkty)
     return d + (" Z" if zamknieta else "")
+
+
+def zapisz_rysunek(linie, nazwa):
+    """Zapis rysunku. Bez argumentu w wierszu poleceń: do folderu kampanii Wzór
+    (kampanie/Template/) i kopia do Template/Przyklady/ — wzór dla agentów rysujących mapy
+    (kopie muszą być identyczne z oryginałami; pilnuje tego test). Z argumentem (ścieżką
+    pliku) — tylko tam."""
+    import sys
+    from pathlib import Path
+
+    tresc = "\n".join(linie) + "\n"
+    if len(sys.argv) > 1:
+        cele = [Path(sys.argv[1])]
+    else:
+        kampania = Path(__file__).resolve().parent.parent
+        cele = [kampania / nazwa, kampania.parent.parent / "Template" / "Przyklady" / nazwa]
+    for cel in cele:
+        cel.parent.mkdir(parents=True, exist_ok=True)
+        with open(cel, "w", encoding="utf-8", newline="\n") as plik:
+            plik.write(tresc)
+    print("elementów:", sum(s.count("<") - s.count("</") for s in linie), file=sys.stderr)

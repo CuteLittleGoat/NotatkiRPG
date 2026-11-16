@@ -11,6 +11,10 @@
 //   --szerokosc=…  szerokość obrazka w pikselach (domyślnie 1600); większa = „przybliżenie”
 //   --wycinek=x,y,w,h  tylko fragment obrazka (w pikselach obrazka, nie jednostkach mapy)
 //   --folder=…     gdzie zapisać obrazki (domyślnie testy/e2e/wyniki/podglad — poza repozytorium)
+//   --na-start     mapa tak, jak gracze widzą ją na start: bez miejsc do odkrycia (w manifeście
+//                  kampania.json z folderu pliku: "widocznyDomyslnie": false) i bez ich grup
+//                  data-nalezy-do. Obrazki dostają w nazwie „_na-start”. Pozwala sprawdzić, czy pod
+//                  zasłoniętym miejscem jest pełne tło (Template/Specyfikacja_rysunku_mapy.md, 5.7).
 //
 // Mapa dla graczy zawiera kolory wszystkich motywów (skrypt przygotuj_mape.py), więc obrazki
 // pokazują, jak wygląda w aplikacji. Rysunek od MG pokazuje się zawsze w swoich kolorach.
@@ -55,15 +59,34 @@ function opcja(nazwa, domyslna) {
   const folder = path.resolve(KORZEN, opcja("folder", path.join("testy", "e2e", "wyniki", "podglad")));
   fs.mkdirSync(folder, { recursive: true });
 
+  // Na start: zasłonięte miejsca z manifestu kampanii (z folderu pliku) — tak jak w aplikacji.
+  let zasloniecie = "";
+  if (process.argv.includes("--na-start")) {
+    const plikManifestu = path.join(path.dirname(plik), "kampania.json");
+    let manifest;
+    try {
+      manifest = JSON.parse(fs.readFileSync(plikManifestu, "utf8"));
+    } catch (e) {
+      console.error(`--na-start: nie da się odczytać manifestu ${plikManifestu} (${e.message}).`);
+      process.exit(2);
+    }
+    const ids = (manifest.elementy || []).filter((e) => e.widocznyDomyslnie === false).map((e) => e.id);
+    console.log(`Na start zasłonięte: ${ids.join(", ") || "(brak)"}`);
+    zasloniecie = ids
+      .flatMap((id) => [`[data-element="${id}"]`, `[data-element="${id}"] *`, `[data-nalezy-do="${id}"]`, `[data-nalezy-do="${id}"] *`])
+      .join(",");
+    if (zasloniecie) zasloniecie += "{visibility:hidden!important}";
+  }
+
   // Komentarze z pliku nie są potrzebne do podglądu; reszta trafia na stronę tak jak w aplikacji.
   const svg = fs.readFileSync(plik, "utf8").replace(/<!--[\s\S]*?-->/g, "");
   const przegladarka = await chromium.launch();
   const strona = await przegladarka.newPage({ viewport: { width: szerokosc, height: 900 }, deviceScaleFactor: 1 });
-  const nazwa = path.basename(plik, ".svg");
+  const nazwa = path.basename(plik, ".svg") + (process.argv.includes("--na-start") ? "_na-start" : "");
   for (const motyw of motywy) {
     await strona.setContent(
       `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#111}` +
-        `.ramka{width:${szerokosc}px}.ramka svg{width:100%;height:auto;display:block}</style></head>` +
+        `.ramka{width:${szerokosc}px}.ramka svg{width:100%;height:auto;display:block}${zasloniecie}</style></head>` +
         `<body class="motyw-${motyw}"><div class="ramka">${svg}</div></body></html>`
     );
     await strona.waitForTimeout(150);

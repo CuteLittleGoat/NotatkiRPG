@@ -465,6 +465,22 @@
 <rect x="987" y="146" width="26" height="8" fill="#3a5a8a" stroke="#3b2a1e" stroke-width="0.8"/>
 <path d="M677 850 l0 -46 M677 804 A46 46 0 0 1 723 850 M674 660 l0 -52 M674 608 A52 52 0 0 1 726 660 M600 745 l30 0 M630 745 A30 30 0 0 1 600 775 M800 745 l-30 0 M770 745 A30 30 0 0 0 800 775 M522 660 l0 28 M522 688 A28 28 0 0 0 550 660 M470 775 l30 0 M500 775 A30 30 0 0 1 470 805 M850 660 l0 28 M850 688 A28 28 0 0 0 878 660 M930 775 l-30 0 M900 775 A30 30 0 0 0 930 805 M470 592 l-36 0 M434 592 A36 36 0 0 0 470 628 M470 415 l-30 0 M440 415 A30 30 0 0 0 470 445 M235 300 l0 -30 M235 270 A30 30 0 0 1 265 300 M585 300 l0 30 M585 330 A30 30 0 0 0 615 300 M765 300 l0 30 M765 330 A30 30 0 0 0 795 300 M860 210 l30 0 M890 210 A30 30 0 0 1 860 240 M930 311 l28 0 M958 311 A28 28 0 0 1 930 339 M1060 326 l28 0 M1088 326 A28 28 0 0 1 1060 354 M1145 300 l0 -30 M1145 270 A30 30 0 0 1 1175 300 M1145 380 l0 30 M1145 410 A30 30 0 0 0 1175 380 M930 455 l30 0 M960 455 A30 30 0 0 1 930 485 M995 560 l0 30 M995 590 A30 30 0 0 0 1025 560 M1260 455 l-30 0 M1230 455 A30 30 0 0 0 1260 485 M930 615 l30 0 M960 615 A30 30 0 0 1 930 645 M1260 675 l-50 0 M1210 675 A50 50 0 0 0 1260 725 M682 350 l0 -36 M682 314 A36 36 0 0 1 718 350 M682 610 l0 36 M682 646 A36 36 0 0 0 718 610 M520 462 l36 0 M556 462 A36 36 0 0 1 520 498 M880 462 l-36 0 M844 462 A36 36 0 0 0 880 498" fill="none" stroke="#6b5442" stroke-width="0.8"/>
 </g>
+<g data-element="przejscie-w-galerii">
+<title>Ukryte przejście</title>
+<rect x="333" y="252" width="14" height="28" fill="#e2d3ad"/>
+<path d="M332 252 h16 M332 280 h16" fill="none" stroke="#3b2a1e" stroke-width="2.4" stroke-linecap="square"/>
+<rect x="336" y="255" width="8" height="22" fill="#8a5f3a" stroke="#3b2a1e" stroke-width="0.9" transform="rotate(-35 340 266)"/>
+<path d="M302 266 H326 M354 266 H382" fill="none" stroke="#5a4636" stroke-width="1.4" stroke-dasharray="1.5 4" stroke-linecap="round"/>
+<path d="M376 261 l7 5 l-7 5" fill="none" stroke="#5a4636" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="352" y="294" class="h" font-size="13" font-weight="bold" font-style="italic" text-anchor="start" fill="#2a1d14">Ukryte przejście</text>
+</g>
+<g data-element="skrytka-w-bibliotece">
+<title>Skrytka za kominkiem</title>
+<rect x="172" y="460" width="16" height="16" fill="#5a4636" stroke="#3b2a1e" stroke-width="1.2"/>
+<path d="M172 468 h16" fill="none" stroke="#8a6a4a" stroke-width="0.9"/>
+<circle cx="180" cy="472" r="2.6" fill="none" stroke="#c9a24a" stroke-width="1.2"/>
+<text x="200" y="496" class="h" font-size="13" font-weight="bold" font-style="italic" text-anchor="middle" fill="#2a1d14">Skrytka</text>
+</g>
 <g>
 <rect x="610" y="855" width="180" height="48" fill="url(#kamien)" stroke="#3b2a1e" stroke-width="1.2"/>
 <circle cx="626" cy="878" r="7" fill="#e9e3d4" stroke="#3b2a1e" stroke-width="1.3"/>

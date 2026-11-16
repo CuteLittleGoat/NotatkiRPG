@@ -1,8 +1,10 @@
-// Zakładka „Admin”: widoczność kampanii i zakładek, dostępność miejsc dla graczy,
-// kolory ekranu, kopia zapasowa i przywracanie bazy, LOG komunikatów.
+// Zakładka „Admin”: widoczność kampanii i zakładek, widoczność i klikalność miejsc dla
+// graczy (👁 i ◈ — odkrycia.js), kolory ekranu, kopia zapasowa i przywracanie bazy,
+// LOG komunikatów.
 // Admin NIE edytuje wpisów graczy — tylko je przegląda (rozdz. 3 polecenia).
 import { MOTYWY, MOTYWY_EKRANU, ZAKLADKI_STALE } from "./konfiguracja.js";
 import { el, komunikat, naZmianeLogu, opisBledu, potwierdz, wpisyLogu, wyczysc, wyczyscLog } from "./narzedzia.js";
+import { IKONA_KLIKALNE, IKONA_WIDOCZNE, polaMiejsca } from "./odkrycia.js";
 import { zapiszWidocznoscKampanii } from "./dane.js";
 import { pobierzKopie, przeanalizujPlik, przywroc } from "./kopia.js";
 import { sprawdzAppCheck } from "./firebase.js";
@@ -19,7 +21,8 @@ export class WidokAdmina {
   constructor(kontener, opcje) {
     this.kontener = kontener;
     this.opcje = opcje;
-    this.pola = { zakladki: new Map(), kolory: new Map(), elementy: new Map() };
+    this.pola = { zakladki: new Map(), kolory: new Map(), elementy: new Map() }; // elementy: id → pola 👁 i ◈
+    this.oczekujace = new Map(); // zapisy pól miejsc w toku (odkrycia.js)
     this.analiza = null;
     this.zbuduj();
   }
@@ -98,7 +101,9 @@ export class WidokAdmina {
     // ---- mapy i miejsca ----
     const sekcjaMap = el("section.panel-ramka", [
       el("h3.sekcja-tytul", { tekst: "MAPY I MIEJSCA" }),
-      el("p.przygaszony", { tekst: "Dostępność miejsc zmienisz też w indeksie obok mapy (pola wyboru) albo w karcie miejsca." })
+      el("p.przygaszony", {
+        tekst: `Przy każdym miejscu: ${IKONA_WIDOCZNE} — gracze widzą je na mapie (odznaczone = zasłonięte; odkrycie wymaga potwierdzenia), ${IKONA_KLIKALNE} — gracze mogą je kliknąć i robić przy nim notatki (tylko przy zaznaczonym ${IKONA_WIDOCZNE}). Te same pola są w indeksie obok mapy i w karcie miejsca.`
+      })
     ]);
     // Kolor interfejsu — ekranu poza mapami (zakładki Notatki i Admin); domyślnie zielony.
     this.kolorKampanii = this.listaKolorow(stan.kolorKampanii(), MOTYWY_EKRANU);
@@ -117,33 +122,40 @@ export class WidokAdmina {
       this.pola.kolory.set(mapa.id, kolor);
 
       const elementy = (stan.manifest.elementy || []).filter((e) => e.mapa === mapa.id);
-      const ustawWszystkie = (wartosc) =>
+      // Przyciski zbiorcze zmieniają tylko klikalność WIDOCZNYCH miejsc — nigdy niczego
+      // nie odkrywają hurtem (decyzja użytkownika, Analizy/Spoilery.md).
+      const ustawWszystkie = (wartosc) => {
+        const widoczne = elementy.filter((e) => stan.elementWidoczny(e));
+        if (!widoczne.length) return;
         this.zapisz(
-          { elementy: Object.fromEntries(elementy.map((e) => [e.id, wartosc])) },
-          wartosc ? `Zaznaczono wszystkie miejsca na mapie „${mapa.nazwa}”.` : `Odznaczono wszystkie miejsca na mapie „${mapa.nazwa}”.`
+          { elementy: Object.fromEntries(widoczne.map((e) => [e.id, wartosc])) },
+          wartosc
+            ? `Wszystkie widoczne miejsca na mapie „${mapa.nazwa}” klikalne dla graczy.`
+            : `Wszystkie widoczne miejsca na mapie „${mapa.nazwa}” nieklikalne dla graczy.`
         );
+      };
       const domyslne = async () => {
-        const ok = await potwierdz(`Przywrócić ustawienia mapy „${mapa.nazwa}” z manifestu (widoczność zakładki, kolor i dostępność miejsc)?`);
-        if (!ok) return;
-        this.zapisz(
-          { mapy: { [mapa.id]: null }, elementy: Object.fromEntries(elementy.map((e) => [e.id, null])) },
-          `Przywrócono ustawienia domyślne mapy „${mapa.nazwa}”.`
+        const ok = await potwierdz(
+          `Przywrócić ustawienia mapy „${mapa.nazwa}” z manifestu (widoczność zakładki, kolor, widoczność i klikalność miejsc)? Miejsca, które na start są zasłonięte, zostaną zasłonięte z powrotem.`
         );
+        if (!ok) return;
+        const bezWpisu = Object.fromEntries(elementy.map((e) => [e.id, null]));
+        this.zapisz({ mapy: { [mapa.id]: null }, elementy: bezWpisu, elementyWidoczne: bezWpisu }, `Przywrócono ustawienia domyślne mapy „${mapa.nazwa}”.`);
       };
       const lista = el("ul.lista-elementow");
       for (const e of elementy) {
-        const pole = el("input.przelacznik", { atrybuty: { type: "checkbox", id: `admin-el-${e.id}` } });
-        pole.addEventListener("change", () =>
-          this.zapisz({ elementy: { [e.id]: pole.checked } }, pole.checked ? `Miejsce „${e.nazwa}” dostępne dla graczy.` : `Miejsce „${e.nazwa}” ukryte przed graczami.`)
-        );
-        this.pola.elementy.set(e.id, pole);
-        lista.append(el("li", [el("label.przelacznik-etykieta", { atrybuty: { for: `admin-el-${e.id}` } }, [pole, el("span", { tekst: e.nazwa })])]));
+        const pola = polaMiejsca({ stan, dane: this.opcje.dane, element: e, oczekujace: this.oczekujace, idPola: `admin-el-${e.id}`, poZmianie: () => this.render() });
+        const nazwa = el("span", { tekst: e.nazwa });
+        this.pola.elementy.set(e.id, { ...pola, nazwa });
+        lista.append(el("li.admin-miejsce", [pola.widoczne, pola.klikalne, el("label", { atrybuty: { for: `admin-el-${e.id}-klikalne` } }, [nazwa])]));
       }
       sekcjaMap.append(
         el("div.admin-mapa", [
           el("h4.podsekcja", { tekst: `◈ ${mapa.nazwa.toUpperCase()}` }),
           el("div.admin-wiersz", [el("label.etykieta.etykieta-pozioma", [el("span", { tekst: "Kolor map:" }), kolor])]),
-          el("p.przygaszony", { tekst: "Zaznaczone miejsca są dla graczy klikalne i można przy nich robić notatki. Odznaczone wyglądają jak zwykłe tło mapy." }),
+          el("p.przygaszony", {
+            tekst: `${IKONA_WIDOCZNE} odznaczone — miejsca nie ma na mapie graczy. ${IKONA_KLIKALNE} odznaczone — miejsce wygląda jak zwykłe tło mapy. Przyciski zmieniają tylko ${IKONA_KLIKALNE} miejsc widocznych.`
+          }),
           el("div.admin-wiersz", [
             el("button.przycisk.przycisk-maly", { tekst: "ZAZNACZ WSZYSTKIE", atrybuty: { type: "button" }, zdarzenia: { click: () => ustawWszystkie(true) } }),
             el("button.przycisk.przycisk-maly", { tekst: "ODZNACZ WSZYSTKIE", atrybuty: { type: "button" }, zdarzenia: { click: () => ustawWszystkie(false) } }),
@@ -310,8 +322,11 @@ export class WidokAdmina {
       this.pola.kolory.get(mapa.id).value = stan.kolorMapy(mapa);
     }
     for (const e of stan.manifest.elementy || []) {
-      const pole = this.pola.elementy.get(e.id);
-      if (pole) pole.checked = stan.elementZaznaczony(e);
+      const pola = this.pola.elementy.get(e.id);
+      if (!pola) continue;
+      pola.odswiez();
+      pola.nazwa.classList.toggle("nazwa-zaslonieta", !pola.widoczne.checked);
+      pola.nazwa.classList.toggle("nazwa-nieklikalna", !pola.klikalne.checked);
     }
   }
 

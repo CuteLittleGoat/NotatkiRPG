@@ -1,9 +1,10 @@
 // Panel boczny miejsca: nazwa, jawny opis z manifestu, notatki o miejscu.
-// Admin dodatkowo przełącza tu dostępność miejsca dla graczy.
-import { el, komunikat, opisBledu, wyczysc } from "./narzedzia.js";
+// Admin dodatkowo ustawia tu, czy gracze widzą miejsce (👁) i czy mogą je kliknąć (◈).
+import { el, wyczysc } from "./narzedzia.js";
 import { jestAdminem, mozeEdytowac } from "./sesja.js";
 import { kartaNotatki, odNajnowszych } from "./karty.js";
 import { oknoNotatki } from "./formularze.js";
+import { IKONA_KLIKALNE, IKONA_WIDOCZNE, polaMiejsca } from "./odkrycia.js";
 
 export class PanelElementu {
   /**
@@ -104,23 +105,24 @@ export class PanelElementu {
 
   sekcjaAdmina(element, mapa) {
     const { stan, dane } = this.opcje;
-    const pole = el("input.przelacznik", {
-      atrybuty: { type: "checkbox", checked: stan.elementZaznaczony(element), id: "panel-dostepny" }
-    });
-    pole.addEventListener("change", async () => {
-      pole.disabled = true;
-      try {
-        await dane.zapiszUstawienia({ elementy: { [element.id]: pole.checked } }, stan.sesja);
-        komunikat(pole.checked ? `Miejsce „${element.nazwa}” dostępne dla graczy.` : `Miejsce „${element.nazwa}” ukryte przed graczami.`, "ok");
-      } catch (e) {
-        komunikat(opisBledu(e), "blad", 8000);
-      } finally {
-        pole.disabled = false;
-      }
-    });
+    const pola = polaMiejsca({ stan, dane, element, idPola: "panel", poZmianie: () => this.render() });
     const sekcja = el("div.panel-admin", [
-      el("label.przelacznik-etykieta", { atrybuty: { for: "panel-dostepny" } }, [pole, el("span", { tekst: "Dostępne dla graczy (klikalne, można robić notatki)" })])
+      el("label.przelacznik-etykieta", { atrybuty: { for: "panel-widoczne" } }, [
+        pola.widoczne,
+        el("span", { tekst: `${IKONA_WIDOCZNE} Widoczne dla graczy (narysowane na mapie)` })
+      ]),
+      el("label.przelacznik-etykieta", { klasa: pola.klikalne.disabled ? "etykieta-nieaktywna" : "", atrybuty: { for: "panel-klikalne" } }, [
+        pola.klikalne,
+        el("span", { tekst: `${IKONA_KLIKALNE} Klikalne dla graczy (karta miejsca i notatki)` })
+      ])
     ]);
+    if (!pola.widoczne.checked) {
+      sekcja.append(
+        el("p.przygaszony", {
+          tekst: "Miejsce zasłonięte: gracze go nie widzą (Ty widzisz je przygaszone). Zaznacz „widoczne”, gdy je odkryją — zobaczą je od razu."
+        })
+      );
+    }
     if (mapa && !stan.mapaWidocznaDlaGraczy(mapa)) {
       sekcja.append(
         el("p.ostrzezenie", {

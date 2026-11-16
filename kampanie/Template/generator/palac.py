@@ -13,7 +13,7 @@ import math
 import random
 import sys
 from pathlib import Path
-from wspolne import atr, catmull, drgajaca, el, f, pts, sciezka_lamanej, tekst, tekst_wiele
+from wspolne import atr, catmull, drgajaca, el, f, pts, sciezka_lamanej, tekst, tekst_wiele, zapisz_rysunek
 
 rng = random.Random(1924)
 W, H = 1400, 1000
@@ -420,6 +420,36 @@ for os_, poz, s, w, strona in DRZWI:
 o(el("path", d=" ".join(d_skrzydla), fill="none", stroke="#6b5442", stroke_width="0.8"))
 o("</g>")
 
+# ------------------------------------------------------------------ MIEJSCA DO ODKRYCIA (na start zasłonięte)
+# W manifeście "widocznyDomyslnie": false — aplikacja zasłania je przed graczami, dopóki admin
+# ich nie odkryje. Rysowane PO ścianach i podłogach: ściana pod ukrytym przejściem jest cała
+# (po zasłonięciu widać zwykłą ścianę), a otwór w niej rysuje dopiero to miejsce.
+
+# Ukryte przejście: obrotowy regał w ścianie między Gabinetem a Galerią portretów
+o('<g data-element="przejscie-w-galerii">')
+o("<title>Ukryte przejście</title>")
+o(el("rect", x=333, y=252, width=14, height=28, fill="#e2d3ad"))
+o(el("path", d="M332 252 h16 M332 280 h16", fill="none", stroke=TUSZ, stroke_width="2.4", stroke_linecap="square"))
+o(el("rect", x=336, y=255, width=8, height=22, fill="#8a5f3a", stroke=TUSZ, stroke_width="0.9",
+     transform="rotate(-35 340 266)"))
+o(el("path", d="M302 266 H326 M354 266 H382", fill="none", stroke="#5a4636", stroke_width="1.4", stroke_dasharray="1.5 4",
+     stroke_linecap="round"))
+o(el("path", d="M376 261 l7 5 l-7 5", fill="none", stroke="#5a4636", stroke_width="1.3", stroke_linecap="round",
+     stroke_linejoin="round"))
+o(tekst(352, 294, "Ukryte przejście", class_="h", font_size="13", font_weight="bold", font_style="italic", text_anchor="start",
+        fill="#2a1d14"))
+o("</g>")
+
+# Skrytka za kominkiem w Bibliotece: klapa w podłodze z kółkiem
+o('<g data-element="skrytka-w-bibliotece">')
+o("<title>Skrytka za kominkiem</title>")
+o(el("rect", x=172, y=460, width=16, height=16, fill="#5a4636", stroke=TUSZ, stroke_width="1.2"))
+o(el("path", d="M172 468 h16", fill="none", stroke="#8a6a4a", stroke_width="0.9"))
+o(el("circle", cx=180, cy=472, r=2.6, fill="none", stroke="#c9a24a", stroke_width="1.2"))
+o(tekst(200, 496, "Skrytka", class_="h", font_size="13", font_weight="bold", font_style="italic", text_anchor="middle",
+        fill="#2a1d14"))
+o("</g>")
+
 # ------------------------------------------------------------------ portyk i schody wejściowe
 o("<g>")
 o(el("rect", x=610, y=855, width=180, height=48, fill="url(#kamien)", stroke=TUSZ, stroke_width="1.2"))
@@ -486,7 +516,4 @@ o(tekst_wiele(712, 46, ["Przykład: notatka dla MG — skrypt usuwa", "grupę �
 o("</g>")
 o("</svg>")
 
-sciezka = sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "Rysunek_palac.svg"
-with open(sciezka, "w", encoding="utf-8") as plik:
-    plik.write("\n".join(out) + "\n")
-print("elementów:", sum(s.count("<") - s.count("</") for s in out), file=sys.stderr)
+zapisz_rysunek(out, "Rysunek_palac.svg")

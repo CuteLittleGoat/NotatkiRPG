@@ -14,7 +14,7 @@ import random
 import sys
 from pathlib import Path
 from wspolne import (catmull, el, f, odl_lamana, poisson, probkuj_krzywa, pts, sciezka_lamanej, tekst, tekst_wiele,
-                     w_wielokacie)
+                     w_wielokacie, zapisz_rysunek)
 
 rng = random.Random(247)
 W, H = 1500, 1000
@@ -128,9 +128,11 @@ def zasieki(punkty):
             el("path", d=paliki, fill="none", stroke="#3a332a", stroke_width="1.6")]
 
 
-def lej(cx, cy, r, woda=False):
+def lej(cx, cy, r, woda=False, los=None):
+    los = los or rng  # osobne losowanie (los) nie przesuwa reszty rysunku
+
     def nieregularny(rr, n=11):
-        return [(cx + rr * rng.uniform(0.82, 1.12) * math.cos(2 * math.pi * k / n), cy + rr * rng.uniform(0.82, 1.12) * math.sin(2 * math.pi * k / n)) for k in range(n)]
+        return [(cx + rr * los.uniform(0.82, 1.12) * math.cos(2 * math.pi * k / n), cy + rr * los.uniform(0.82, 1.12) * math.sin(2 * math.pi * k / n)) for k in range(n)]
     czesci = [el("path", d=catmull(nieregularny(r * 1.3), True), fill="#dccba3"),
               el("path", d=catmull(nieregularny(r), True), fill="#8a7350", stroke="#5e4a33", stroke_width="0.8"),
               el("path", d=catmull(nieregularny(r * 0.5, 8), True), fill="#6e8c87" if woda else "#574531")]
@@ -326,7 +328,15 @@ for punkty in ([(40, 652), (300, 664), (520, 650)], [(616, 654), (900, 664), (12
     out.extend(zasieki(punkty))
 o("</g>")
 
-# ------------------------------------------------------------------ POLE MINOWE (klikalne)
+# Leje pod polem minowym (tło). Pole minowe jest miejscem do odkrycia — po zasłonięciu widać
+# zwykłą, zrytą pociskami ziemię niczyją, a nie podejrzanie czysty prostokąt.
+los_tla = random.Random(2470)
+o("<g>")
+for x, y, r in ((150, 470, 11), (330, 448, 13), (214, 548, 9), (372, 530, 10), (128, 520, 8), (250, 432, 8)):
+    out.extend(lej(x, y, r, woda=(x == 330), los=los_tla))
+o("</g>")
+
+# ------------------------------------------------------------------ POLE MINOWE (miejsce do odkrycia)
 o('<g data-element="pole-minowe">')
 o("<title>Pole minowe</title>")
 o(el("polygon", points=pts(MINY), fill="#b8a57a", fill_opacity="0.35", stroke="#d9a520", stroke_width="2", stroke_dasharray="7 5"))
@@ -511,6 +521,35 @@ o(el("path", d=f"M{lx - 126} {ly + 40} v-24 h46", fill="none", stroke="#3a3a38",
 o(tekst(lx, ly - 86, "Lądowisko", class_="h", font_size="16", font_weight="bold", text_anchor="middle", fill="#2a1f12"))
 o("</g>")
 
+# ------------------------------------------------------------------ MIEJSCA DO ODKRYCIA (na start zasłonięte)
+# W manifeście "widocznyDomyslnie": false — aplikacja zasłania je przed graczami, dopóki admin
+# ich nie odkryje (także pole minowe wyżej). Pod nimi jest pełne tło (ziemia, ruiny).
+# Linie przerywane — w kolorze ziemi, NIE czerwone (czerwone przerywane to znak materiału MG).
+
+# Tunel pod ziemią niczyją: z pierwszej linii okopów do ruin manufaktury
+TUNEL = [(1424, 710), (1418, 676), (1406, 642), (1392, 612), (1378, 590)]
+o('<g data-element="tunel-wschodni">')
+o("<title>Tunel</title>")
+o(el("path", d=catmull(TUNEL), fill="none", stroke="#dccba3", stroke_width="7", stroke_linecap="round"))
+o(el("path", d=catmull(TUNEL), fill="none", stroke="#3e2a18", stroke_width="2.6", stroke_dasharray="7 4", stroke_linecap="round"))
+for x, y in (TUNEL[0], TUNEL[-1]):
+    o(el("rect", x=x - 6, y=y - 6, width=12, height=12, fill="#5b4630", stroke=TUSZ, stroke_width="1.2"))
+    o(el("path", d=f"M{x - 6} {y} h12 M{x} {y - 6} v12", fill="none", stroke="#c9b58b", stroke_width="0.9"))
+o(tekst(1434, 652, "Tunel", class_="h", font_size="14", font_weight="bold", text_anchor="start", fill="#2a1f12"))
+o("</g>")
+
+# Gniazdo snajpera wroga w ruinach manufaktury
+sx, sy = 1300, 404
+o('<g data-element="stanowisko-w-ruinach">')
+o("<title>Gniazdo snajpera</title>")
+out.extend(worki_z_piaskiem([(sx + 18 * math.cos(a), sy + 14 * math.sin(a)) for a in [math.pi * (0.9 + k / 7 * 1.2) for k in range(8)]]))
+o(el("path", d=f"M{sx - 4} {sy + 2} L{sx + 22} {sy - 12}", fill="none", stroke="#1e1e1c", stroke_width="2.4", stroke_linecap="round"))
+o(el("circle", cx=sx - 4, cy=sy + 4, r=5, fill="#6a3a32", stroke="#1e1e1c", stroke_width="1"))
+o(el("circle", cx=sx + 30, cy=sy - 18, r=7, fill="none", stroke="#9e1d16", stroke_width="1.4"))
+o(el("path", d=f"M{sx + 30} {sy - 28} v20 M{sx + 20} {sy - 18} h20", fill="none", stroke="#9e1d16", stroke_width="1.2"))
+o(tekst(sx, sy + 34, "Gniazdo snajpera", class_="h", font_size="14", font_weight="bold", text_anchor="middle", fill="#5a1410"))
+o("</g>")
+
 # ------------------------------------------------------------------ tyły: wieża łączności, kable, znaczniki jednostek (tło)
 o("<g>")
 wx, wy = 1150, 790
@@ -604,7 +643,4 @@ for x, y, sx, sy in ((16, 16, 1, 1), (W - 16, 16, -1, 1), (16, H - 16, 1, -1), (
 o("</g>")
 o("</svg>")
 
-sciezka = sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "Rysunek_pole_bitwy.svg"
-with open(sciezka, "w", encoding="utf-8") as plik:
-    plik.write("\n".join(out) + "\n")
-print("elementów:", sum(s.count("<") - s.count("</") for s in out), file=sys.stderr)
+zapisz_rysunek(out, "Rysunek_pole_bitwy.svg")

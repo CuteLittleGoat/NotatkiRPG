@@ -368,5 +368,49 @@ test("kolory: mapy domyślnie w kolorach oryginału (pierwsze na liście), inter
   assert.equal(stan.kolorMapy(bez), "oryginalny", "kolor interfejsu zmienił kolor mapy");
 });
 
+test("miejsca: „widoczne” i „klikalne” — domyślne z manifestu, klikalne tylko widoczne", () => {
+  const manifest = {
+    mapy: [{ id: "m", widocznaDomyslnie: true }, { id: "ukryta", widocznaDomyslnie: false }],
+    elementy: [
+      { id: "zwykle", mapa: "m", dostepnyDomyslnie: true },
+      { id: "nieklikalne", mapa: "m", dostepnyDomyslnie: false },
+      { id: "zasloniete", mapa: "m", widocznyDomyslnie: false, dostepnyDomyslnie: false },
+      { id: "po-odkryciu-klikalne", mapa: "m", widocznyDomyslnie: false, dostepnyDomyslnie: true },
+      { id: "na-ukrytej", mapa: "ukryta", dostepnyDomyslnie: true }
+    ]
+  };
+  const stan = new Stan({ kampania: { id: "proba" }, manifest, folder: "" });
+  stan.sesja = { kontoId: "g", rola: "gracz" };
+  const e = Object.fromEntries(manifest.elementy.map((x) => [x.id, x]));
+  const widoczne = () => manifest.elementy.filter((x) => stan.elementWidocznyDlaUzytkownika(x)).map((x) => x.id);
+  const klikalne = () => stan.elementyDlaUzytkownika().map((x) => x.id);
+  // Bez pola widocznyDomyslnie miejsce jest widoczne (istniejące kampanie bez zmian).
+  assert.deepEqual(widoczne(), ["zwykle", "nieklikalne"]);
+  assert.deepEqual(klikalne(), ["zwykle"]);
+  assert.equal(stan.elementWidoczny(e["na-ukrytej"]), true, "pole „widoczne” nie zależy od zakładki");
+  // Admin odkrywa miejsca: klikalność wraca do zapisanej albo domyślnej wartości.
+  stan.ustawienia = { elementyWidoczne: { zasloniete: true, "po-odkryciu-klikalne": true } };
+  assert.deepEqual(widoczne(), ["zwykle", "nieklikalne", "zasloniete", "po-odkryciu-klikalne"]);
+  assert.deepEqual(klikalne(), ["zwykle", "po-odkryciu-klikalne"]);
+  // Zasłonięte miejsce nie jest klikalne, nawet gdy pole „klikalne” jest zapisane (niespójne dane).
+  stan.ustawienia = { elementyWidoczne: { zwykle: false }, elementy: { zwykle: true } };
+  assert.equal(stan.elementDostepnyDlaGraczy(e.zwykle), false);
+  assert.equal(stan.elementWidocznyDlaUzytkownika(e.zwykle), false);
+  assert.equal(stan.rodzajNotatki({ elementId: "zwykle" }), "bez-miejsca", "notatka przy zasłoniętym miejscu zdradza je graczom");
+  // Czerwona kropka tylko przy widocznym i klikalnym miejscu.
+  stan.notatki = [{ elementId: "zwykle" }, { elementId: "zasloniete" }];
+  assert.equal(stan.elementMaKropke(e.zwykle), false);
+  stan.ustawienia = { elementy: { zasloniete: true } };
+  assert.equal(stan.elementMaKropke(e.zasloniete), false, "kropka przy zasłoniętym miejscu");
+  assert.equal(stan.elementMaKropke(e.zwykle), true);
+  // Admin widzi i może kliknąć wszystko; w podglądzie gracza — jak gracz.
+  stan.sesja = { kontoId: "a", rola: "admin" };
+  assert.equal(stan.elementWidocznyDlaUzytkownika(e.zasloniete), true);
+  assert.equal(stan.elementDlaUzytkownika(e.zasloniete), true);
+  stan.podgladGracza = true;
+  assert.equal(stan.elementWidocznyDlaUzytkownika(e.zasloniete), false);
+  assert.equal(stan.elementDlaUzytkownika(e.zasloniete), false);
+});
+
 console.log(`\nWynik: ${ok}/${ok + zle} testów OK.`);
 process.exit(zle ? 1 : 0);

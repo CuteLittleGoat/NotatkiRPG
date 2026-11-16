@@ -583,7 +583,10 @@ async function bezPrzewijaniaWBok(strona) {
     await sa.click('[data-element="trakt"] text >> nth=0');
     await sa.waitForSelector("#panel:not([hidden]) .karta");
     zalozenie((await sa.$$("#panel button:has-text('EDYTUJ'), #panel button:has-text('USUŃ'), #panel button:has-text('DODAJ')")).length === 0, "admin może edytować wpisy");
-    zalozenie((await sa.$$("#panel .panel-admin input[type=checkbox]")).length === 1, "brak pola „dostępne dla graczy” w karcie");
+    zalozenie(
+      (await sa.$$("#panel .panel-admin input.pole-widoczne, #panel .panel-admin input.pole-klikalne")).length === 2,
+      "brak pól „widoczne” i „klikalne” w karcie"
+    );
   });
 
   await krok("admin → gracz na żywo: zaznaczenie miejsca w indeksie (z czerwoną kropką, bo są notatki)", async () => {
@@ -591,7 +594,7 @@ async function bezPrzewijaniaWBok(strona) {
     await s.waitForSelector('.plansza svg [data-element="brassyl"]');
     await s.waitForTimeout(400);
     zalozenie(!(await s.$eval('[data-element="brassyl"]', (g) => g.classList.contains("el-ma-notatki"))), "kropka przy miejscu ukrytym przed graczami");
-    await sa.click('#indeks li:has-text("Brassyl") input[type=checkbox]');
+    await sa.click('#indeks li:has-text("Brassyl") input.pole-klikalne');
     await s.waitForSelector('.plansza svg [data-element="brassyl"].el-dostepny', { timeout: 4000 });
     await s.waitForSelector('#indeks .indeks-nazwa:has-text("Brassyl")', { timeout: 4000 });
     await s.waitForSelector('[data-element="brassyl"].el-ma-notatki', { timeout: 4000 });
@@ -599,10 +602,10 @@ async function bezPrzewijaniaWBok(strona) {
   });
 
   await krok("czerwona kropka znika, gdy admin wyłączy miejsce", async () => {
-    await sa.click('#indeks li:has-text("Brassyl") input[type=checkbox]');
+    await sa.click('#indeks li:has-text("Brassyl") input.pole-klikalne');
     await s.waitForFunction(() => !document.querySelector('[data-element="brassyl"]').classList.contains("el-dostepny"), null, { timeout: 4000 });
     zalozenie((await s.$eval('[data-element="brassyl"] .el-kropka', (k) => k.getBoundingClientRect().width)) === 0, "kropka widoczna przy wyłączonym miejscu");
-    await sa.click('#indeks li:has-text("Brassyl") input[type=checkbox]');
+    await sa.click('#indeks li:has-text("Brassyl") input.pole-klikalne');
     await s.waitForSelector('[data-element="brassyl"].el-dostepny.el-ma-notatki', { timeout: 4000 });
   });
 
@@ -739,7 +742,7 @@ async function bezPrzewijaniaWBok(strona) {
     for (const oczekiwany of [
       /^Zakładka „Kopiec” widoczna dla graczy\.$/,
       /^Zakładka „Notatki” ukryta przed graczami\.$/,
-      /^Miejsce „Brassyl[^”]*” dostępne dla graczy\.$/,
+      /^Miejsce „Brassyl[^”]*” klikalne dla graczy\.$/,
       /^Kolor mapy „Okolice”: bursztynowy\.$/,
       /^Kampania „Kampania próbna” widoczna dla graczy\.$/
     ]) {
@@ -890,6 +893,130 @@ async function bezPrzewijaniaWBok(strona) {
       await s4.waitForURL(/index\.html\?k=iliac$/);
       await s4.close();
     }
+  });
+
+  // ---- miejsca do odkrycia (Analizy/Spoilery.md): admin zasłania i odkrywa miejsca na mapach
+  const g = await nowaStrona(ctx, bledy); // Gracz (bez wpisu w admins)
+  // Każde zasłonięte miejsce, które choć na chwilę trafiło na stronę bez zasłony, zostaje zapamiętane.
+  await g.addInitScript(() => {
+    window.__mignelo = [];
+    new MutationObserver((zmiany) => {
+      for (const z of zmiany) {
+        for (const n of z.addedNodes) {
+          if (!(n instanceof Element)) continue;
+          for (const id of ["smocza-jama", "chata-na-mokradlach", "stara-sztolnia"]) {
+            const e = n.matches(`svg [data-element="${id}"]`) ? n : n.querySelector(`svg [data-element="${id}"]`);
+            if (e && !e.classList.contains("el-niewidoczny")) window.__mignelo.push(id);
+          }
+        }
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
+  const otworzIndeks = async (strona) => {
+    if (await strona.$eval("#indeks", (x) => x.hidden)) await strona.click("#przycisk-indeks");
+    await strona.waitForSelector("#indeks:not([hidden]) .indeks-pozycja");
+  };
+  // Uwaga: przyciski indeksu też mają data-element — miejsca na mapie szukamy w .plansza svg.
+  const zaslonieteUGracza = (id) => g.$eval(`.plansza svg [data-element="${id}"]`, (e) => e.classList.contains("el-niewidoczny"));
+
+  await krok("gracz: miejsca do odkrycia są zasłonięte — na mapie (także w chwili wczytania), w indeksie i w filtrze notatek", async () => {
+    await g.goto(`${ADRES}/index.html`);
+    await zaloguj(g, "test-gracz", "haslo-gracza");
+    await g.goto(`${ADRES}/kampania.html?k=wzor#kraina`);
+    await g.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kraina"] .el');
+    const stany = await g.$$eval(
+      'svg[data-mapa="kraina"] [data-element="smocza-jama"], svg[data-mapa="kraina"] [data-nalezy-do="smocza-jama"], svg[data-mapa="kraina"] [data-element="chata-na-mokradlach"], svg[data-mapa="kraina"] [data-element="stara-sztolnia"]',
+      (lista) => lista.map((e) => [e.classList.contains("el-niewidoczny"), getComputedStyle(e.querySelector("path, text") || e).visibility, e.getAttribute("tabindex")])
+    );
+    zalozenie(stany.length === 4 && stany.every(([k, v, t]) => k && v === "hidden" && t === null), `zasłonięte miejsca u gracza: ${JSON.stringify(stany)}`);
+    zalozenie(!(await zaslonieteUGracza("wysogrod")) && !(await zaslonieteUGracza("kamieniec")), "zasłonięte zwykłe miejsce");
+    zalozenie((await g.evaluate(() => window.__mignelo)).length === 0, "zasłonięte miejsce mignęło przy wczytaniu mapy");
+    await otworzIndeks(g);
+    const nazwy = await g.$$eval("#indeks .indeks-nazwa", (n) => n.map((x) => x.textContent));
+    zalozenie(!nazwy.some((n) => /Smocza|Zielarki|sztolnia/.test(n)), `zasłonięte miejsca w indeksie gracza: ${nazwy}`);
+    await g.click("#zakladki .zakladka:has-text('POLE BITWY')");
+    await g.waitForSelector('.plansza:not([hidden]) svg[data-mapa="pole-bitwy"] .el');
+    for (const id of ["pole-minowe", "tunel-wschodni", "stanowisko-w-ruinach"]) zalozenie(await zaslonieteUGracza(id), `${id} nie jest zasłonięte`);
+    await g.click("#zakladki .zakladka:has-text('NOTATKI')");
+    const filtr = await g.$$eval('#widok-notatki select[aria-label="Filtr: miejsce"] option', (o) => o.map((x) => x.textContent));
+    zalozenie(!filtr.some((n) => /Smocza|Zielarki|sztolnia|Tunel|snajpera|Skrytka|Ukryte przejście/.test(n)), `zasłonięte miejsca w filtrze notatek: ${filtr}`);
+    await g.click("#zakladki .zakladka:has-text('KRAINA')");
+    await g.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kraina"]');
+  });
+
+  await krok("admin: zasłonięte miejsca przygaszone; pole ◈ nieaktywne, dopóki 👁 jest odznaczone", async () => {
+    await sa.goto(`${ADRES}/kampania.html?k=wzor#kraina`);
+    await sa.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kraina"] [data-element="smocza-jama"].el-zasloniety.el-dostepny');
+    zalozenie((await sa.$eval('.plansza svg [data-element="smocza-jama"]', (e) => getComputedStyle(e).opacity)) === "0.4", "zasłonięte miejsce nie jest przygaszone");
+    zalozenie(await sa.$eval('[data-nalezy-do="smocza-jama"]', (e) => e.classList.contains("el-zasloniety")), "ścieżka do jaskini nie jest przygaszona");
+    await otworzIndeks(sa);
+    const pola = await sa.$eval('#indeks li:has-text("Smocza Jama")', (li) => ({
+      w: li.querySelector(".pole-widoczne").checked,
+      k: li.querySelector(".pole-klikalne").checked,
+      wyl: li.querySelector(".pole-klikalne").disabled
+    }));
+    zalozenie(!pola.w && !pola.k && pola.wyl, `pola przy Smoczej Jamie: ${JSON.stringify(pola)}`);
+    zalozenie(await sa.$eval('#indeks li:has-text("Wysogród") .pole-klikalne', (x) => x.checked && !x.disabled), "pola przy zwykłym miejscu");
+    await sa.screenshot({ path: path.join(WYNIKI, "15_admin_zasloniete.png") });
+  });
+
+  await krok("admin odkrywa miejsce (z potwierdzeniem) → gracz widzi je od razu, z napisem i mruganiem; ANULUJ niczego nie zmienia", async () => {
+    await sa.click('#indeks input[aria-label="Widoczne dla graczy: Chata Zielarki"]');
+    await sa.waitForSelector("dialog[open] .okno-tresc:has-text('Chata Zielarki')");
+    await sa.click("dialog[open] button:has-text('ANULUJ')");
+    await sa.waitForFunction(() => !document.querySelector('#indeks input[aria-label="Widoczne dla graczy: Chata Zielarki"]').checked);
+    await sa.click('#indeks input[aria-label="Widoczne dla graczy: Smocza Jama"]');
+    await sa.waitForSelector("dialog[open] .okno-tresc:has-text('Odkryć graczom „Smocza Jama”')");
+    await sa.click("dialog[open] button:has-text('ODKRYJ')");
+    await g.waitForFunction(() => !document.querySelector('.plansza svg [data-element="smocza-jama"]').classList.contains("el-niewidoczny"), null, { timeout: 4000 });
+    zalozenie(!(await zaslonieteUGracza("smocza-jama")) && !(await g.$eval('[data-nalezy-do="smocza-jama"]', (e) => e.classList.contains("el-niewidoczny"))), "ścieżka do jaskini nie odkryła się razem z nią");
+    zalozenie(!(await g.$eval('.plansza svg [data-element="smocza-jama"]', (e) => e.classList.contains("el-dostepny"))), "odkrycie od razu zrobiło miejsce klikalnym");
+    await g.waitForSelector(".komunikat:has-text('Nowe odkrycie na mapie „Kraina”: Smocza Jama')", { timeout: 4000 });
+    zalozenie(await g.$eval('.plansza svg [data-element="smocza-jama"]', (e) => e.classList.contains("el-odkryte")), "odkryte miejsce nie mruga");
+    zalozenie(await zaslonieteUGracza("chata-na-mokradlach"), "ANULUJ odkrył Chatę Zielarki");
+    await g.screenshot({ path: path.join(WYNIKI, "15_gracz_odkrycie.png") });
+  });
+
+  await krok("admin: ◈ po odkryciu — gracz może kliknąć miejsce; zasłonięcie odznacza ◈", async () => {
+    await sa.waitForFunction(() => !document.querySelector('#indeks input[aria-label="Klikalne dla graczy: Smocza Jama"]').disabled);
+    await sa.click('#indeks input[aria-label="Klikalne dla graczy: Smocza Jama"]');
+    await g.waitForSelector('.plansza svg [data-element="smocza-jama"].el-dostepny', { timeout: 4000 });
+    await g.waitForSelector('#indeks .indeks-nazwa:has-text("Smocza Jama")', { timeout: 4000 });
+    await sa.click('#indeks input[aria-label="Widoczne dla graczy: Smocza Jama"]'); // zasłonięcie — bez pytania
+    await g.waitForFunction(() => document.querySelector('.plansza svg [data-element="smocza-jama"]').classList.contains("el-niewidoczny"), null, { timeout: 4000 });
+    await sa.waitForFunction(() => {
+      const k = document.querySelector('#indeks input[aria-label="Klikalne dla graczy: Smocza Jama"]');
+      return k && !k.checked && k.disabled;
+    });
+    zalozenie(!(await g.$$eval("#indeks .indeks-nazwa", (n) => n.some((x) => x.textContent.includes("Smocza Jama")))), "zasłonięte miejsce zostało w indeksie gracza");
+    zalozenie(!(await g.$eval('.plansza svg [data-element="smocza-jama"]', (e) => e.classList.contains("el-dostepny"))), "zasłonięte miejsce dalej klikalne");
+  });
+
+  await krok("admin: podgląd gracza — zasłonięte miejsca znikają także u admina", async () => {
+    await sa.check("#podglad-gracza");
+    await sa.waitForFunction(() => document.querySelector('.plansza svg [data-element="smocza-jama"]').classList.contains("el-niewidoczny"));
+    await sa.uncheck("#podglad-gracza");
+    await sa.waitForFunction(() => document.querySelector('.plansza svg [data-element="smocza-jama"]').classList.contains("el-zasloniety"));
+  });
+
+  await krok("admin: przyciski zbiorcze nie odkrywają zasłoniętych miejsc; PRZYWRÓĆ DOMYŚLNE — ustawienia z manifestu", async () => {
+    await sa.click("#zakladki .zakladka:has-text('ADMIN')");
+    const kraina = sa.locator("#widok-admin .admin-mapa", { hasText: "KRAINA" });
+    await kraina.locator("button:has-text('ZAZNACZ WSZYSTKIE')").click();
+    await g.waitForSelector('.plansza svg [data-element="kamieniec"].el-dostepny', { timeout: 4000 });
+    zalozenie(await zaslonieteUGracza("chata-na-mokradlach"), "przycisk zbiorczy odkrył zasłonięte miejsce");
+    zalozenie(
+      await sa.$eval('#widok-admin input[aria-label="Klikalne dla graczy: Chata Zielarki"]', (x) => x.disabled && !x.checked),
+      "◈ przy zasłoniętym miejscu po „ZAZNACZ WSZYSTKIE”"
+    );
+    await sa.screenshot({ path: path.join(WYNIKI, "15_admin_miejsca.png") });
+    await kraina.locator("button:has-text('PRZYWRÓĆ DOMYŚLNE')").click();
+    await sa.click("dialog[open] button:has-text('TAK')");
+    await g.waitForFunction(() => !document.querySelector('.plansza svg [data-element="kamieniec"]').classList.contains("el-dostepny"), null, { timeout: 4000 });
+    zalozenie(await zaslonieteUGracza("smocza-jama"), "po przywróceniu domyślnych Smocza Jama nie jest zasłonięta");
+    await g.close();
+    await sa.goto(`${ADRES}/kampania.html?k=iliac#okolice`); // dalsze kroki — w kampanii Iliac
+    await sa.waitForSelector('.plansza:not([hidden]) svg[data-mapa="okolice"]');
   });
 
   await krok("komputer: brak przewijania w bok", async () => {
