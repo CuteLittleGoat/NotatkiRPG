@@ -337,6 +337,41 @@ async function bezPrzewijaniaWBok(strona) {
     }
   });
 
+  await krok("gracz: INDEKS na mapie — tylko miejsca tej mapy; na Notatkach — wszystkich map; wybór miejsca otwiera jego mapę", async () => {
+    const sekcje = () => s.$$eval("#indeks:not([hidden]) .indeks-naglowek", (h) => h.map((x) => x.textContent).filter((t) => t.startsWith("◈")));
+    const nazwy = () => s.$$eval("#indeks:not([hidden]) .indeks-nazwa", (n) => n.map((x) => x.textContent));
+    for (const [zakladka, naglowek, jest, niema] of [
+      ["KRAINA", "◈ KRAINA", "Wysogród", "Czołg „Młot”"],
+      ["PAŁAC", "◈ PAŁAC", "Biblioteka", "Wysogród"],
+      ["POLE BITWY", "◈ POLE BITWY", "Czołg „Młot”", "Biblioteka"]
+    ]) {
+      await s.click(`#zakladki .zakladka:has-text('${zakladka}')`);
+      await s.waitForSelector(".plansza:not([hidden]) svg");
+      if (await s.$eval("#indeks", (x) => x.hidden)) await s.click("#przycisk-indeks");
+      await s.waitForFunction((n) => [...document.querySelectorAll("#indeks .indeks-naglowek")].some((h) => h.textContent === n), naglowek);
+      zalozenie(JSON.stringify(await sekcje()) === JSON.stringify([naglowek]), `indeks na zakładce ${zakladka}: ${await sekcje()}`);
+      const lista = await nazwy();
+      zalozenie(lista.includes(jest) && !lista.includes(niema), `miejsca w indeksie na zakładce ${zakladka}: ${lista}`);
+      zalozenie((await s.textContent("#indeks .indeks-info")).includes("na tej mapie"), "brak informacji o zakresie indeksu");
+    }
+    await s.click("#zakladki .zakladka:has-text('NOTATKI')");
+    await s.waitForSelector("#widok-notatki:not([hidden])");
+    if (await s.$eval("#indeks", (x) => x.hidden)) await s.click("#widok-notatki button:has-text('INDEKS')");
+    await s.waitForSelector("#indeks:not([hidden]) .indeks-pozycja");
+    zalozenie(
+      JSON.stringify(await sekcje()) === JSON.stringify(["◈ KRAINA", "◈ PAŁAC", "◈ POLE BITWY"]),
+      `indeks na zakładce Notatki: ${await sekcje()}`
+    );
+    zalozenie((await s.textContent("#indeks .indeks-info")).includes("na wszystkich mapach"), "brak informacji o zakresie indeksu");
+    await s.screenshot({ path: path.join(WYNIKI, "02d_gracz_notatki_indeks.png") });
+    // Wybór miejsca z indeksu na Notatkach — jego mapa i karta; indeks już tylko z tej mapy.
+    await s.click("#indeks .indeks-pozycja:has-text('Czołg')");
+    await s.waitForSelector("#panel:not([hidden]) .panel-nazwa:has-text('Czołg')");
+    zalozenie((await s.textContent('#zakladki [aria-selected="true"]')).includes("POLE BITWY"), "wybór miejsca nie otworzył jego mapy");
+    zalozenie(JSON.stringify(await sekcje()) === JSON.stringify(["◈ POLE BITWY"]), `indeks po przejściu na mapę: ${await sekcje()}`);
+    await s.click("#panel .przycisk-ikona");
+  });
+
   await krok("gracz: Pałac Kruków na mapie Kraina otwiera plan pałacu (mapa szczegółowa)", async () => {
     await s.click("#zakladki .zakladka:has-text('KRAINA')");
     await s.waitForSelector('.plansza:not([hidden]) svg[data-mapa="kraina"] [data-element="palac-krukow"].el-dostepny');
@@ -520,15 +555,28 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(JSON.stringify(pola) === JSON.stringify([["Widoczna dla graczy: Notatki", true], ["Widoczna dla graczy: Okolice", true], ["Widoczna dla graczy: Kopiec", false]]), `stan przełączników: ${JSON.stringify(pola)}`);
   });
 
-  await krok("admin: indeks pokazuje wszystkie miejsca z polami wyboru", async () => {
+  await krok("admin: indeks na mapie — wszystkie miejsca TEJ mapy z polami wyboru; na Notatkach — wszystkich map", async () => {
     await sa.waitForSelector("#indeks .indeks-admin");
     const ile = await sa.$$eval("#indeks .indeks-admin", (n) => n.length);
-    zalozenie(ile === 24, `oczekiwano 24 miejsc w indeksie admina, jest ${ile}`);
+    zalozenie(ile === 7, `oczekiwano 7 miejsc mapy Okolice w indeksie admina, jest ${ile}`);
+    const mapy = await sa.$$eval("#indeks .indeks-naglowek", (h) => h.map((x) => x.textContent));
+    zalozenie(JSON.stringify(mapy) === JSON.stringify(["◈ OKOLICE", "▤ NOTATKI"]), `sekcje indeksu na mapie Okolice: ${mapy}`);
     await sa.fill("#indeks .indeks-szukaj", "brassyl");
     await sa.waitForTimeout(300);
     zalozenie((await sa.$$("#indeks .indeks-admin")).length === 1, "admin nie znalazł ukrytego miejsca");
     await sa.fill("#indeks .indeks-szukaj", "");
+    await sa.waitForFunction(() => document.querySelectorAll("#indeks .indeks-admin").length === 7);
     await sa.screenshot({ path: path.join(WYNIKI, "05_admin_okolice.png") });
+    // Zakładka Notatki: przycisk INDEKS w nagłówku — miejsca wszystkich map (Okolice 7 + Kopiec 17).
+    await sa.click("#zakladki .zakladka:has-text('NOTATKI')");
+    await sa.waitForSelector("#widok-notatki:not([hidden])");
+    if (await sa.$eval("#indeks", (x) => x.hidden)) await sa.click("#widok-notatki button:has-text('INDEKS')");
+    await sa.waitForSelector("#indeks:not([hidden]) .indeks-admin");
+    zalozenie((await sa.$$eval("#indeks .indeks-admin", (n) => n.length)) === 24, "na zakładce Notatki indeks nie ma miejsc wszystkich map");
+    await sa.screenshot({ path: path.join(WYNIKI, "05b_admin_notatki_indeks.png") });
+    await sa.click("#zakladki .zakladka:has-text('OKOLICE')");
+    await sa.waitForSelector('.plansza:not([hidden]) svg[data-mapa="okolice"]');
+    await sa.waitForFunction(() => document.querySelectorAll("#indeks .indeks-admin").length === 7);
   });
 
   await krok("admin: przegląda wpisy, ale nie ma przycisków edycji", async () => {
@@ -1066,7 +1114,25 @@ async function bezPrzewijaniaWBok(strona) {
   await ctxF.addInitScript(() => {
     delete window.PasswordCredential;
   });
-  await krok("Firefox i Safari: po zalogowaniu strona przechodzi dalej (sygnał dla menedżera haseł)", async () => {
+  // Każdy czerwony napis „…listy kampanii…”, choćby na chwilę, zostaje zapamiętany w karcie.
+  await ctxF.addInitScript(() => {
+    new MutationObserver(() => {
+      for (const b of document.querySelectorAll(".formularz-blad")) {
+        if (/listy kampanii/i.test(b.textContent)) sessionStorage.setItem("test-mignal-blad", b.textContent);
+      }
+    }).observe(document, { childList: true, subtree: true, characterData: true });
+  });
+  // Przeglądarka przerywa trwające wczytywanie, gdy strona przechodzi na nowy adres —
+  // udajemy to: pierwsze żądanie rejestru kampanii po zalogowaniu zostaje przerwane.
+  let przerwijRejestr = true;
+  await ctxF.route(/\/kampanie\.json(\?.*)?$/, (r) => {
+    if (przerwijRejestr) {
+      przerwijRejestr = false;
+      return r.abort("aborted");
+    }
+    return r.fallback();
+  });
+  await krok("Firefox i Safari: po zalogowaniu strona przechodzi dalej (sygnał dla menedżera haseł), bez mignięcia błędu listy kampanii", async () => {
     const a = await nowaStrona(ctxF, bledy);
     await a.goto(`${ADRES}/index.html`);
     await a.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
@@ -1076,7 +1142,10 @@ async function bezPrzewijaniaWBok(strona) {
     await a.fill("input[name=login]", "test-gracz");
     await a.fill("input[name=haslo]", "haslo-gracza");
     await a.click("button[type=submit]");
-    await czekajNa(a, () => !window.__przedZalogowaniem && Boolean(document.querySelector("#sekcja-kampanii:not([hidden])")), "nowa strona z listą kampanii");
+    await czekajNa(a, () => !window.__przedZalogowaniem && Boolean(document.querySelector("#kampanie a.kampania")), "nowa strona z listą kampanii");
+    zalozenie(!przerwijRejestr, "test nie przerwał wczytywania rejestru kampanii");
+    const mignal = await a.evaluate(() => sessionStorage.getItem("test-mignal-blad"));
+    zalozenie(mignal === null, `po zalogowaniu mignął błąd: ${mignal}`);
     await a.close();
   });
   await ctxF.close();
@@ -1184,6 +1253,13 @@ async function bezPrzewijaniaWBok(strona) {
         await bezPrzewijaniaWBok(t);
       }
       await t.screenshot({ path: path.join(WYNIKI, `13_${plik}_notatki.png`) });
+      // INDEKS na zakładce Notatki (wszystkie mapy) — wysuwa się nad notatki, × zamyka.
+      if (await t.$eval("#indeks", (x) => x.hidden)) await t.click("#widok-notatki button:has-text('INDEKS')");
+      await t.waitForSelector("#indeks:not([hidden]) .indeks-pozycja");
+      await bezPrzewijaniaWBok(t);
+      await t.screenshot({ path: path.join(WYNIKI, `13_${plik}_notatki_indeks.png`) });
+      await t.click("#indeks .indeks-zamknij");
+      await t.waitForSelector("#indeks", { state: "hidden" });
     });
     await krok(`${nazwa}: admin — lista kampanii i panel z logiem bez przewijania w bok`, async () => {
       await t.click("#konto button:has-text('WYLOGUJ')");

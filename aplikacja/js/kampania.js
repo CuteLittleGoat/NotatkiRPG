@@ -199,6 +199,8 @@ async function start() {
     onSzukajWNotatkach: (tekst, miejsce) => {
       przelacz({ rodzaj: "widok", id: "notatki" });
       notatki.ustawFiltr({ szukaj: tekst, miejsce });
+      // Węższy ekran: indeks zasłaniałby wyniki — chowamy go.
+      if (!SZEROKI.matches) ustawIndeks(false);
     }
   });
   const panel = new PanelElementu($("panel"), {
@@ -208,26 +210,32 @@ async function start() {
     onOtworzMape: (id) => przelacz({ rodzaj: "mapa", id }),
     onMiejsce: (id) => pokazElement(id)
   });
-  const notatki = new WidokNotatek($("widok-notatki"), { stan, dane, onMiejsce: (id) => pokazElement(id) });
+  const notatki = new WidokNotatek($("widok-notatki"), { stan, dane, onMiejsce: (id) => pokazElement(id), onIndeks: () => przelaczIndeks() });
   let admin = null;
 
   // ------------------------------------------------------------- indeks
+  // Indeks jest na zakładkach map (tylko miejsca tej mapy) i na zakładce Notatki
+  // (miejsca wszystkich map); na zakładce Admin go nie ma. Otwarcie zapamiętujemy
+  // (szeroki ekran) — przechodzi z zakładki na zakładkę.
   let indeksOtwarty = SZEROKI.matches ? pamiecOdczyt(KLUCZ_INDEKSU, "1") === "1" : false;
+  const indeksNaZakladce = () => Boolean(biezaca) && (biezaca.rodzaj === "mapa" || biezaca.id === "notatki");
   function ustawIndeks(otwarty) {
     indeksOtwarty = otwarty;
-    widokMap.classList.toggle("indeks-otwarty", otwarty);
-    indeksWezel.hidden = !otwarty;
-    $("przycisk-indeks").setAttribute("aria-expanded", String(otwarty));
+    const widoczny = otwarty && indeksNaZakladce();
+    indeks.ustawZakres(biezaca?.rodzaj === "mapa" ? biezaca.id : null);
+    $("srodek").classList.toggle("indeks-obok", widoczny);
+    indeksWezel.hidden = !widoczny;
+    for (const przycisk of document.querySelectorAll('[aria-controls="indeks"]')) przycisk.setAttribute("aria-expanded", String(widoczny));
     if (SZEROKI.matches) pamiecZapis(KLUCZ_INDEKSU, otwarty ? "1" : "0");
-    if (otwarty) indeks.render();
-    const p = biezaca?.rodzaj === "mapa" ? przegladarki.get(biezaca.id) : null;
-    if (p) p.przelicz();
+    if (widoczny) indeks.render();
+    aktywnaPrzegladarka()?.przelicz();
   }
-  $("przycisk-indeks").addEventListener("click", () => {
-    ustawIndeks(!indeksOtwarty);
+  function przelaczIndeks() {
+    ustawIndeks(!(indeksOtwarty && !indeksWezel.hidden));
     // Na ekranach dotykowych bez automatycznego fokusu — klawiatura ekranowa zasłoniłaby indeks.
-    if (indeksOtwarty && !window.matchMedia("(pointer: coarse)").matches) indeks.fokus();
-  });
+    if (!indeksWezel.hidden && !window.matchMedia("(pointer: coarse)").matches) indeks.fokus();
+  }
+  $("przycisk-indeks").addEventListener("click", przelaczIndeks);
   $("przycisk-przybliz").addEventListener("click", () => aktywnaPrzegladarka()?.przybliz());
   $("przycisk-oddal").addEventListener("click", () => aktywnaPrzegladarka()?.oddal());
   $("przycisk-calosc").addEventListener("click", () => aktywnaPrzegladarka()?.widokDomyslny());
@@ -366,6 +374,7 @@ async function start() {
       biezaca = null;
       for (const s of document.querySelectorAll(".widok")) s.hidden = true;
       zamknijPanel({ bezHasha: true });
+      ustawIndeks(indeksOtwarty); // bez zakładki — bez indeksu
       renderZakladek();
       ustawMotyw(stan.kolorKampanii());
       return;
@@ -388,6 +397,7 @@ async function start() {
     } else {
       $(`widok-${wybor.id}`).hidden = false;
       ustawMotyw(stan.kolorKampanii());
+      ustawIndeks(indeksOtwarty); // Notatki — indeks wszystkich map; Admin — bez indeksu
       if (wybor.id === "admin") {
         if (!admin) admin = new WidokAdmina($("widok-admin"), { stan, dane, rejestr });
         admin.render();
@@ -442,7 +452,7 @@ async function start() {
 
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Escape" || document.querySelector("dialog[open]")) return;
-    if (indeksOtwarty && !SZEROKI.matches) ustawIndeks(false);
+    if (!indeksWezel.hidden && !SZEROKI.matches) ustawIndeks(false);
     else if (panel.id) {
       const id = panel.id;
       zamknijPanel();

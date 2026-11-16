@@ -45,6 +45,22 @@ let koniecNasluchu = null;
 let przekierowanie = null; // { id, hash } z odnośnika — po zalogowaniu wracamy do kampanii
 let pokolenie = 0; // chroni przed spóźnionym wczytaniem po wylogowaniu
 let wylogowanoTutaj = false; // po kliknięciu WYLOGUJ na tej stronie — bez automatycznego logowania
+
+// Strona właśnie przechodzi na inny adres (np. po zalogowaniu w Safari i Firefoksie).
+// Przeglądarka przerywa wtedy trwające wczytywanie — to nie jest błąd do pokazania
+// (bez tego na chwilę migał czerwony napis „Nie udało się wczytać listy kampanii”).
+let opuszczamStrone = false;
+window.addEventListener("pagehide", () => {
+  opuszczamStrone = true;
+});
+window.addEventListener("pageshow", (ev) => {
+  if (ev.persisted) opuszczamStrone = false; // powrót „wstecz” do strony z pamięci przeglądarki
+});
+function przejdz(adres, { zastap = false } = {}) {
+  opuszczamStrone = true;
+  if (zastap) location.replace(adres);
+  else location.href = adres;
+}
 const pozycje = new Map(); // id → { wpis, li, link, pole, opisPola, oczekuje }
 
 // ------------------------------------------------------------- konto
@@ -77,7 +93,7 @@ async function pokazLogowanie(moje) {
   try {
     m = await wczytajModuly();
   } catch {
-    if (moje !== pokolenie) return;
+    if (moje !== pokolenie || opuszczamStrone) return;
     wyczysc(tresc);
     tresc.append(el("p.formularz-blad", { tekst: "Nie udało się połączyć z Firebase — logowanie chwilowo niedostępne. Sprawdź internet i odśwież stronę." }));
     return;
@@ -93,7 +109,7 @@ async function pokazLogowanie(moje) {
     } else if (!automatycznie && !m.obslugaZapisuHasel()) {
       // Firefox, Safari: prawdziwe przejście na stronę po zalogowaniu — najpewniejszy
       // sygnał dla menedżera haseł, że logowanie się udało („Zapisać hasło?”).
-      location.replace("index.html");
+      przejdz("index.html", { zastap: true });
     }
   };
   const { formularz } = m.formularzLogowania(() => poZalogowaniu());
@@ -128,7 +144,7 @@ async function pokazKampanie(sesja, moje) {
   try {
     [m, rejestr] = await Promise.all([wczytajModuly(), rejestr ? Promise.resolve(rejestr) : wczytajJson("kampanie.json")]);
   } catch (e) {
-    if (moje !== pokolenie) return;
+    if (moje !== pokolenie || opuszczamStrone) return;
     wyczysc(lista);
     lista.append(el("li.formularz-blad", { tekst: `Nie udało się wczytać listy kampanii: ${e.message}` }));
     return;
@@ -175,7 +191,7 @@ async function pokazKampanie(sesja, moje) {
       sprawdzPrzekierowanie(sesja);
     },
     (e) => {
-      if (moje !== pokolenie) return;
+      if (moje !== pokolenie || opuszczamStrone) return;
       dokumenty = null;
       odswiezListe(sesja);
       const blad = $("kampanie-blad");
@@ -237,7 +253,7 @@ function sprawdzPrzekierowanie(sesja) {
   przekierowanie = null;
   const p = pozycje.get(cel.id);
   if (p && kampaniaDlaUzytkownika(sesja, p.wpis, dokumenty.get(cel.id) || null)) {
-    location.href = `kampania.html?k=${encodeURIComponent(cel.id)}${cel.hash || ""}`;
+    przejdz(`kampania.html?k=${encodeURIComponent(cel.id)}${cel.hash || ""}`);
   }
 }
 

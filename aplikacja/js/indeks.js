@@ -1,4 +1,6 @@
-// Indeks z boku mapy: lista miejsc z wyszukiwarką.
+// Indeks: lista miejsc z wyszukiwarką, w panelu z lewej strony kampanii.
+// Zakres zależy od zakładki: na zakładce mapy — tylko miejsca tej mapy, na zakładce
+// Notatki — miejsca wszystkich map (ustawZakres, wywoływane przy zmianie zakładki).
 // Gracze (Edytor i Gracz) widzą tylko miejsca dostępne (zaznaczone przez admina, na widocznej
 // zakładce). Admin widzi wszystko i przy każdym miejscu ma pole „dostępne dla graczy”.
 import { el, komunikat, normalizuj, opisBledu, opoznij, pasuje, wyczysc } from "./narzedzia.js";
@@ -13,7 +15,16 @@ export class Indeks {
     this.opcje = opcje;
     this.oczekujace = new Map(); // id miejsca → wartość zapisywana właśnie do bazy
     this.oczekujaceMapy = new Map(); // id mapy → widoczność zapisywana właśnie do bazy
+    this.zakres = null; // id mapy (zakładka mapy) albo null — wszystkie mapy (zakładka Notatki)
     this.zbuduj();
+  }
+
+  /** Zakres indeksu: id mapy — tylko jej miejsca; null — miejsca wszystkich map. */
+  ustawZakres(idMapy) {
+    const nowy = idMapy || null;
+    if (nowy === this.zakres) return;
+    this.zakres = nowy;
+    if (!this.kontener.hidden) this.render();
   }
 
   zbuduj() {
@@ -49,7 +60,7 @@ export class Indeks {
     const kategorie = stan.manifest.kategorie || {};
     const kolejnoscKategorii = Object.keys(kategorie);
 
-    for (const mapa of stan.mapyDlaUzytkownika()) {
+    for (const mapa of stan.mapyDlaUzytkownika().filter((m) => !this.zakres || m.id === this.zakres)) {
       const elementy = (stan.manifest.elementy || [])
         .filter((e) => e.mapa === mapa.id && stan.elementDlaUzytkownika(e))
         .filter((e) => this.pasujeElement(e, zapytanie));
@@ -118,9 +129,13 @@ export class Indeks {
 
   ustawInfo(ile, zapytanie) {
     const { stan } = this.opcje;
+    const gdzie = this.zakres ? "na tej mapie" : "na wszystkich mapach";
     if (!stan.mapyDlaUzytkownika().length) this.info.textContent = "Żadna mapa nie jest jeszcze udostępniona.";
-    else if (zapytanie.trim()) this.info.textContent = `Znalezione miejsca: ${ile}`;
-    else this.info.textContent = stan.widokAdmina() ? "Widok admina: wszystkie miejsca. ☑ = dostępne dla graczy." : `Dostępne miejsca: ${ile}`;
+    else if (zapytanie.trim()) this.info.textContent = `Znalezione miejsca ${gdzie}: ${ile}`;
+    else
+      this.info.textContent = stan.widokAdmina()
+        ? `Widok admina: wszystkie miejsca ${gdzie}. ☑ = dostępne dla graczy.`
+        : `Dostępne miejsca ${gdzie}: ${ile}`;
   }
 
   pasujeElement(e, zapytanie) {

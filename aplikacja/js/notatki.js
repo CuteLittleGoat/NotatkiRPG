@@ -9,7 +9,7 @@ import { oknoNotatki } from "./formularze.js";
 export class WidokNotatek {
   constructor(kontener, opcje) {
     this.kontener = kontener;
-    this.opcje = opcje; // { stan, dane, onMiejsce(id) }
+    this.opcje = opcje; // { stan, dane, onMiejsce(id), onIndeks() }
     this.zbuduj();
   }
 
@@ -20,6 +20,12 @@ export class WidokNotatek {
       atrybuty: { type: "button" },
       zdarzenia: { click: () => oknoNotatki({ stan, dane, sesja: stan.sesja }) }
     });
+    // Indeks na zakładce Notatki pokazuje miejsca ze wszystkich map (na mapie — tylko z niej).
+    this.przyciskIndeks = el("button.przycisk", {
+      tekst: "INDEKS",
+      atrybuty: { type: "button", "aria-controls": "indeks", "aria-expanded": "false", title: "Miejsca ze wszystkich map" },
+      zdarzenia: { click: () => this.opcje.onIndeks?.() }
+    });
     this.szukaj = el("input.pole", { atrybuty: { type: "search", placeholder: "Szukaj w notatkach…", "aria-label": "Szukaj w notatkach" } });
     this.miejsce = el("select.pole", { atrybuty: { "aria-label": "Filtr: miejsce" } });
     this.podpis = el("select.pole", { atrybuty: { "aria-label": "Filtr: podpis" } });
@@ -28,7 +34,10 @@ export class WidokNotatek {
     for (const s of [this.miejsce, this.podpis]) s.addEventListener("change", () => this.renderListy());
     this.info = el("p.przygaszony", { atrybuty: { "aria-live": "polite" } });
     this.lista = el("div.lista-wpisow");
-    this.naglowek = el("div.widok-naglowek", [el("h2", { tekst: "▤ NOTATKI" }), this.przyciskNowa]);
+    this.naglowek = el("div.widok-naglowek", [
+      el("h2", { tekst: "▤ NOTATKI" }),
+      el("div.widok-przyciski", [this.przyciskIndeks, this.przyciskNowa])
+    ]);
     this.kontener.append(
       el("div.tresc-widoku", [
         this.naglowek,

@@ -606,6 +606,11 @@ dialog.okno-male > .okno-przyciski {
   justify-content: space-between;
   gap: 10px;
 }
+.widok-przyciski {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .widok-naglowek h2,
 .tresc-widoku > h2 {
   margin: 6px 0;
@@ -794,7 +799,10 @@ dialog.okno-male > .okno-przyciski {
   font-size: 14px;
   letter-spacing: 0.1em;
 }
-#przycisk-indeks[aria-expanded="true"] {
+/* Przycisk INDEKS (na mapie i na zakładce Notatki) podświetlony, gdy indeks jest otwarty.
+   Bez :hover i :focus-visible — wtedy obowiązuje zwykły wygląd .przycisk:hover (zielone tło,
+   ciemny napis); inaczej napis miał kolor tła i znikał (na dotyku „najechanie” zostaje po stuknięciu). */
+[aria-controls="indeks"][aria-expanded="true"]:not(:hover):not(:focus-visible) {
   border-color: var(--fosfor);
   color: var(--fosfor);
 }
@@ -879,13 +887,26 @@ dialog.okno-male > .okno-przyciski {
 }
 
 /* ---------------------------------------------------------------- indeks */
+/* Indeks to panel z lewej strony całej strony kampanii (nie tylko mapy): na zakładce
+   mapy pokazuje miejsca tej mapy, na zakładce Notatki — wszystkie. Na szerokim
+   ekranie stoi obok widoku (widok przesuwa się w prawo), węziej wysuwa się nad treść. */
 .indeks {
-  flex: 0 0 300px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 6;
+  width: 300px;
   display: flex;
   flex-direction: column;
   min-height: 0;
   background: var(--tlo-panel);
   border-right: 1px solid var(--linia);
+}
+@media (min-width: 1280px) {
+  .slate-srodek.indeks-obok > .widok {
+    left: 300px;
+  }
 }
 .indeks-pasek,
 .panel-pasek {
@@ -1266,13 +1287,8 @@ dialog.okno-male > .okno-przyciski {
 
 /* ---------------------------------------------------------------- węższe ekrany */
 @media (max-width: 1279px) {
-  /* Indeks wysuwa się NAD mapę, zamiast zwężać ją do paska. */
+  /* Indeks wysuwa się NAD mapę (albo notatki), zamiast zwężać ją do paska. */
   .indeks {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 6;
     width: min(340px, 88vw);
     border-right: 1px solid var(--fosfor);
     box-shadow: var(--poswiata);

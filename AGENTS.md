@@ -137,6 +137,7 @@ wzoru (`dokumentacja/Kod_Wzoru.txt`). Każde naprawia błąd widziany na tableta
 | zachowanie mapy | `aplikacja/js/mapa.js` |
 | logowanie, lista kampanii (widoczność kampanii) | `aplikacja/js/start.js`, `logowanie.js`; profile i dostęp do kampanii: `sesja.js` |
 | zakładki, przepływ strony kampanii | `aplikacja/js/kampania.js` |
+| indeks miejsc (na zakładce mapy — tylko jej miejsca, na zakładce Notatki — wszystkich map) | `aplikacja/js/indeks.js` (`ustawZakres`); otwieranie i zakres przy zmianie zakładki — `ustawIndeks()` w `kampania.js` |
 | nowa zakładka (inna niż mapa) | wpis w `ZAKLADKI_STALE` (`aplikacja/js/konfiguracja.js`), sekcja `widok-{id}` w `kampania.html`, obsługa w `przelacz()` w `kampania.js`; widoczność dla graczy zapisuje się sama w `ustawienia/mapy` → `zakladki.{id}` |
 | widoczność (domyślne z manifestu + ustawienia admina) | `aplikacja/js/stan.js` |
 | zapis/odczyt bazy | `aplikacja/js/dane.js` |

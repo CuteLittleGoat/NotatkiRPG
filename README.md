@@ -51,7 +51,8 @@ opis: [`kampanie/Template/README.md`](kampanie/Template/README.md).
   notatki. Odznaczone wygląda jak zwykłe tło mapy (żeby nie zdradzać, że jest ważne).
 * **Czerwona kropka** w prawym górnym rogu złotej ramki — przy tym miejscu są
   notatki. Widać ją tylko przy miejscach odsłoniętych przez admina.
-* **Indeks z boku mapy** z wyszukiwarką — gracze widzą tylko to, co mają
+* **Indeks** z wyszukiwarką — na zakładce mapy pokazuje miejsca tej mapy, na
+  zakładce Notatki — miejsca ze wszystkich map. Gracze widzą tylko to, co mają
   dostępne; admin widzi wszystko i ma przy każdym miejscu pole wyboru.
 * **Notatki** przy miejscach i ogólne. Etykieta notatki pokazuje miejsce, podpis,
   datę i godzinę. Zmiany widać u wszystkich od razu, bez odświeżania strony.
@@ -144,9 +145,12 @@ Home — widok początkowy, Esc zamyka kartę albo indeks.
 **Miejsca:** kliknij miejsce ze złotymi narożnikami. Otworzy się karta z jawnym
 opisem i notatkami. Edytor ma tam przycisk „+ DODAJ NOTATKĘ”.
 
-**Indeks:** przycisk INDEKS (na szerokim ekranie indeks jest otwarty z boku).
-Wyszukiwarka przeszukuje nazwy miejsc, dawne nazwy (aliasy), opisy i notatki —
-bez rozróżniania wielkości liter i polskich znaków.
+**Indeks:** przycisk INDEKS — na mapie w prawym górnym rogu, na zakładce Notatki
+obok „+ NOWA NOTATKA” (na szerokim ekranie indeks jest otwarty z boku). Na zakładce
+mapy indeks pokazuje tylko miejsca tej mapy, a na zakładce Notatki — miejsca ze
+wszystkich map; kliknięcie miejsca otwiera jego mapę i kartę. Wyszukiwarka przeszukuje
+nazwy miejsc, dawne nazwy (aliasy), opisy i notatki — bez rozróżniania wielkości
+liter i polskich znaków.
 
 **Admin — kampanie:** na liście **WYBIERZ KAMPANIĘ** przy każdej kampanii jest pole
 „widoczna dla graczy”. Odznaczona kampania (przerywana ramka, znak ⊘) znika
@@ -444,7 +448,7 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   przechodzi; obce pola, za długie teksty, widoczność inna niż tak/nie, nieznane
   kolekcje (w tym usunięte `postep` i `powiazania`) i każda zmiana kont są
   odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
-* **Cała aplikacja w przeglądarce** (Chromium, 82 kroki) na **udawanym Firebase**:
+* **Cała aplikacja w przeglądarce** (Chromium, 83 kroki) na **udawanym Firebase**:
   bez logowania nic nie widać (strona startowa bez nazw kampanii, strona kampanii
   przenosi do logowania i po nim wraca), trzy profile (Gracz tylko czyta — nawet z
   `DisplayName` „Skryba”, Edytor pisze — z dowolnym `DisplayName`, Admin ustawia),
@@ -472,9 +476,13 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   **menedżer haseł** (pola oznaczone dla menedżerów haseł; z udawanym mechanizmem
   Chrome/Edge: prośba o zapis, automatyczne logowanie, brak automatycznego logowania
   po WYLOGUJ — także ze strony kampanii; bez tego mechanizmu, jak w Firefoksie i
-  Safari: przejście na nową stronę po zalogowaniu);
+  Safari: przejście na nową stronę po zalogowaniu, bez mignięcia czerwonego napisu
+  „Nie udało się wczytać listy kampanii”); **zakres indeksu** (na zakładce mapy —
+  tylko jej miejsca, u admina i u gracza; na zakładce Notatki — miejsca wszystkich
+  map; wybór miejsca z indeksu otwiera jego mapę);
   **telefony (iPhone 13, Pixel 5) i tablet (iPad Mini pionowo i poziomo)**:
-  brak przewijania w bok (logowanie, listy kampanii, mapa, indeks, panel admina,
+  brak przewijania w bok (logowanie, listy kampanii, mapa, indeks na mapie i na
+  zakładce Notatki, panel admina,
   pole bitwy kampanii Wzór), przesuwanie palcem, szczypanie dwoma palcami, stuknięcie
   w miejsce, log admina widoczny na ekranie.
 * **Prawdziwe biblioteki Firebase 13.2.0** (aplikacja, App Check, baza) wczytują się z

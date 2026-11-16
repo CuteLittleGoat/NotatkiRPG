@@ -31,7 +31,14 @@ Pierwsze dwa uruchamia też GitHub Actions po każdej zmianie na `main` (zakład
   `storageState`, wygasanie, WYLOGUJ we wszystkich kartach, zmiana roli i loginu w
   udawanej bazie). Przeglądarka testowa nie ma menedżera haseł — kroki „Chrome i Edge”
   podstawiają udawany `navigator.credentials` (hasła testowe są wymyślone), a krok
-  „Firefox i Safari” usuwa `PasswordCredential`.
+  „Firefox i Safari” usuwa `PasswordCredential`. Ten krok przerywa też pierwsze
+  wczytanie `kampanie.json` po zalogowaniu (tak robi przeglądarka, gdy strona przechodzi
+  na nowy adres) i pilnuje, żeby nawet na chwilę nie pojawił się czerwony napis
+  „Nie udało się wczytać listy kampanii”.
+* Indeks: na zakładce mapy — tylko miejsca tej mapy (admin: z polami wyboru), na zakładce
+  Notatki — miejsca wszystkich map (przycisk INDEKS w nagłówku Notatek); wybór miejsca
+  z indeksu otwiera jego mapę. Na telefonach i tablecie — indeks na Notatkach bez
+  przewijania w bok.
 * Serwer plików: `e2e/serwer.cjs` (można go uruchomić osobno: `node testy/e2e/serwer.cjs 8000`).
 * Zrzuty ekranu i pobrane w teście pliki kopii: `e2e/wyniki/` (nie trafiają do repozytorium).
 * `CZCIONKI=1 node testy/e2e/uruchom.cjs` — z prawdziwymi czcionkami z Google Fonts
