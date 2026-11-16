@@ -90,12 +90,43 @@ async function nowaStrona(ctx, bledy) {
 }
 
 // Logowanie na stronie startowej (bez logowania aplikacja niczego nie pokazuje).
-async function zaloguj(strona, login, haslo) {
+// Domyślnie BEZ „Zapamiętaj mnie” — sesja tylko w tej karcie, więc testy mogą mieć w
+// jednej przeglądarce karty zalogowane na różne konta (zapamiętane logowanie jest wspólne
+// dla wszystkich kart; sprawdzają je osobne kroki „[zapamiętane logowanie]”).
+async function zaloguj(strona, login, haslo, { zapamietaj = false } = {}) {
   await strona.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
   await strona.fill("input[name=login]", login);
   await strona.fill("input[name=haslo]", haslo);
+  if (zapamietaj) await strona.check("input[name=zapamietaj]");
+  else await strona.uncheck("input[name=zapamietaj]");
   await strona.click("button[type=submit]");
   await strona.waitForSelector("#sekcja-kampanii:not([hidden])");
+}
+
+/** Sesja z obu pamięci przeglądarki: karty (sessionStorage) i urządzenia (localStorage). */
+function sesjeWPamieci(strona) {
+  return strona.evaluate(() => ({ karta: sessionStorage.getItem("notatkirpg.sesja"), urzadzenie: localStorage.getItem("notatkirpg.sesja") }));
+}
+
+/** Czeka, aż warunek na stronie będzie spełniony — także gdy strona w międzyczasie przeładuje się sama. */
+async function czekajNa(strona, warunek, opis, ms = 8000) {
+  const koniec = Date.now() + ms;
+  let ostatniBlad = null;
+  while (Date.now() < koniec) {
+    try {
+      if (await strona.evaluate(warunek)) return;
+    } catch (e) {
+      ostatniBlad = e; // strona właśnie się przeładowuje
+    }
+    await strona.waitForTimeout(150);
+  }
+  throw new Error(`nie doczekano się: ${opis}${ostatniBlad ? ` (${String(ostatniBlad.message).split("\n")[0]})` : ""}`);
+}
+
+/** Czy strona startowa pokazuje listę kampanii (zalogowany), czy formularz logowania. */
+async function czyZalogowany(strona) {
+  await strona.waitForSelector("#sekcja-kampanii:not([hidden]), #sekcja-logowania:not([hidden]) input[name=login]");
+  return !(await strona.$eval("#sekcja-kampanii", (x) => x.hidden));
 }
 
 async function wyloguj(strona) {
@@ -126,6 +157,10 @@ async function bezPrzewijaniaWBok(strona) {
     const tekst = await s.textContent("body");
     zalozenie(!/iliac|próbna|wzór/i.test(tekst), "nazwa kampanii widoczna bez logowania");
     zalozenie(!/reCAPTCHA/i.test(tekst), "w stopce nadal jest napis o reCAPTCHA");
+    zalozenie(await s.$eval("input[name=zapamietaj]", (x) => x.checked), "„Zapamiętaj mnie na tym urządzeniu” nie jest domyślnie zaznaczone");
+    zalozenie(tekst.includes("cudzym lub wspólnym komputerze"), "brak podpowiedzi przy „Zapamiętaj mnie”");
+    const pola = await s.$$eval("#sekcja-logowania input", (p) => p.map((x) => `${x.name}:${x.getAttribute("autocomplete") || ""}`));
+    zalozenie(pola.includes("login:username") && pola.includes("haslo:current-password"), `pola formularza bez oznaczeń dla menedżera haseł: ${pola}`);
     await s.screenshot({ path: path.join(WYNIKI, "01_start.png") });
   });
 
@@ -169,8 +204,10 @@ async function bezPrzewijaniaWBok(strona) {
     // Konto do przeglądania ma w teście DisplayName „Skryba” — nazwa nie daje edycji.
     zalozenie(dol === "KONTO: Skryba", `konto u dołu: ${dol}`);
     zalozenie(!/reCAPTCHA/i.test(await s.textContent("#status")), "w stopce nadal jest napis o reCAPTCHA");
-    const sesja = await s.evaluate(() => sessionStorage.getItem("notatkirpg.sesja"));
-    zalozenie(!/haslo/i.test(sesja), "hasło zapisane w sesji!");
+    // Domyślnie „Zapamiętaj mnie” — sesja na urządzeniu, nigdy z hasłem.
+    const { karta, urzadzenie } = await sesjeWPamieci(s);
+    zalozenie(karta === null && urzadzenie !== null, `sesja nie jest zapamiętana na urządzeniu: ${JSON.stringify({ karta, urzadzenie })}`);
+    zalozenie(!/haslo/i.test(urzadzenie), "hasło zapisane w sesji!");
   });
 
   await krok("gracz: lista kampanii — tylko udostępnione (bez ukrytej kampanii próbnej), Wzór pierwszy, bez opisu", async () => {
@@ -319,8 +356,8 @@ async function bezPrzewijaniaWBok(strona) {
     await s.click("#konto button:has-text('WYLOGUJ')");
     await s.waitForURL(/index\.html$/);
     await s.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
-    const sesja = await s.evaluate(() => sessionStorage.getItem("notatkirpg.sesja"));
-    zalozenie(sesja === null, "sesja nie została wyczyszczona");
+    const { karta, urzadzenie } = await sesjeWPamieci(s);
+    zalozenie(karta === null && urzadzenie === null, `sesja nie została wyczyszczona: ${JSON.stringify({ karta, urzadzenie })}`);
     zalozenie(await s.$eval("#sekcja-kampanii", (x) => x.hidden), "po wylogowaniu widać listę kampanii");
   });
 
@@ -783,7 +820,7 @@ async function bezPrzewijaniaWBok(strona) {
     const s3 = await nowaStrona(ctx, []);
     await s3.addInitScript(() => {
       localStorage.setItem("falszywa-baza-odmowa", "1");
-      sessionStorage.setItem("notatkirpg.sesja", JSON.stringify({ wersja: 3, kontoId: "Player3", login: "test-gracz", nazwa: "Gracz", rola: "gracz" }));
+      sessionStorage.setItem("notatkirpg.sesja", JSON.stringify({ wersja: 4, kontoId: "Player3", login: "test-gracz", nazwa: "Gracz", rola: "gracz" }));
     });
     await s3.goto(`${ADRES}/kampania.html?k=iliac`);
     await s3.waitForSelector("#srodek h2:has-text('BŁĄD ODCZYTU DANYCH')");
@@ -793,10 +830,11 @@ async function bezPrzewijaniaWBok(strona) {
     await s3.close();
   });
 
-  await krok("stare sesje (sprzed profili i sprzed roli „edytor”) nie wpuszczają — trzeba zalogować się ponownie", async () => {
+  await krok("stare sesje (sprzed profili, roli „edytor” i zapamiętywania) nie wpuszczają — trzeba zalogować się ponownie", async () => {
     for (const stara of [
       { kontoId: "Player2", login: "test-edytor", rola: "gracz" },
-      { wersja: 2, kontoId: "Player2", login: "test-edytor", nazwa: "Skryba", rola: "skryba" }
+      { wersja: 2, kontoId: "Player2", login: "test-edytor", nazwa: "Skryba", rola: "skryba" },
+      { wersja: 3, kontoId: "Player2", login: "test-edytor", nazwa: "Kronikarz", rola: "edytor" }
     ]) {
       const s4 = await nowaStrona(ctx, bledy);
       await s4.addInitScript((sesja) => sessionStorage.setItem("notatkirpg.sesja", JSON.stringify(sesja)), stara);
@@ -823,6 +861,225 @@ async function bezPrzewijaniaWBok(strona) {
     zalozenie(sesja === null && log === null, `po wylogowaniu zostały dane: sesja=${sesja}, log=${log}`);
   });
   await ctx.close();
+
+  // ===================================================================== zapamiętane logowanie
+  console.log("\n[zapamiętane logowanie]");
+  const ctxZ = await nowyKontekst(przegladarka);
+  await krok("„Zapamiętaj mnie” (domyślnie): 30 dni, bez hasła; nowa karta i zamknięcie wszystkich kart — bez logowania", async () => {
+    const z1 = await nowaStrona(ctxZ, bledy);
+    await z1.goto(`${ADRES}/index.html`);
+    await z1.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
+    await z1.fill("input[name=login]", "test-edytor");
+    await z1.fill("input[name=haslo]", "haslo-edytora");
+    await z1.click("button[type=submit]");
+    await z1.waitForSelector("#sekcja-kampanii:not([hidden])");
+    const { karta, urzadzenie } = await sesjeWPamieci(z1);
+    zalozenie(karta === null && urzadzenie !== null, `sesja nie jest zapamiętana na urządzeniu: ${JSON.stringify({ karta, urzadzenie })}`);
+    zalozenie(!/haslo-edytora/.test(urzadzenie), "hasło w zapamiętanej sesji!");
+    const dni = (JSON.parse(urzadzenie).wazneDo - Date.now()) / 86400000;
+    zalozenie(dni > 29.9 && dni <= 30, `ważność zapamiętania: ${dni} dni`);
+    const z2 = await nowaStrona(ctxZ, bledy);
+    await z2.goto(`${ADRES}/kampania.html?k=wzor#notatki`);
+    await z2.waitForSelector("#widok-notatki:not([hidden]) .lista-wpisow");
+    zalozenie(!(await z2.$eval("#widok-notatki button:has-text('NOWA NOTATKA')", (b) => b.hidden)), "zapamiętany edytor nie może pisać w nowej karcie");
+    await z1.close();
+    await z2.close();
+    const z3 = await nowaStrona(ctxZ, bledy);
+    await z3.goto(`${ADRES}/index.html`);
+    zalozenie(await czyZalogowany(z3), "po zamknięciu wszystkich kart trzeba logować się od nowa");
+    await z3.close();
+  });
+  const stanPrzegladarki = await ctxZ.storageState();
+  await ctxZ.close();
+
+  // Ten sam stan przeglądarki w nowym kontekście = przeglądarka zamknięta i uruchomiona ponownie.
+  const ctxR = await nowyKontekst(przegladarka, { storageState: stanPrzegladarki });
+  await krok("„Zapamiętaj mnie”: po ponownym uruchomieniu przeglądarki nadal zalogowany", async () => {
+    const r = await nowaStrona(ctxR, bledy);
+    await r.goto(`${ADRES}/index.html`);
+    zalozenie(await czyZalogowany(r), "po ponownym uruchomieniu przeglądarki trzeba logować się od nowa");
+    zalozenie((await r.textContent("#konto")).includes("test-edytor"), "po ponownym uruchomieniu zalogowane inne konto");
+    await r.close();
+  });
+
+  await krok("WYLOGUJ w jednej karcie wylogowuje pozostałe karty tej przeglądarki", async () => {
+    const a = await nowaStrona(ctxR, bledy);
+    const b = await nowaStrona(ctxR, bledy);
+    await a.goto(`${ADRES}/index.html`);
+    await b.goto(`${ADRES}/kampania.html?k=wzor#kraina`);
+    await b.waitForSelector(".plansza svg");
+    zalozenie(await czyZalogowany(a), "karta A nie jest zalogowana");
+    await a.click("#konto button:has-text('WYLOGUJ')");
+    await a.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
+    await b.waitForURL(/index\.html$/, { timeout: 6000 });
+    await b.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
+    const { karta, urzadzenie } = await sesjeWPamieci(b);
+    zalozenie(karta === null && urzadzenie === null, `po WYLOGUJ została sesja: ${JSON.stringify({ karta, urzadzenie })}`);
+    await a.close();
+    await b.close();
+  });
+
+  await krok("bez „Zapamiętaj mnie” — logowanie tylko w tej karcie (odświeżenie tak, nowa karta nie)", async () => {
+    const a = await nowaStrona(ctxR, bledy);
+    await a.goto(`${ADRES}/index.html`);
+    await zaloguj(a, "test-gracz", "haslo-gracza", { zapamietaj: false });
+    const { karta, urzadzenie } = await sesjeWPamieci(a);
+    zalozenie(karta !== null && urzadzenie === null, `sesja nie jest tylko w karcie: ${JSON.stringify({ karta, urzadzenie })}`);
+    await a.reload();
+    zalozenie(await czyZalogowany(a), "odświeżenie karty wylogowało");
+    const b = await nowaStrona(ctxR, bledy);
+    await b.goto(`${ADRES}/index.html`);
+    zalozenie(!(await czyZalogowany(b)), "nowa karta zalogowana mimo odznaczonego „Zapamiętaj mnie”");
+    await a.close();
+    await b.close();
+  });
+
+  await krok("po 30 dniach zapamiętanie wygasa — logowanie od nowa", async () => {
+    const a = await nowaStrona(ctxR, bledy);
+    await a.goto(`${ADRES}/index.html`);
+    await zaloguj(a, "test-gracz", "haslo-gracza", { zapamietaj: true });
+    await a.evaluate(() => {
+      const sesja = JSON.parse(localStorage.getItem("notatkirpg.sesja"));
+      sesja.wazneDo = Date.now() - 1000;
+      localStorage.setItem("notatkirpg.sesja", JSON.stringify(sesja));
+    });
+    await a.reload();
+    zalozenie(!(await czyZalogowany(a)), "przeterminowane zapamiętanie nadal działa");
+    zalozenie((await sesjeWPamieci(a)).urzadzenie === null, "przeterminowana sesja nie została usunięta");
+    await a.close();
+  });
+
+  await krok("zmiana roli w bazie działa od razu; zmiana loginu w bazie wylogowuje zapamiętane urządzenia", async () => {
+    const a = await nowaStrona(ctxR, bledy);
+    await a.goto(`${ADRES}/index.html`);
+    await zaloguj(a, "test-edytor", "haslo-edytora", { zapamietaj: true });
+    await a.goto(`${ADRES}/kampania.html?k=wzor#notatki`);
+    await a.waitForSelector("#widok-notatki:not([hidden]) .lista-wpisow");
+    zalozenie(!(await a.$eval("#widok-notatki button:has-text('NOWA NOTATKA')", (b) => b.hidden)), "edytor nie może pisać");
+    // Ktoś w konsoli Firebase odebrał kontu rolę „edytor” (tu: udawana baza) — po odświeżeniu tylko czyta.
+    await a.evaluate(() => {
+      const baza = JSON.parse(localStorage.getItem("falszywa-baza"));
+      delete baza["admins/Player2"];
+      localStorage.setItem("falszywa-baza", JSON.stringify(baza));
+    });
+    await a.reload();
+    await czekajNa(
+      a,
+      () => {
+        const przycisk = [...document.querySelectorAll("#widok-notatki button")].find((x) => x.textContent.includes("NOWA NOTATKA"));
+        return Boolean(przycisk && przycisk.hidden && JSON.parse(localStorage.getItem("notatkirpg.sesja")).rola === "gracz");
+      },
+      "profil Gracz po odebraniu roli w bazie"
+    );
+    // Zmiana loginu w konsoli Firebase = wylogowanie wszystkich zapamiętanych urządzeń konta.
+    await a.evaluate(() => {
+      const baza = JSON.parse(localStorage.getItem("falszywa-baza"));
+      baza["secrets/Player2"].PlayerName = "test-edytor-nowy";
+      localStorage.setItem("falszywa-baza", JSON.stringify(baza));
+    });
+    await a.reload();
+    await czekajNa(a, () => /index\.html/.test(location.href) && Boolean(document.querySelector("#sekcja-logowania:not([hidden]) input[name=login]")), "ekran logowania po zmianie loginu");
+    zalozenie((await sesjeWPamieci(a)).urzadzenie === null, "zapamiętana sesja została mimo zmiany loginu");
+    await a.close();
+  });
+  await ctxR.close();
+
+  // Chrome i Edge mają mechanizm zapisu haseł dla stron (Credential Management API).
+  // Przeglądarka testowa nie ma menedżera haseł — podstawiamy udawany (hasła testowe są wymyślone).
+  // blokadaDziala = false udaje przeglądarkę, która nie zdążyła przetworzyć blokady po WYLOGUJ.
+  const udawanyMenedzerHasel = (blokadaDziala) => {
+    class UdawaneHaslo {
+      constructor(d) {
+        this.id = d.id;
+        this.password = d.password;
+        this.name = d.name;
+        this.type = "password";
+      }
+    }
+    window.PasswordCredential = UdawaneHaslo;
+    const zapisane = () => JSON.parse(localStorage.getItem("test-menedzer-hasel") || "null");
+    const zapisz = (z) => localStorage.setItem("test-menedzer-hasel", JSON.stringify(z));
+    Object.defineProperty(navigator, "credentials", {
+      configurable: true,
+      value: {
+        store: async (c) => {
+          zapisz({ id: c.id, password: c.password, automatycznie: true });
+          return c;
+        },
+        get: async (o) => {
+          const z = zapisane();
+          return o && o.password && o.mediation === "silent" && z && z.automatycznie ? new UdawaneHaslo(z) : null;
+        },
+        preventSilentAccess: async () => {
+          const z = zapisane();
+          if (z && blokadaDziala) zapisz({ ...z, automatycznie: false });
+        }
+      }
+    });
+  };
+  const ctxH = await nowyKontekst(przegladarka);
+  await ctxH.addInitScript(udawanyMenedzerHasel, true);
+  await krok("Chrome i Edge: prośba o zapis hasła po zalogowaniu, automatyczne logowanie w nowej karcie, po WYLOGUJ — bez", async () => {
+    const a = await nowaStrona(ctxH, bledy);
+    await a.goto(`${ADRES}/index.html`);
+    await zaloguj(a, "test-gracz", "haslo-gracza", { zapamietaj: false });
+    const zapisane = await a.evaluate(() => JSON.parse(localStorage.getItem("test-menedzer-hasel") || "null"));
+    zalozenie(zapisane && zapisane.id === "test-gracz", `przeglądarka nie dostała hasła do zapisania: ${JSON.stringify(zapisane)}`);
+    zalozenie((await a.$eval("input[name=haslo]", (x) => x.value)) === "", "pole hasła nie zostało wyczyszczone po przekazaniu przeglądarce");
+    // Nowa karta bez sesji (logowanie bez zapamiętania) → przeglądarka loguje sama.
+    const b = await nowaStrona(ctxH, bledy);
+    await b.goto(`${ADRES}/index.html`);
+    await b.waitForSelector("#sekcja-kampanii:not([hidden])", { timeout: 6000 });
+    zalozenie((await b.textContent("#konto")).includes("test-gracz"), "automatyczne logowanie na złe konto");
+    await a.close();
+    // Po WYLOGUJ przeglądarka nie loguje sama — także po odświeżeniu — dopóki ktoś nie zaloguje się ręcznie.
+    await b.click("#konto button:has-text('WYLOGUJ')");
+    await b.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
+    await b.waitForTimeout(500);
+    zalozenie(!(await czyZalogowany(b)), "zalogowało samo zaraz po WYLOGUJ");
+    await b.reload();
+    await b.waitForTimeout(500);
+    zalozenie(!(await czyZalogowany(b)), "zalogowało samo po WYLOGUJ i odświeżeniu");
+    await b.close();
+  });
+  await ctxH.close();
+
+  const ctxP = await nowyKontekst(przegladarka);
+  await ctxP.addInitScript(udawanyMenedzerHasel, false);
+  await krok("Chrome i Edge: WYLOGUJ na stronie kampanii — strona startowa nie loguje z powrotem (nawet gdy przeglądarka się spóźni)", async () => {
+    const a = await nowaStrona(ctxP, bledy);
+    await a.goto(`${ADRES}/index.html`);
+    await zaloguj(a, "test-gracz", "haslo-gracza", { zapamietaj: true });
+    await a.goto(`${ADRES}/kampania.html?k=wzor#notatki`);
+    await a.waitForSelector("#widok-notatki:not([hidden])");
+    await a.click("#konto button:has-text('WYLOGUJ')");
+    await a.waitForURL(/index\.html$/);
+    await a.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
+    await a.waitForTimeout(600);
+    zalozenie(!(await czyZalogowany(a)), "po WYLOGUJ na stronie kampanii zalogowało z powrotem");
+    await a.close();
+  });
+  await ctxP.close();
+
+  // Firefox i Safari nie mają tego mechanizmu — po zalogowaniu strona przechodzi na nowy adres.
+  const ctxF = await nowyKontekst(przegladarka);
+  await ctxF.addInitScript(() => {
+    delete window.PasswordCredential;
+  });
+  await krok("Firefox i Safari: po zalogowaniu strona przechodzi dalej (sygnał dla menedżera haseł)", async () => {
+    const a = await nowaStrona(ctxF, bledy);
+    await a.goto(`${ADRES}/index.html`);
+    await a.waitForSelector("#sekcja-logowania:not([hidden]) input[name=login]");
+    await a.evaluate(() => {
+      window.__przedZalogowaniem = true;
+    });
+    await a.fill("input[name=login]", "test-gracz");
+    await a.fill("input[name=haslo]", "haslo-gracza");
+    await a.click("button[type=submit]");
+    await czekajNa(a, () => !window.__przedZalogowaniem && Boolean(document.querySelector("#sekcja-kampanii:not([hidden])")), "nowa strona z listą kampanii");
+    await a.close();
+  });
+  await ctxF.close();
 
   // ===================================================================== telefon i tablet
   const urzadzenia = [

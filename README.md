@@ -32,6 +32,9 @@ opis: [`kampanie/Template/README.md`](kampanie/Template/README.md).
 * **Logowanie wymagane** — bez logowania strona pokazuje tylko formularz (bez map
   i bez nazw kampanii). Trzy profile: **Admin**, **Edytor** (pisze notatki) i
   **Gracz** (tylko czyta) — opis w rozdziale [Role i uprawnienia](#role-i-uprawnienia).
+* **„Zapamiętaj mnie na tym urządzeniu”** — logowanie pamiętane przez 30 dni (także
+  po zamknięciu przeglądarki, we wszystkich kartach), aż do kliknięcia WYLOGUJ;
+  przeglądarka może zapisać hasło, a Chrome i Edge — logować automatycznie.
 * **Wybór kampanii** po zalogowaniu — admin widzi wszystkie kampanie i przy każdej
   zaznacza, czy jest **widoczna dla graczy**; Edytor i Gracz widzą tylko kampanie
   udostępnione (admin może więc spokojnie przygotowywać kilka kampanii naraz).
@@ -102,11 +105,31 @@ korzystają tylko ze stron aplikacji (Twoja decyzja).
 `DisplayName` i `PlayerName` **nie wpływają na uprawnienia** — możesz je zmieniać
 dowolnie. Na górze ekranu przy „KONTO:” widać login (`PlayerName`), a na dole —
 nazwę konta (`DisplayName`). Przy wpisie jest pole **„podpis / postać”**, bo z
-jednego konta może korzystać kilka osób. Logowanie trwa do zamknięcia karty
-przeglądarki (sesja w `sessionStorage`, bez hasła — odświeżenie strony w tej samej
-karcie nie wylogowuje, nowa karta już tak); po wylogowaniu aplikacja wraca
-do ekranu logowania. Zapamiętywanie zalogowania na dłużej i zapisywanie hasła w
-przeglądarce — analiza: [`Analizy/Logowanie.md`](Analizy/Logowanie.md).
+jednego konta może korzystać kilka osób.
+
+**Jak długo trwa zalogowanie** (analiza i decyzje: [`Analizy/Logowanie.md`](Analizy/Logowanie.md)):
+
+* Pole **„Zapamiętaj mnie na tym urządzeniu”** (domyślnie zaznaczone) — aplikacja
+  pamięta zalogowanie **30 dni** od zalogowania, także po zamknięciu przeglądarki,
+  we wszystkich kartach tej przeglądarki (`localStorage`). **Hasła aplikacja nie
+  zapisuje** — tylko numer konta, login, nazwę konta, profil i datę ważności.
+* Odznaczone (na **cudzym lub wspólnym komputerze**) — tylko do zamknięcia karty
+  (`sessionStorage`); odświeżenie strony nie wylogowuje, nowa karta już tak.
+* **WYLOGUJ** wylogowuje wszystkie karty tej przeglądarki; inne urządzenia zostają
+  zalogowane (każde pamięta osobno).
+* Przy każdym otwarciu strony aplikacja **sprawdza konto w bazie**: zmiana roli w
+  konsoli Firebase działa od razu, usunięte konto wylogowuje się samo. **Wylogowanie
+  wszystkich urządzeń konta** (np. po zgubieniu telefonu): zmień jego login
+  (`PlayerName`) w konsoli Firebase — sama zmiana hasła zapamiętanych urządzeń nie
+  wyloguje. Bez internetu aplikacja nikogo nie wylogowuje.
+* **Hasło w przeglądarce:** pola są oznaczone dla menedżerów haseł, więc przeglądarka
+  proponuje „Zapisać hasło?” i potem wypełnia formularz. W Chrome i Edge aplikacja sama
+  prosi o zapis, a gdy zapamiętanie wygaśnie — loguje automatycznie hasłem z
+  przeglądarki (po kliknięciu WYLOGUJ już nie, dopóki ktoś nie zaloguje się sam).
+* Chcesz mieć w jednej przeglądarce dwie karty na **różnych kontach** (np. admin i
+  gracz)? Loguj się bez „Zapamiętaj mnie” albo użyj okna prywatnego — zapamiętane
+  logowanie jest wspólne dla wszystkich kart. Admin ma też pole **PODGLĄD GRACZA**.
+
 Liczba jednocześnie zalogowanych osób nie jest ograniczona —
 analiza takiej blokady dla kont admina i edytora: [`Analizy/Blokada_kont.md`](Analizy/Blokada_kont.md).
 
@@ -286,6 +309,11 @@ logowania Firebase — Twoja decyzja):
 4. **Repozytorium jest publiczne**, a strona publikuje się wprost z niego — rysunki
    od MG (`Rysunki_*.svg`) może otworzyć każdy, kto zna ich adres. Aplikacja ich nie
    pokazuje; gracze korzystają tylko z jej stron (Twoja decyzja).
+5. **Zapamiętane logowanie działa dla każdego, kto używa tego urządzenia** (jak poczta
+   czy komunikator na telefonie). Na cudzym lub wspólnym komputerze odznacz „Zapamiętaj
+   mnie” albo klikaj WYLOGUJ — szczególnie na koncie admina. Wylogowanie wszystkich
+   urządzeń konta: zmiana loginu (`PlayerName`) w konsoli Firebase. Ochrony bazy to nie
+   zmienia (rozdział [Role i uprawnienia](#role-i-uprawnienia)).
 
 Kopia zapasowa po każdej sesji to najlepsza ochrona przed przypadkowym lub
 złośliwym skasowaniem notatek.
@@ -385,14 +413,24 @@ Przyjęte na tym etapie — każdą można zmienić:
 23. **Skrypt map usuwa każdy arkusz `<style>` z rysunku** (także schowany w grupie) —
     wcześniej taki arkusz trafiał do mapy graczy i mógł zmienić wygląd całej strony.
     Z arkusza rysunku skrypt bierze tylko kolor obwódki napisów (`.h`).
+24. **Zapamiętane logowanie i hasło w przeglądarce** (Twoja decyzja — warianty A + B z
+    [`Analizy/Logowanie.md`](Analizy/Logowanie.md), wszystkie rekomendacje): „Zapamiętaj
+    mnie na tym urządzeniu” domyślnie zaznaczone, 30 dni, tak samo dla admina; konto
+    sprawdzane w bazie przy każdym otwarciu strony; formularz przyjazny menedżerom
+    haseł (w Firefoksie i Safari po zalogowaniu strona przeładowuje się — sygnał dla
+    menedżera haseł); w Chrome i Edge prośba o zapis hasła i automatyczne logowanie;
+    wylogowanie wszystkich urządzeń przez zmianę loginu w konsoli Firebase. Sesja w
+    wersji 4 — wcześniejsze zalogowania wymagają jednorazowo ponownego logowania.
 
 ## Testy — co sprawdzono, a czego nie
 
 Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/README.md)):
 
-* **Testy jednostkowe** (Node, 23): format CSV (cudzysłowy, przecinki, nowe linie,
+* **Testy jednostkowe** (Node, 28): format CSV (cudzysłowy, przecinki, nowe linie,
   BOM), kodowanie typów Firestore, odczyt błędnych plików, partie po 500,
   wyszukiwanie bez polskich znaków, profile kont (Admin / Edytor / Gracz — tylko z pola `rola`),
+  sesja (zapamiętanie na 30 dni bez hasła, tylko karta, wygasanie, stare wersje,
+  odświeżenie profilu z bazy, wylogowanie, brak dostępu do pamięci przeglądarki),
   widoczność kampanii (z bazy albo domyślna z rejestru) i domyślne kolory (mapy —
   kolory oryginału, pierwsze na liście; interfejs — zielony).
 * **Skrypty** (Python, 14): przygotowanie map — usuwanie materiału MG, przerwanie
@@ -406,7 +444,7 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   przechodzi; obce pola, za długie teksty, widoczność inna niż tak/nie, nieznane
   kolekcje (w tym usunięte `postep` i `powiazania`) i każda zmiana kont są
   odrzucane; partia przywracania z kontem zostaje odrzucona w całości.
-* **Cała aplikacja w przeglądarce** (Chromium, 73 kroki) na **udawanym Firebase**:
+* **Cała aplikacja w przeglądarce** (Chromium, 82 kroki) na **udawanym Firebase**:
   bez logowania nic nie widać (strona startowa bez nazw kampanii, strona kampanii
   przenosi do logowania i po nim wraca), trzy profile (Gracz tylko czyta — nawet z
   `DisplayName` „Skryba”, Edytor pisze — z dowolnym `DisplayName`, Admin ustawia),
@@ -427,7 +465,15 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   najwyżej dwa komunikaty na ekranie), status App Check, kopia CSV (z `secrets` i
   bez), przywracanie „Scal” i „Zastąp” (z kopią bezpieczeństwa, z pominięciem kont),
   odporność na wstrzyknięcie HTML w notatce, klawiatura, komunikat przy odmowie
-  dostępu; **telefony (iPhone 13, Pixel 5) i tablet (iPad Mini pionowo i poziomo)**:
+  dostępu; **zapamiętane logowanie** („Zapamiętaj mnie” domyślnie zaznaczone, nowa
+  karta i ponowne uruchomienie przeglądarki bez logowania, sesja bez hasła i z
+  30-dniową ważnością, wygasanie, WYLOGUJ we wszystkich kartach, bez zapamiętania —
+  tylko karta, zmiana roli w bazie działa od razu, zmiana loginu wylogowuje),
+  **menedżer haseł** (pola oznaczone dla menedżerów haseł; z udawanym mechanizmem
+  Chrome/Edge: prośba o zapis, automatyczne logowanie, brak automatycznego logowania
+  po WYLOGUJ — także ze strony kampanii; bez tego mechanizmu, jak w Firefoksie i
+  Safari: przejście na nową stronę po zalogowaniu);
+  **telefony (iPhone 13, Pixel 5) i tablet (iPad Mini pionowo i poziomo)**:
   brak przewijania w bok (logowanie, listy kampanii, mapa, indeks, panel admina,
   pole bitwy kampanii Wzór), przesuwanie palcem, szczypanie dwoma palcami, stuknięcie
   w miejsce, log admina widoczny na ekranie.
@@ -443,9 +489,17 @@ Sprawdzone automatycznie (szczegóły i polecenia: [`testy/README.md`](testy/REA
   pod adresem `cutelittlegoat.github.io`, więc sprawdza się go na opublikowanej
   stronie: zakładka ADMIN → ZABEZPIECZENIA ma pokazać „Działa”; potem wykres w
   konsoli Firebase (App Check → Cloud Firestore) — żądania „zweryfikowane”.
+* **Okienek menedżera haseł i automatycznego logowania** w prawdziwych przeglądarkach
+  (przeglądarka testowa nie ma menedżera haseł — test używa udawanego). Ręcznie: zaloguj
+  się na telefonie i na komputerze — przeglądarka powinna zaproponować „Zapisać hasło?”;
+  po WYLOGUJ pola powinny wypełnić się same (albo pojawi się podpowiedź nad klawiaturą).
+  Zamknij przeglądarkę i otwórz stronę ponownie — z zaznaczonym „Zapamiętaj mnie” od
+  razu lista kampanii. Szczegóły: [`Analizy/Logowanie.md`](Analizy/Logowanie.md), rozdział 7.
 * **Zapisu i odczytu w prawdziwej bazie** (nie zapisuję nic w Twojej bazie). Po
   opublikowaniu reguł i strony:
-  1. Otwórz stronę w dwóch kartach (albo na dwóch urządzeniach).
+  1. Otwórz stronę w dwóch kartach (albo na dwóch urządzeniach). W jednej przeglądarce
+     loguj się na różne konta **bez** „Zapamiętaj mnie” — zapamiętane logowanie jest
+     wspólne dla wszystkich kart.
   2. Zaloguj się w pierwszej jako edytor (`Player2`), dodaj notatkę przy dowolnym miejscu —
      powinna od razu pojawić się w drugiej karcie (zalogowanej jako Gracz).
   3. Zaloguj się jako Gracz — nie powinno być przycisków „NOWA NOTATKA”,

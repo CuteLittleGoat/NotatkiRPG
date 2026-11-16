@@ -1,7 +1,8 @@
 // Testy jednostkowe (Node 18+, bez dodatkowych pakietów):
 //   node testy/jednostkowe.mjs
 // Sprawdzają format kopii zapasowej (CSV, kodowanie typów), wyszukiwanie tekstu
-// oraz profile kont, widoczność kampanii i domyślne kolory map i interfejsu.
+// oraz profile kont, sesję (zapamiętane logowanie), widoczność kampanii i domyślne
+// kolory map i interfejsu.
 import assert from "node:assert/strict";
 import {
   BladKopii,
@@ -24,7 +25,13 @@ import {
   kampaniaWidocznaDlaGraczy,
   mozeEdytowac,
   nazwaKonta,
-  rolaKonta
+  odswiezSesje,
+  pobierzSesje,
+  rolaKonta,
+  swiezoWylogowano,
+  uwzglednijSprawdzenieKonta,
+  wyczyscSesje,
+  zapiszSesje
 } from "../aplikacja/js/sesja.js";
 import { MOTYWY, MOTYWY_EKRANU } from "../aplikacja/js/konfiguracja.js";
 import { Stan } from "../aplikacja/js/stan.js";
@@ -235,6 +242,111 @@ test("kampania: admin widzi wszystkie, gracze — udostępnione, bez logowania �
   assert.ok(!kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, ukryta, null));
   assert.ok(kampaniaDlaUzytkownika({ rola: ROLE.GRACZ }, widoczna, null));
   assert.ok(!kampaniaDlaUzytkownika(null, widoczna, null));
+});
+
+// ---- sesja: pamięć karty (sessionStorage) i zapamiętanie na urządzeniu (localStorage) ----
+class PamiecTestowa {
+  constructor() {
+    this.dane = new Map();
+  }
+  getItem(k) {
+    return this.dane.has(k) ? this.dane.get(k) : null;
+  }
+  setItem(k, v) {
+    this.dane.set(k, String(v));
+  }
+  removeItem(k) {
+    this.dane.delete(k);
+  }
+}
+function nowePamieci() {
+  for (const nazwa of ["sessionStorage", "localStorage"]) {
+    Object.defineProperty(globalThis, nazwa, { value: new PamiecTestowa(), configurable: true, writable: true });
+  }
+}
+const KLUCZ = "notatkirpg.sesja";
+const DZIEN = 24 * 60 * 60 * 1000;
+
+test("sesja: „zapamiętaj mnie” — na urządzeniu przez 30 dni, bez hasła; bez zapamiętania — tylko karta", () => {
+  nowePamieci();
+  const przed = Date.now();
+  zapiszSesje({ kontoId: "K1", login: "gracz", nazwa: "Drużyna", rola: ROLE.GRACZ, haslo: "tajne-haslo" }, { zapamietaj: true });
+  assert.equal(sessionStorage.getItem(KLUCZ), null);
+  const zapis = localStorage.getItem(KLUCZ);
+  assert.ok(!zapis.includes("tajne-haslo"), "hasło trafiło do zapisanej sesji");
+  const dane = JSON.parse(zapis);
+  assert.equal(dane.wersja, 4);
+  const dni = (dane.wazneDo - przed) / DZIEN;
+  assert.ok(dni > 29.99 && dni < 30.01, `ważność ${dni} dni`);
+  const s = pobierzSesje();
+  assert.deepEqual([s.kontoId, s.login, s.rola, s.zapamietana], ["K1", "gracz", ROLE.GRACZ, true]);
+  // Logowanie bez zapamiętania: tylko ta karta, zapamiętana sesja znika z urządzenia.
+  zapiszSesje({ kontoId: "K2", login: "edytor", nazwa: "", rola: ROLE.EDYTOR }, { zapamietaj: false });
+  assert.equal(localStorage.getItem(KLUCZ), null);
+  assert.deepEqual([pobierzSesje().kontoId, pobierzSesje().zapamietana, pobierzSesje().wazneDo], ["K2", false, null]);
+});
+test("sesja: po terminie ważności, bez daty ważności albo w starej wersji — logowanie od nowa", () => {
+  nowePamieci();
+  const sesja = { wersja: 4, kontoId: "K1", login: "g", nazwa: "", rola: "gracz" };
+  localStorage.setItem(KLUCZ, JSON.stringify({ ...sesja, wazneDo: Date.now() - 1000 }));
+  assert.equal(pobierzSesje(), null);
+  assert.equal(localStorage.getItem(KLUCZ), null, "przeterminowana sesja nie została usunięta");
+  localStorage.setItem(KLUCZ, JSON.stringify(sesja));
+  assert.equal(pobierzSesje(), null, "zapamiętana sesja bez daty ważności");
+  sessionStorage.setItem(KLUCZ, JSON.stringify({ ...sesja, wersja: 3 }));
+  assert.equal(pobierzSesje(), null, "sesja w starej wersji (3)");
+  sessionStorage.setItem(KLUCZ, "{uszkodzony");
+  assert.equal(pobierzSesje(), null);
+});
+test("sesja: karta ma pierwszeństwo; odświeżenie profilu zachowuje ważność; WYLOGUJ czyści obie pamięci", () => {
+  nowePamieci();
+  zapiszSesje({ kontoId: "K1", login: "g", nazwa: "A", rola: ROLE.GRACZ }, { zapamietaj: true });
+  const waznosc = pobierzSesje().wazneDo;
+  assert.equal(odswiezSesje({ kontoId: "K1", nazwa: "B", rola: ROLE.EDYTOR }), true);
+  const s = pobierzSesje();
+  assert.deepEqual([s.rola, s.nazwa, s.login, s.zapamietana, s.wazneDo], [ROLE.EDYTOR, "B", "g", true, waznosc]);
+  assert.equal(odswiezSesje({ kontoId: "K1", nazwa: "B", rola: ROLE.EDYTOR }), false, "bez zmian — bez zapisu");
+  assert.equal(odswiezSesje({ kontoId: "INNE", nazwa: "B", rola: ROLE.ADMIN }), false, "dane innego konta");
+  sessionStorage.setItem(KLUCZ, JSON.stringify({ wersja: 4, kontoId: "K9", login: "x", nazwa: "", rola: "admin" }));
+  assert.equal(pobierzSesje().kontoId, "K9", "sesja tej karty nie ma pierwszeństwa");
+  wyczyscSesje();
+  assert.equal(pobierzSesje(), null);
+  assert.equal(localStorage.getItem(KLUCZ), null);
+  assert.equal(sessionStorage.getItem(KLUCZ), null);
+  // Znacznik „przed chwilą wylogowano” (bez automatycznego logowania) — jednorazowy.
+  assert.equal(swiezoWylogowano(), true);
+  assert.equal(swiezoWylogowano(), false);
+  wyczyscSesje();
+  zapiszSesje({ kontoId: "K1", login: "g", nazwa: "", rola: ROLE.GRACZ }, { zapamietaj: true });
+  assert.equal(swiezoWylogowano(), false, "znacznik został po ponownym zalogowaniu");
+});
+test("sesja: wynik sprawdzenia konta w bazie — usunięte konto wylogowuje, nowa rola od razu", () => {
+  nowePamieci();
+  zapiszSesje({ kontoId: "K1", login: "g", nazwa: "", rola: ROLE.EDYTOR }, { zapamietaj: true });
+  const sesja = pobierzSesje();
+  uwzglednijSprawdzenieKonta(sesja, { kontoId: "K1", login: "g", nazwa: "", rola: ROLE.GRACZ });
+  assert.equal(pobierzSesje().rola, ROLE.GRACZ, "nowa rola z bazy nie została zapisana");
+  uwzglednijSprawdzenieKonta({ kontoId: "INNE" }, null);
+  assert.ok(pobierzSesje(), "wynik dla innego konta wylogował bieżące");
+  uwzglednijSprawdzenieKonta(sesja, null);
+  assert.equal(pobierzSesje(), null, "usunięte konto (albo zmieniony login) nie wylogowało");
+});
+test("sesja: przeglądarka nie pozwala zapamiętać — logowanie działa w tej karcie", () => {
+  nowePamieci();
+  localStorage.setItem = () => {
+    throw new Error("QuotaExceededError");
+  };
+  assert.equal(zapiszSesje({ kontoId: "K1", login: "g", nazwa: "", rola: ROLE.GRACZ }, { zapamietaj: true }), true);
+  assert.equal(pobierzSesje().zapamietana, false);
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    get() {
+      throw new Error("SecurityError");
+    }
+  });
+  assert.equal(pobierzSesje(), null, "błąd dostępu do pamięci nie może przerwać strony");
+  delete globalThis.sessionStorage;
+  delete globalThis.localStorage;
 });
 
 test("kolory: mapy domyślnie w kolorach oryginału (pierwsze na liście), interfejs — zielony", () => {

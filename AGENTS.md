@@ -75,8 +75,22 @@ Przeczytaj ten plik w całości, zanim cokolwiek zmienisz. Potem: `README.md`
 * Firebase z CDN `https://www.gstatic.com/firebasejs/13.2.0/…` — **wszystkie moduły
   w tej samej wersji**, ładowane tylko w `aplikacja/js/firebase.js`.
 * `sessionStorage` i `localStorage` zawsze w `try/catch`. Sesja: tylko id konta,
-  login (`PlayerName`), nazwa konta (`DisplayName`) i profil — nigdy hasło. Zmiana
-  kształtu sesji = podbij `WERSJA_SESJI` w `sesja.js` (stare sesje trzeba odrzucić).
+  login (`PlayerName`), nazwa konta (`DisplayName`), profil i data ważności — **nigdy
+  hasło**. Zmiana kształtu sesji = podbij `WERSJA_SESJI` w `sesja.js` (stare sesje
+  trzeba odrzucić). Gdzie (`Analizy/Logowanie.md`, decyzje użytkownika): „Zapamiętaj
+  mnie na tym urządzeniu” (domyślnie) → `localStorage` na `ZAPAMIETANIE_DNI` (30) dni,
+  wspólna dla kart (zdarzenie `storage`: WYLOGUJ wylogowuje wszystkie karty); bez
+  zapamiętania → `sessionStorage` (tylko karta). Przy każdym otwarciu strony
+  `sprawdzKonto()` (`logowanie.js`): usunięte konto albo zmieniony `PlayerName` =
+  wylogowanie, zmieniona rola = nowy profil; błąd sieci = sesja bez zmian.
+* Menedżer haseł: pola formularza mają `autocomplete="username"` / `"current-password"`;
+  pola hasła nie czyść przed opuszczeniem strony (w Firefoksie i Safari po zalogowaniu
+  strona przechodzi na nowy adres). Chrome i Edge: `PasswordCredential` +
+  `navigator.credentials.store()` po zalogowaniu, automatyczne logowanie
+  `get({ password: true, mediation: "silent" })`, przy wylogowaniu
+  `preventSilentAccess()` i znacznik „przed chwilą wylogowano” — po WYLOGUJ bez
+  automatycznego logowania. Przeglądarka testowa nie ma menedżera haseł — test e2e
+  podstawia udawany.
 * Komunikaty tylko przez `komunikat()` z `narzedzia.js`: na ekranie najwyżej dwa
   naraz; u admina potwierdzenia trafiają wyłącznie do LOGU w zakładce Admin
   (`sessionStorage`, czyszczony przy wylogowaniu), a na ekranie zostają same błędy.

@@ -9,7 +9,16 @@ import { Indeks } from "./indeks.js";
 import { PanelElementu } from "./panel.js";
 import { WidokNotatek } from "./notatki.js";
 import { WidokAdmina } from "./admin.js";
-import { jestAdminem, kampaniaDlaUzytkownika, naZmianeSesji, nazwaKonta, pobierzSesje, wyczyscSesje } from "./sesja.js";
+import { sprawdzKonto } from "./logowanie.js";
+import {
+  jestAdminem,
+  kampaniaDlaUzytkownika,
+  naZmianeSesji,
+  nazwaKonta,
+  pobierzSesje,
+  uwzglednijSprawdzenieKonta,
+  wyczyscSesje
+} from "./sesja.js";
 import { KLUCZ_INDEKSU, MOTYWY, ZAKLADKI_STALE } from "./konfiguracja.js";
 import {
   el,
@@ -75,6 +84,28 @@ async function start() {
     doLogowania();
     return;
   }
+  // Zmiana sesji — w tej karcie albo w innej (zapamiętane logowanie jest wspólne dla
+  // kart): wylogowanie → logowanie; inne konto albo zmieniona rola → strona od nowa
+  // (inne uprawnienia, inne zakładki); nowa nazwa konta → tylko odświeżenie napisów.
+  let biezacaSesja = sesja;
+  let poZmianieNazwyKonta = null; // ustawiane, gdy strona jest gotowa
+  naZmianeSesji((nowa) => {
+    if (!nowa) {
+      doLogowania();
+      return;
+    }
+    if (nowa.kontoId !== biezacaSesja.kontoId || nowa.rola !== biezacaSesja.rola) {
+      location.reload();
+      return;
+    }
+    biezacaSesja = nowa;
+    poZmianieNazwyKonta?.(nowa);
+  });
+  // Konto sprawdzane w bazie przy każdym otwarciu strony (usunięte konto albo zmieniony
+  // login → logowanie, zmieniona rola → nowy profil). Błąd sieci — sesja bez zmian.
+  sprawdzKonto(sesja)
+    .then((wynik) => uwzglednijSprawdzenieKonta(sesja, wynik))
+    .catch(() => {});
   // Admin: potwierdzenia jego zmian trafiają do logu w zakładce Admin, na ekranie — tylko błędy.
   if (jestAdminem(sesja)) ustawTrybKomunikatow({ log: true, tylkoBledyNaEkranie: true });
 
@@ -140,7 +171,7 @@ async function start() {
   }
 
   const stan = new Stan({ kampania, manifest, folder: kampania.folder });
-  stan.sesja = sesja;
+  stan.sesja = biezacaSesja; // mogła już zostać odświeżona (sprawdzenie konta w bazie)
   stan.dokumentKampanii = dokumentKampanii;
   dane.nazwa = manifest.nazwa || kampania.nazwa;
   document.title = `${manifest.nazwa || kampania.nazwa} — Data-Slate`;
@@ -443,10 +474,13 @@ async function start() {
     );
   }
 
-  // Wylogowanie: wszystko znika, wracamy do logowania.
-  naZmianeSesji((nowa) => {
-    if (!nowa) doLogowania();
-  });
+  // Nowa nazwa konta (DisplayName) z bazy — napisy u góry i u dołu ekranu.
+  // (Wylogowanie i zmianę roli obsługuje nasłuch na początku start().)
+  poZmianieNazwyKonta = (nowa) => {
+    stan.sesja = nowa;
+    renderKonta();
+    renderStatusu();
+  };
 
   // ------------------------------------------------------------- status
   function renderStatusu() {

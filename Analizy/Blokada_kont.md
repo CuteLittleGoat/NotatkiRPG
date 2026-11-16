@@ -25,7 +25,11 @@ być na nim zalogowanych wiele osób naraz (Twoja decyzja).
   `secrets`. W bazie **nie zostaje żaden ślad**, że ktoś jest zalogowany.
 * Zalogowanie trzyma się **jednej karty przeglądarki** (pamięć karty,
   `sessionStorage`). Zamknięcie karty = wylogowanie. Druga karta otwarta „od zera”
-  wymaga ponownego logowania.
+  wymaga ponownego logowania. *(Aktualizacja 2026-11-16: od wdrożenia
+  [`Logowanie.md`](Logowanie.md) logowanie z „Zapamiętaj mnie” trzyma się całej
+  przeglądarki przez 30 dni — wspólne dla wszystkich kart; bez zapamiętania — jak wyżej.
+  Pozostałe wnioski tej analizy się nie zmieniają: zapamiętane urządzenie to po prostu
+  dłużej trwające zalogowanie.)*
 * Na każde konto może się zalogować dowolnie wiele osób i urządzeń naraz.
 
 ## 2. Dlaczego to nie jest jeden przełącznik

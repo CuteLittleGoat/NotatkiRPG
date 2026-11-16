@@ -4,7 +4,21 @@
 // graczy”; gracze (Edytor, Gracz) — tylko kampanie udostępnione przez admina.
 // Moduły z Firebase ładujemy osobno — gdyby serwer Firebase był niedostępny,
 // strona pokaże zrozumiały komunikat zamiast pustego ekranu.
-import { jestAdminem, kampaniaDlaUzytkownika, kampaniaWidocznaDlaGraczy, naZmianeSesji, nazwaKonta, pobierzSesje, wyczyscSesje } from "./sesja.js";
+// Logowanie może być zapamiętane na urządzeniu (sesja.js); przy otwarciu strony konto
+// jest sprawdzane w bazie, a w Chrome i Edge możliwe jest automatyczne logowanie
+// hasłem z menedżera haseł przeglądarki (logowanie.js, Analizy/Logowanie.md).
+import {
+  jestAdminem,
+  kampaniaDlaUzytkownika,
+  kampaniaWidocznaDlaGraczy,
+  naZmianeSesji,
+  nazwaKonta,
+  pobierzSesje,
+  swiezoWylogowano,
+  uwzglednijSprawdzenieKonta,
+  wyczyscSesje,
+  zapiszSesje
+} from "./sesja.js";
 import { el, komunikat, opisBledu, parametrAdresu, ustawTrybKomunikatow, wczytajJson, wyczysc } from "./narzedzia.js";
 
 const $ = (id) => document.getElementById(id);
@@ -15,6 +29,9 @@ async function wczytajModuly() {
     const [logowanie, dane] = await Promise.all([import("./logowanie.js"), import("./dane.js")]);
     moduly = {
       formularzLogowania: logowanie.formularzLogowania,
+      sprawdzKonto: logowanie.sprawdzKonto,
+      obslugaZapisuHasel: logowanie.obslugaZapisuHasel,
+      logowanieAutomatyczne: logowanie.logowanieAutomatyczne,
       subskrybujKampanie: dane.subskrybujKampanie,
       zapiszWidocznoscKampanii: dane.zapiszWidocznoscKampanii
     };
@@ -27,6 +44,7 @@ let dokumenty = null; // Map id → dane kampanii z bazy (null = jeszcze nie prz
 let koniecNasluchu = null;
 let przekierowanie = null; // { id, hash } z odnośnika — po zalogowaniu wracamy do kampanii
 let pokolenie = 0; // chroni przed spóźnionym wczytaniem po wylogowaniu
+let wylogowanoTutaj = false; // po kliknięciu WYLOGUJ na tej stronie — bez automatycznego logowania
 const pozycje = new Map(); // id → { wpis, li, link, pole, opisPola, oczekuje }
 
 // ------------------------------------------------------------- konto
@@ -38,7 +56,16 @@ function renderKonta(sesja) {
   if (!sesja) return;
   konto.append(
     el("span.konto-rola", ["KONTO: ", el("span.konto-login", { tekst: sesja.login, atrybuty: { title: sesja.login } })]),
-    el("button.przycisk.przycisk-maly", { tekst: "WYLOGUJ", atrybuty: { type: "button" }, zdarzenia: { click: () => wyczyscSesje() } })
+    el("button.przycisk.przycisk-maly", {
+      tekst: "WYLOGUJ",
+      atrybuty: { type: "button" },
+      zdarzenia: {
+        click: () => {
+          wylogowanoTutaj = true;
+          wyczyscSesje();
+        }
+      }
+    })
   );
   $("status-konto").textContent = `KONTO: ${nazwaKonta(sesja)}`;
 }
@@ -57,15 +84,30 @@ async function pokazLogowanie(moje) {
   }
   if (moje !== pokolenie) return;
   wyczysc(tresc);
-  const { formularz } = m.formularzLogowania(() => {
+  const poZalogowaniu = ({ automatycznie = false } = {}) => {
     // Przyszliśmy tu z odnośnika do kampanii (np. zakładki w przeglądarce) — wrócimy tam.
     const k = parametrAdresu("k");
     if (k) {
       przekierowanie = { id: k, hash: location.hash };
       sprawdzPrzekierowanie(pobierzSesje());
+    } else if (!automatycznie && !m.obslugaZapisuHasel()) {
+      // Firefox, Safari: prawdziwe przejście na stronę po zalogowaniu — najpewniejszy
+      // sygnał dla menedżera haseł, że logowanie się udało („Zapisać hasło?”).
+      location.replace("index.html");
     }
-  });
+  };
+  const { formularz } = m.formularzLogowania(() => poZalogowaniu());
   tresc.append(el("p.przygaszony", { tekst: "Zaloguj się, aby zobaczyć kampanie, mapy i notatki drużyny." }), formularz);
+
+  // Chrome, Edge: logowanie hasłem zapisanym w przeglądarce, bez okienek — tylko gdy
+  // przeglądarka pozwala (po WYLOGUJ nie pozwala, dopóki ktoś nie zaloguje się sam).
+  // Wylogowanie przed chwilą (tutaj albo na stronie kampanii) — bez prób.
+  if (swiezoWylogowano()) wylogowanoTutaj = true;
+  if (wylogowanoTutaj || !m.obslugaZapisuHasel()) return;
+  const sesja = await m.logowanieAutomatyczne();
+  if (!sesja || moje !== pokolenie || pobierzSesje()) return;
+  zapiszSesje(sesja, { zapamietaj: true });
+  poZalogowaniu({ automatycznie: true });
 }
 
 // ------------------------------------------------------------- lista kampanii
@@ -219,5 +261,16 @@ function render(sesja) {
   pokazLogowanie(moje);
 }
 
-render(pobierzSesje());
+const poczatkowa = pobierzSesje();
+render(poczatkowa);
 naZmianeSesji(render);
+
+// Konto sprawdzane w bazie przy każdym otwarciu strony: usunięte konto albo zmieniony
+// login → logowanie; zmieniona rola → nowy profil (render przez naZmianeSesji).
+// Bez internetu albo przy błędzie bazy sesja zostaje bez zmian.
+if (poczatkowa) {
+  wczytajModuly()
+    .then((m) => m.sprawdzKonto(poczatkowa))
+    .then((wynik) => uwzglednijSprawdzenieKonta(poczatkowa, wynik))
+    .catch(() => {});
+}

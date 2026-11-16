@@ -1,6 +1,12 @@
 # Logowanie bez wpisywania hasła za każdym razem
 
-Analiza z 2026-11-16. **Nic z tego nie jest wdrożone** — to materiał do decyzji.
+Analiza z 2026-11-16.
+
+> **Wdrożone 2026-11-16:** warianty **A + B** ze wszystkimi rekomendacjami z rozdziału 6
+> (decyzja użytkownika). Opis działania: README, rozdział „Role i uprawnienia”; kod:
+> `aplikacja/js/sesja.js`, `logowanie.js`, `start.js`, `kampania.js`. Rozdział 1 opisuje
+> stan **sprzed** wdrożenia. Okienek menedżera haseł nie da się sprawdzić automatycznie —
+> test ręczny w rozdziale 7.
 
 Pytanie: czy da się sprawić, żeby przeglądarka **pamiętała zalogowanie** i **pozwalała
 zapisać hasło** (jak na innych stronach), zamiast wymagać wpisywania loginu i hasła

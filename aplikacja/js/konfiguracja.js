@@ -40,7 +40,11 @@ export const LIMITY = {
   podpis: 80
 };
 
-export const KLUCZ_SESJI = "notatkirpg.sesja";
+/** Ile dni aplikacja pamięta zalogowanie z polem „Zapamiętaj mnie na tym urządzeniu”
+ *  (liczone od zalogowania; analiza i decyzje: Analizy/Logowanie.md). */
+export const ZAPAMIETANIE_DNI = 30;
+
+export const KLUCZ_SESJI = "notatkirpg.sesja"; // ten sam klucz w sessionStorage i localStorage
 export const KLUCZ_LOGU = "notatkirpg.log"; // log komunikatów admina (sessionStorage)
 export const KLUCZ_PODPISU = "notatkirpg.podpis";
 export const KLUCZ_INDEKSU = "notatkirpg.indeks";
