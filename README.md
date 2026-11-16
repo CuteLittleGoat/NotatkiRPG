@@ -103,8 +103,11 @@ korzystają tylko ze stron aplikacji (Twoja decyzja).
 dowolnie. Na górze ekranu przy „KONTO:” widać login (`PlayerName`), a na dole —
 nazwę konta (`DisplayName`). Przy wpisie jest pole **„podpis / postać”**, bo z
 jednego konta może korzystać kilka osób. Logowanie trwa do zamknięcia karty
-przeglądarki (sesja w `sessionStorage`, bez hasła); po wylogowaniu aplikacja wraca
-do ekranu logowania. Liczba jednocześnie zalogowanych osób nie jest ograniczona —
+przeglądarki (sesja w `sessionStorage`, bez hasła — odświeżenie strony w tej samej
+karcie nie wylogowuje, nowa karta już tak); po wylogowaniu aplikacja wraca
+do ekranu logowania. Zapamiętywanie zalogowania na dłużej i zapisywanie hasła w
+przeglądarce — analiza: [`Analizy/Logowanie.md`](Analizy/Logowanie.md).
+Liczba jednocześnie zalogowanych osób nie jest ograniczona —
 analiza takiej blokady dla kont admina i edytora: [`Analizy/Blokada_kont.md`](Analizy/Blokada_kont.md).
 
 ## Jak tego używać
