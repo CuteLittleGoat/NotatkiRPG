@@ -240,7 +240,7 @@ ją dezaktualizuje (nowy plik, przeniesiona funkcja, nowa ścieżka).
 |---|---|
 | nowa wersja rysunku MG, nowe miejsca, zmiana nazw, miejsce do odkrycia (krok po kroku) | `kampanie/README.md` |
 | przygotowanie rysunku mapy (format SVG, znaczniki, kolory, zakazy, miejsca do odkrycia) | `Template/Specyfikacja_rysunku_mapy.md` (rozdział 17 — praktyczne wskazówki); przykłady: `Template/Przyklady/`; podgląd: `node narzedzia/podglad_mapy.cjs … [--na-start]` |
-| przekazanie rysowania mapy innemu agentowi (pliki i polecenie do wklejenia) | `Template/README.md` |
+| przekazanie rysowania mapy innemu agentowi (pliki i polecenie do wklejenia); sprawdzanie rysunku skryptem map i podglądem | `Template/README.md` (specyfikacja jest samodzielna — bez poleceń tego repozytorium; ścieżki do plików w tabeli „Pliki” na jej początku) |
 | problemy i zmiany mechanizmu map | zgłoszenia: `Template/Problemy/`; dziennik: `Template/Changelog.md` |
 | nowa kampania | `kampanie/README.md`, szablon `narzedzia/szablon_kampanii/`; pełny przykład: `kampanie/Template/` (kampania „Wzór”; generatory rysunków zapisują też kopie do `Template/Przyklady/`) |
 | kolejność kampanii na liście | kolejność wpisów w `kampanie.json` (zmiana z aplikacji — analiza: `Analizy/Kolejnosc.md`) |
